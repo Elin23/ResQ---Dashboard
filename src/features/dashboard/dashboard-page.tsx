@@ -100,7 +100,7 @@ function RangeFilter({
     rangeOptions.find(
       (option) =>
         option.value === value,
-    ) ?? rangeOptions[0];
+    ) ?? rangeOptions[0]!;
 
   useEffect(() => {
     if (!open) {

@@ -45,7 +45,7 @@ const seeds: Array<Omit<Report, 'createdAt' | 'updatedAt' | 'media'> & { created
 
 let reports: Report[] = seeds.map(({ createdMinutes, updatedMinutes, mediaAnimal, mediaCount, ...report }) => ({
   ...report,
-  status: report.status === 'EN_ROUTE' && !report.assignedOrganization ? undefined : report.status,
+  status: report.status,
   media: media(report.id, mediaAnimal, mediaCount),
   createdAt: minutesAgo(createdMinutes),
   updatedAt: minutesAgo(updatedMinutes ?? createdMinutes),

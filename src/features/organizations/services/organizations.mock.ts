@@ -417,13 +417,6 @@ async function statsFor(
         'CLOSED',
     );
 
-  const receivedReports =
-    reports.items.filter(
-      (report) =>
-        report.status ===
-        'RECEIVED',
-    );
-
   return {
     /*
      * أبقينا نفس أسماء الحقول مؤقتًا

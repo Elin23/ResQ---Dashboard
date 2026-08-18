@@ -78,7 +78,7 @@ export interface RecentActivity {
 }
 
 export interface GeographicLayer {
-  key: 'critical-reports' | 'organizations' | 'missions';
+  key: 'waiting-reports' | 'critical-reports' | 'organizations' | 'missions';
   label: string;
   count: number;
   tone: StatusTone;
