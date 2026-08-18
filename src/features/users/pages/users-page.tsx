@@ -1,0 +1,187 @@
+import { commitSearchParams } from '@/lib/search-params';
+import { useCallback, useMemo } from 'react';
+import { useSearchParams } from 'react-router';
+import { Button, EmptyState, ErrorState, PageHeader } from '@/components/ui';
+import type { DataTableQueryState } from '@/components/ui/data-table';
+import { UserFilterBar } from '../components/user-filter-bar';
+import { UserSummaryCards } from '../components/user-summary';
+import { UsersTable } from '../components/users-table';
+import { useUsers, useUserSummary } from '../hooks';
+import {
+  userAccountStatuses,
+  userVerificationStatuses,
+  type UserFilters,
+} from '../types';
+import { userGovernorates } from '../constants';
+import { hasUserFilters } from '../utils';
+
+const valid = <T extends string>(
+  value: string | null,
+  options: readonly T[],
+): T | undefined =>
+  value && options.includes(value as T) ? (value as T) : undefined;
+
+function fromParams(params: URLSearchParams): UserFilters {
+  return {
+    search: params.get('q') ?? '',
+    accountStatus: valid(params.get('status'), userAccountStatuses),
+    verificationStatus: valid(params.get('verification'), userVerificationStatuses),
+    governorate: params.get('governorate') ?? undefined,
+    dateFrom: params.get('from') ?? undefined,
+    dateTo: params.get('to') ?? undefined,
+    recentActivity: valid(params.get('activity'), ['ACTIVE_7_DAYS', 'INACTIVE_30_DAYS'] as const),
+    hasReports: valid(params.get('hasReports'), ['YES', 'NO'] as const),
+    hasAdoptions: valid(params.get('hasAdoptions'), ['YES', 'NO'] as const),
+    hasActiveAdoptions: params.get('activeAdoptions') === 'YES' ? 'YES' : undefined,
+    page: Math.max(1, Number(params.get('page') ?? 1) || 1),
+    pageSize: [10, 20, 50].includes(Number(params.get('pageSize')))
+      ? Number(params.get('pageSize'))
+      : 10,
+    sortBy: valid(params.get('sort'), ['createdAt', 'lastActiveAt', 'fullName', 'accountStatus'] as const),
+    sortDirection: params.get('direction') === 'asc' ? 'asc' : 'desc',
+  };
+}
+
+function toParams(filters: UserFilters) {
+  const params = new URLSearchParams();
+  const entries: Array<[string, string | number | undefined]> = [
+    ['q', filters.search || undefined],
+    ['status', filters.accountStatus],
+    ['verification', filters.verificationStatus],
+    ['governorate', filters.governorate],
+    ['from', filters.dateFrom],
+    ['to', filters.dateTo],
+    ['activity', filters.recentActivity],
+    ['hasReports', filters.hasReports],
+    ['hasAdoptions', filters.hasAdoptions],
+    ['activeAdoptions', filters.hasActiveAdoptions],
+    ['page', filters.page > 1 ? filters.page : undefined],
+    ['pageSize', filters.pageSize !== 10 ? filters.pageSize : undefined],
+    ['sort', filters.sortBy],
+    ['direction', filters.sortBy ? filters.sortDirection : undefined],
+  ];
+
+  for (const [key, value] of entries) {
+    if (value !== undefined) params.set(key, String(value));
+  }
+
+  return params;
+}
+
+export function UsersPage() {
+  const [params, setParams] = useSearchParams();
+  const filters = useMemo(() => fromParams(params), [params]);
+  const query = useUsers(filters);
+  const summary = useUserSummary();
+
+  const update = useCallback(
+    (patch: Partial<UserFilters>) =>
+      commitSearchParams(
+        params,
+        toParams({ ...filters, ...patch }),
+        setParams,
+      ),
+    [filters, params, setParams],
+  );
+
+  const clear = () => setParams(new URLSearchParams());
+  const active = hasUserFilters(filters);
+  const governors = [...userGovernorates];
+
+  const onState = useCallback(
+    (state: DataTableQueryState) => {
+      const sort = state.sorting[0];
+      const next =
+        sort && ['createdAt', 'lastActiveAt', 'fullName', 'accountStatus'].includes(sort.id)
+          ? (sort.id as UserFilters['sortBy'])
+          : undefined;
+
+      if (
+        state.pageIndex + 1 !== filters.page ||
+        state.pageSize !== filters.pageSize ||
+        next !== filters.sortBy ||
+        (next && (sort?.desc ? 'desc' : 'asc')) !== filters.sortDirection
+      ) {
+        update({
+          page: state.pageIndex + 1,
+          pageSize: state.pageSize,
+          sortBy: next,
+          sortDirection: next ? (sort?.desc ? 'desc' : 'asc') : undefined,
+        });
+      }
+    },
+    [filters.page, filters.pageSize, filters.sortBy, filters.sortDirection, update],
+  );
+
+  if (query.isError && !query.data) {
+    return (
+      <ErrorState
+        title="تعذر تحميل المستخدمين"
+        description={query.error.message}
+        onRetry={() => void query.refetch()}
+      />
+    );
+  }
+
+  const emptyTitle =
+    filters.accountStatus === 'SUSPENDED'
+      ? 'لا توجد حسابات معلقة حاليًا.'
+      : active
+        ? 'لا يوجد مستخدمون يطابقون عوامل التصفية الحالية.'
+        : 'لا يوجد مستخدمون مسجلون حتى الآن.';
+
+  return (
+    <div className="space-y-6 pb-6">
+      <PageHeader
+        title="إدارة المستخدمين"
+        description="متابعة الحسابات وحالة التوثيق والنشاط المرتبط بالمنصة."
+        breadcrumbs={[
+          { label: 'الرئيسية', href: '/dashboard' },
+          { label: 'المستخدمون' },
+        ]}
+      />
+
+      <UserSummaryCards
+        summary={summary.data}
+        loading={summary.isLoading}
+        onFilter={update}
+      />
+
+      <UserFilterBar
+        filters={filters}
+        governorates={governors}
+        onChange={update}
+        onClear={clear}
+        active={active}
+      />
+
+      <UsersTable
+        items={query.data?.items ?? []}
+        total={query.data?.total ?? 0}
+        pageCount={query.data?.pageCount ?? 1}
+        filters={filters}
+        loading={query.isLoading || (query.isFetching && !query.data)}
+        error={query.isError ? query.error.message : undefined}
+        onRetry={() => void query.refetch()}
+        onQueryChange={onState}
+        emptyState={
+          <EmptyState
+            title={emptyTitle}
+            description={
+              active
+                ? 'عدّل عوامل التصفية أو امسحها.'
+                : 'ستظهر الحسابات المسجلة هنا.'
+            }
+            action={
+              active ? (
+                <Button variant="secondary" onClick={clear}>
+                  مسح الفلاتر
+                </Button>
+              ) : undefined
+            }
+          />
+        }
+      />
+    </div>
+  );
+}

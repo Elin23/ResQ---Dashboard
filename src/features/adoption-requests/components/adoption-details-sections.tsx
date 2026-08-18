@@ -1,0 +1,46 @@
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Building2, CheckCircle2, Mail, Phone, UserRound } from 'lucide-react';
+import { Link } from 'react-router';
+import { toast } from 'sonner';
+import { Badge, Button, Card, SectionHeader, Textarea } from '@/components/ui';
+import { PermissionGuard } from '@/features/auth/rbac';
+import { adoptionAnimalSpeciesLabels } from '../constants';
+import { useAddAdoptionNote } from '../hooks';
+import { noteSchema } from '../schemas';
+import type { AdoptionRequestDetails } from '../types';
+import { formatAdoptionDate, formatEstimatedAge } from '../utils';
+import { AdoptionApplicationStatusBadge, AdoptionPublisherBadge } from './adoption-badges';
+
+type NoteValues = { note: string };
+
+export function AdoptionMainDetails({ details }: { details: AdoptionRequestDetails }) {
+  const { request } = details;
+  const animal = request.animal;
+  return <Card className="rounded-xl border-border/45 bg-white p-0 shadow-none"><section className="p-4 sm:p-5"><SectionHeader title="محتوى عرض التبني" description="هذه هي المعلومات والصور التي يراجعها الأدمن قبل السماح بالنشر."/><div className="mt-4 grid gap-4 lg:grid-cols-[15rem_minmax(0,1fr)]"><div className="overflow-hidden rounded-xl bg-muted/35">{animal.imageUrls[0] ? <img src={animal.imageUrls[0]} alt={`صورة ${animal.name ?? 'الحيوان'}`} className="aspect-[4/3] h-full w-full object-cover"/> : <div className="aspect-[4/3]"/>}</div><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><h2 className="text-base font-semibold">{animal.name ?? adoptionAnimalSpeciesLabels[animal.species]}</h2><Badge tone="neutral">{adoptionAnimalSpeciesLabels[animal.species]}</Badge></div><dl className="mt-4 grid gap-x-6 gap-y-3 sm:grid-cols-2"><Info label="السلالة" value={animal.breed ?? 'غير محددة'}/><Info label="العمر التقريبي" value={formatEstimatedAge(animal.estimatedAgeMonths)}/><Info label="الموقع" value={request.location}/><Info label="تاريخ الإرسال" value={formatAdoptionDate(request.submittedAt)}/></dl><div className="mt-4 border-t border-border/40 pt-4"><p className="text-[12px] font-semibold">الوصف المنشور</p><p className="mt-1.5 text-[13px] leading-7 text-muted-foreground">{animal.description}</p>{request.requirements && <><p className="mt-4 text-[12px] font-semibold">شروط أو ملاحظات الناشر</p><p className="mt-1.5 text-[13px] leading-7 text-muted-foreground">{request.requirements}</p></>}</div></div></div></section>{request.moderationReason && <section className="border-t border-border/40 px-4 py-3.5 sm:px-5"><p className="text-[12px] font-semibold text-critical">ملاحظة قرار المراجعة</p><p className="mt-1 text-[12px] leading-6 text-muted-foreground">{request.moderationReason}</p></section>}</Card>;
+}
+
+export function PublisherPanel({ details }: { details: AdoptionRequestDetails }) {
+  const publisher = details.request.publisher;
+  const href = publisher.type === 'USER' ? `/users/${publisher.id}` : `/organizations/${publisher.id}`;
+  return <Card className="rounded-xl border-border/45 bg-white shadow-none"><SectionHeader title="الناشر" actions={<AdoptionPublisherBadge type={publisher.type}/>}/><div className="mt-4 flex items-center gap-3"><span className="flex size-9 items-center justify-center rounded-lg bg-muted/60">{publisher.type === 'USER' ? <UserRound className="size-4"/> : <Building2 className="size-4"/>}</span><div className="min-w-0"><p className="truncate text-[13px] font-semibold">{publisher.name}</p><p className="text-[11px] text-muted-foreground">{publisher.city ?? 'الموقع غير محدد'}</p></div></div><div className="mt-4 space-y-2.5 border-t border-border/40 pt-4 text-[12px]">{publisher.phone && <div className="flex items-center justify-between gap-3"><span className="flex items-center gap-2 text-muted-foreground"><Phone className="size-3.5"/>الهاتف</span><span dir="ltr" className="font-medium">{publisher.phone}</span></div>}{publisher.email && <div className="flex items-center justify-between gap-3"><span className="flex items-center gap-2 text-muted-foreground"><Mail className="size-3.5"/>البريد</span><span dir="ltr" className="max-w-40 truncate font-medium">{publisher.email}</span></div>}</div><Link to={href}><Button variant="secondary" size="sm" className="mt-4 h-9 w-full rounded-xl">فتح ملف {publisher.type === 'USER' ? 'المستخدم' : 'الجمعية'}</Button></Link></Card>;
+}
+
+export function AdoptionApplicationsSection({ details }: { details: AdoptionRequestDetails }) {
+  return <Card className="rounded-xl border-border/45 bg-white shadow-none"><SectionHeader title="طلبات التبني بعد النشر" description="الأدمن يتابع فقط. صاحب الحيوان أو الجمعية هو من يقبل أو يرفض طلب التبني."/><div className="mt-4 space-y-2.5">{details.applications.length === 0 ? <p className="rounded-lg bg-muted/30 p-4 text-[12px] text-muted-foreground">لا توجد طلبات تبنٍ على هذا العرض حتى الآن.</p> : details.applications.map((application) => <div key={application.id} className="rounded-lg border border-border/40 px-3.5 py-3"><div className="flex flex-wrap items-start justify-between gap-3"><div><div className="flex flex-wrap items-center gap-2"><p className="text-[13px] font-semibold">{application.applicant.name}</p><AdoptionApplicationStatusBadge status={application.status}/></div><p className="mt-1 text-[11px] text-muted-foreground">أرسل الطلب {formatAdoptionDate(application.submittedAt)}</p></div><Link to={`/users/${application.applicant.id}`}><Button variant="ghost" size="sm" className="h-8 rounded-lg">فتح المستخدم</Button></Link></div>{application.message && <p className="mt-3 text-[12px] leading-6 text-muted-foreground">{application.message}</p>}{application.ownerResponse && <div className="mt-3 rounded-lg bg-muted/35 px-3 py-2.5 text-[12px]"><span className="font-semibold">رد الناشر: </span>{application.ownerResponse}</div>}{application.status === 'ACCEPTED' && application.contactShared && <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-border/35 pt-3 text-[11px] text-success"><span className="flex items-center gap-1.5"><CheckCircle2 className="size-3.5"/>تم السماح للطرفين برؤية معلومات التواصل</span>{application.applicant.phone && <span dir="ltr">{application.applicant.phone}</span>}{application.applicant.email && <span dir="ltr">{application.applicant.email}</span>}</div>}{application.status !== 'ACCEPTED' && <p className="mt-3 text-[11px] text-muted-foreground">معلومات التواصل لا تظهر للطرف الآخر إلا بعد قبول الطلب.</p>}</div>)}</div></Card>;
+}
+
+export function AdoptionTimelineSection({ details }: { details: AdoptionRequestDetails }) {
+  return <Card className="rounded-xl border-border/45 bg-white shadow-none"><SectionHeader title="سجل العرض" description="من طلب النشر إلى تفاعل المستخدمين وقرار صاحب الحيوان."/><div className="mt-4 space-y-0">{details.timeline.map((event, index) => <div key={event.id} className="relative flex gap-3 pb-4 last:pb-0">{index < details.timeline.length - 1 && <span className="absolute right-[7px] top-5 h-[calc(100%-8px)] w-px bg-border/60"/>}<span className="relative mt-1.5 size-[15px] shrink-0 rounded-full border-4 border-white bg-primary/55"/><div className="min-w-0"><p className="text-[12px] font-medium">{event.title}</p><p className="mt-0.5 text-[11px] text-muted-foreground">{[event.actor, formatAdoptionDate(event.timestamp)].filter(Boolean).join(' · ')}</p>{event.note && <p className="mt-1 text-[11px] leading-5 text-muted-foreground">{event.note}</p>}</div></div>)}</div></Card>;
+}
+
+export function AdoptionInternalNotesCard({ details }: { details: AdoptionRequestDetails }) {
+  const mutation = useAddAdoptionNote(details.request.id);
+  const { register, handleSubmit, reset, formState: { errors } } = useForm<NoteValues>({ resolver: zodResolver(noteSchema), defaultValues: { note: '' } });
+  const submit = handleSubmit((values) => mutation.mutate(values.note, { onSuccess: () => { toast.success('تمت إضافة الملاحظة'); reset(); }, onError: () => toast.error('تعذر إضافة الملاحظة') }));
+  return <Card className="rounded-xl border-border/45 bg-white shadow-none"><SectionHeader title="ملاحظات داخلية"/><PermissionGuard permission="adoption:notes:create"><form className="mt-3" onSubmit={(event) => { event.preventDefault(); void submit(); }}><Textarea {...register('note')} placeholder="ملاحظة لفريق الإدارة…"/>{errors.note && <p className="mt-1 text-xs text-critical">{errors.note.message}</p>}<Button type="submit" size="sm" className="mt-2 h-9 rounded-xl" disabled={mutation.isPending}>إضافة</Button></form></PermissionGuard>{details.notes.length > 0 && <div className="mt-4 space-y-2 border-t border-border/40 pt-4">{details.notes.map((note) => <div key={note.id} className="rounded-lg bg-muted/30 p-3"><p className="text-[11px] font-semibold">{note.adminName}</p><p className="mt-1 text-[12px] leading-5">{note.note}</p></div>)}</div>}</Card>;
+}
+
+function Info({ label, value }: { label: string; value: string }) {
+  return <div><dt className="text-[11px] text-muted-foreground">{label}</dt><dd className="mt-1 text-[12px] font-medium">{value}</dd></div>;
+}

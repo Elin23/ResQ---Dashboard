@@ -1,0 +1,4 @@
+import type{Permission}from'@/features/auth/permissions';import type{AdminRoleRecord}from'../types';import{safeFormatDate}from'@/lib/runtime-safety';
+export const getEffectivePermissions=(roles:AdminRoleRecord[]):Permission[]=>[...new Set((Array.isArray(roles)?roles:[]).flatMap(r=>r.permissions??[]))].sort();
+export const formatAdminDate=(value?:string)=>safeFormatDate(value,{dateStyle:'medium',timeStyle:'short',timeZone:'Asia/Damascus'});
+export const createRoleKey=(name:string)=>`CUSTOM_${String(name??'').trim().toUpperCase().replace(/[^\p{L}\p{N}]+/gu,'_')||'ROLE'}_${Date.now().toString().slice(-4)}`;

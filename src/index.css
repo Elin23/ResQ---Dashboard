@@ -1,0 +1,844 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+/* =========================================================
+   Root variables
+   ========================================================= */
+
+:root {
+  --color-background: 30 45% 97.5%;
+  --color-foreground: 24 28% 15%;
+
+  --color-surface: 0 0% 100%;
+  --color-surface-subtle: 30 45% 99%;
+
+  --color-muted: 30 27% 94%;
+  --color-muted-foreground: 24 9% 40%;
+
+  --color-border: 30 24% 87%;
+
+  --color-primary: 24 95% 53%;
+  --color-primary-foreground: 0 0% 100%;
+
+  --color-brown: 24 36% 22%;
+
+  --color-success: 145 63% 36%;
+  --color-pending: 38 92% 48%;
+  --color-critical: 0 72% 51%;
+  --color-info: 210 88% 48%;
+
+  --radius-sm: 0.625rem;
+  --radius-md: 0.875rem;
+  --radius-lg: 1.125rem;
+  --radius-xl: 1.5rem;
+  --radius-2xl: 1.875rem;
+
+  --shadow-card:
+    0 1px 2px hsl(24 30% 16% / 0.035),
+    0 10px 30px hsl(24 30% 16% / 0.045);
+
+  --shadow-card-hover:
+    0 2px 4px hsl(24 30% 16% / 0.05),
+    0 18px 44px hsl(24 30% 16% / 0.09);
+
+  --shadow-overlay:
+    0 24px 64px hsl(24 30% 16% / 0.18);
+
+  --motion-fast: 120ms;
+  --motion-normal: 160ms;
+  --motion-slow: 260ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+
+  --layout-sidebar: 17rem;
+  --layout-sidebar-collapsed: 5.25rem;
+  --layout-header: 4.5rem;
+}
+
+
+/* =========================================================
+   Document base
+   ========================================================= */
+
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+
+  width: 100%;
+  min-width: 100%;
+
+  min-height: 100%;
+
+  background-color: hsl(var(--color-background));
+}
+
+html {
+  height: 100%;
+  color-scheme: light;
+}
+
+body {
+  min-height: 100vh;
+  min-height: 100dvh;
+
+  overflow-x: hidden;
+
+  background-color: hsl(var(--color-background));
+  color: hsl(var(--color-foreground));
+
+  font-family:
+    'Tajawal',
+    'Noto Sans Arabic',
+    Arial,
+    sans-serif;
+
+  text-rendering: optimizeLegibility;
+  line-height: 1.65;
+  font-feature-settings: 'kern' 1;
+
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+html,
+body,
+#root {
+  border: 0;
+  outline: 0;
+  box-shadow: none;
+}
+
+html,
+body {
+  overscroll-behavior: none;
+}
+
+*:focus:not(:focus-visible) {
+  outline: none;
+}
+
+
+/* =========================================================
+   Global box model
+   ========================================================= */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+* {
+  border-color: hsl(var(--color-border));
+}
+
+
+/* =========================================================
+   Form controls
+   ========================================================= */
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button,
+a,
+[role='button'] {
+  -webkit-tap-highlight-color: transparent;
+}
+
+
+/* =========================================================
+   Focus states
+   ========================================================= */
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid hsl(var(--color-primary));
+  outline-offset: 2px;
+}
+
+
+/* =========================================================
+   Text selection
+   ========================================================= */
+
+::selection {
+  background-color: hsl(var(--color-primary) / 0.18);
+}
+
+
+/* =========================================================
+   Media defaults
+   ========================================================= */
+
+img,
+svg,
+video,
+canvas {
+  display: block;
+  max-width: 100%;
+}
+
+
+/* =========================================================
+   Interaction motion
+   ========================================================= */
+
+@media (hover: hover) {
+  a,
+  button,
+  [role='button'],
+  input,
+  textarea,
+  select {
+    transition-property:
+      color,
+      background-color,
+      border-color,
+      box-shadow,
+      opacity,
+      transform;
+
+    transition-duration: 160ms;
+
+    transition-timing-function: var(--ease-standard);
+  }
+}
+
+
+/* =========================================================
+   Scroll behavior
+   ========================================================= */
+
+.resq-scroll-region {
+  scrollbar-gutter: stable;
+  overscroll-behavior: contain;
+}
+
+
+/* =========================================================
+   Leaflet map
+   ========================================================= */
+
+.resq-map-marker-shell {
+  border: 0;
+  background: transparent;
+}
+
+.resq-map-marker {
+  display: block;
+
+  width: 1rem;
+  height: 1rem;
+
+  border:
+    2px solid
+    hsl(var(--color-surface));
+
+  border-radius: 9999px;
+
+  box-shadow:
+    0 1px 5px
+    hsl(var(--color-foreground) / 0.28);
+}
+
+.resq-map-marker--critical {
+  background-color: hsl(var(--color-critical));
+}
+
+.resq-map-marker--pending {
+  background-color: hsl(var(--color-pending));
+}
+
+.resq-map-marker--primary {
+  background-color: hsl(var(--color-primary));
+}
+
+.resq-map-marker--success {
+  background-color: hsl(var(--color-success));
+}
+
+.resq-map-marker--info {
+  background-color: hsl(var(--color-info));
+}
+
+.resq-map-marker--neutral {
+  background-color: hsl(var(--color-muted-foreground));
+}
+
+.resq-map-marker--selected {
+  outline:
+    3px solid
+    hsl(var(--color-foreground) / 0.28);
+
+  outline-offset: 2px;
+
+  transform: scale(1.15);
+}
+
+.leaflet-container {
+  font-family: inherit;
+}
+
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  background-color: hsl(var(--color-surface));
+  color: hsl(var(--color-foreground));
+}
+
+
+/* =========================================================
+   Reduced motion
+   ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+
+    transition-duration: 0.01ms !important;
+  }
+
+  .resq-map-marker--selected {
+    transform: none;
+  }
+}
+
+/* =========================================================
+   ResQ visual system
+   ========================================================= */
+
+.resq-page-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: clamp(1rem, 1.2vw, 1.5rem);
+}
+
+.resq-surface-grid {
+  background-image:
+    linear-gradient(hsl(var(--color-border) / 0.34) 1px, transparent 1px),
+    linear-gradient(90deg, hsl(var(--color-border) / 0.34) 1px, transparent 1px);
+  background-size: 32px 32px;
+  mask-image: linear-gradient(to bottom, black, transparent 88%);
+}
+
+.resq-card-interactive {
+  transition:
+    transform var(--motion-normal) var(--ease-standard),
+    border-color var(--motion-normal) var(--ease-standard),
+    box-shadow var(--motion-normal) var(--ease-standard),
+    background-color var(--motion-normal) var(--ease-standard);
+}
+
+@media (hover: hover) {
+  .resq-card-interactive:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-card-hover);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* =========================================================
+   Package 05 — interaction, forms and table polish
+   ========================================================= */
+
+.resq-filter-bar > * {
+  min-width: 0;
+}
+
+.resq-popover,
+.resq-dialog-content,
+.resq-dialog-overlay,
+.resq-mobile-nav-overlay,
+.resq-mobile-nav-panel {
+  will-change: transform, opacity;
+}
+
+.resq-popover[data-state='open'] {
+  animation: resq-popover-in var(--motion-fast) var(--ease-standard) both;
+}
+
+.resq-dialog-overlay[data-state='open'] {
+  animation: resq-fade-in var(--motion-normal) var(--ease-standard) both;
+}
+
+.resq-dialog-overlay[data-state='closed'] {
+  animation: resq-fade-out var(--motion-fast) var(--ease-standard) both;
+}
+
+.resq-dialog-content[data-state='open'] {
+  animation: resq-dialog-in var(--motion-normal) var(--ease-standard) both;
+}
+
+.resq-dialog-content[data-state='closed'] {
+  animation: resq-dialog-out var(--motion-fast) var(--ease-standard) both;
+}
+
+.resq-mobile-nav-overlay {
+  animation: resq-fade-in var(--motion-normal) var(--ease-standard) both;
+}
+
+.resq-mobile-nav-panel {
+  animation: resq-drawer-in var(--motion-slow) var(--ease-standard) both;
+}
+
+.resq-skeleton {
+  position: relative;
+}
+
+.resq-skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(100%);
+  background: linear-gradient(90deg, transparent, hsl(var(--color-surface) / 0.72), transparent);
+  animation: resq-shimmer 1.45s ease-in-out infinite;
+}
+
+@keyframes resq-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes resq-fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes resq-popover-in {
+  from { opacity: 0; transform: translateY(-4px) scale(0.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes resq-dialog-in {
+  from { opacity: 0; transform: translate(-50%, -48%) scale(0.985); }
+  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+@keyframes resq-dialog-out {
+  from { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  to { opacity: 0; transform: translate(-50%, -48%) scale(0.99); }
+}
+
+@keyframes resq-drawer-in {
+  from { opacity: 0; transform: translateX(1.25rem); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes resq-shimmer {
+  100% { transform: translateX(-100%); }
+}
+
+@media (max-width: 639px) {
+  .resq-filter-bar > * {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .resq-popover,
+  .resq-dialog-content,
+  .resq-dialog-overlay,
+  .resq-mobile-nav-overlay,
+  .resq-mobile-nav-panel,
+  .resq-skeleton::after {
+    animation: none !important;
+    will-change: auto;
+  }
+}
+
+/* =========================================================
+   Package 06 — responsive + production integration
+   ========================================================= */
+
+:root {
+  --page-inline: 0.75rem;
+}
+
+@media (min-width: 640px) {
+  :root { --page-inline: 1rem; }
+}
+
+@media (min-width: 768px) {
+  :root { --page-inline: 1.5rem; }
+}
+
+@media (min-width: 1280px) {
+  :root { --page-inline: 2rem; }
+}
+
+/* Keep notched/mobile browser chrome from covering actionable UI. */
+@supports (padding: max(0px)) {
+  body {
+    padding-inline-start: env(safe-area-inset-left);
+    padding-inline-end: env(safe-area-inset-right);
+  }
+
+  .resq-mobile-nav-panel {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* Touch targets stay usable without making desktop controls oversized. */
+@media (pointer: coarse) {
+  button,
+  a,
+  [role='button'],
+  [role='checkbox'] {
+    touch-action: manipulation;
+  }
+}
+
+/* Prevent long Arabic/Latin identifiers from forcing viewport overflow. */
+.resq-break-safe,
+.resq-card-interactive,
+main p,
+main dd,
+main td {
+  overflow-wrap: anywhere;
+}
+
+/* Scrollable tables advertise horizontal overflow without leaking the page. */
+.resq-scroll-region {
+  max-width: 100%;
+}
+
+@media (max-width: 639px) {
+  :root {
+    --layout-header: 4rem;
+  }
+
+  .resq-page-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem;
+  }
+
+  .resq-surface-grid {
+    background-size: 26px 26px;
+    opacity: 0.38;
+  }
+
+  .resq-card-interactive:hover {
+    transform: none;
+  }
+}
+
+@media (min-width: 640px) and (max-width: 1023px) {
+  .resq-page-grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 1279px) {
+  .resq-page-grid {
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+  }
+}
+
+@media print {
+  body {
+    background: white;
+  }
+
+  .resq-mobile-nav,
+  nav[aria-label='التنقل الرئيسي'] {
+    display: none !important;
+  }
+
+  .resq-card-interactive,
+  [class*='shadow-'] {
+    box-shadow: none !important;
+  }
+}
+
+/* Branded administrative report printing / Save as PDF */
+@media screen {
+  .resq-report-print-document {
+    display: none !important;
+  }
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 14mm 12mm 16mm;
+  }
+
+  body.resq-report-printing {
+    background: #fff !important;
+  }
+
+  body.resq-report-printing * {
+    visibility: hidden !important;
+  }
+
+  body.resq-report-printing .resq-report-print-document,
+  body.resq-report-printing .resq-report-print-document * {
+    visibility: visible !important;
+  }
+
+  body.resq-report-printing .resq-report-print-document {
+    display: block !important;
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    min-height: 100%;
+    direction: rtl;
+    font-family: inherit;
+    color: #241b16;
+    background: #fff;
+  }
+
+  .resq-report-print-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    padding-bottom: 10px;
+  }
+
+  .resq-report-print-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .resq-report-print-mark {
+    display: inline-flex;
+    width: 34px;
+    height: 34px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    background: hsl(var(--color-primary));
+    color: white;
+    font-size: 17px;
+    font-weight: 800;
+    line-height: 1;
+  }
+
+  .resq-report-print-logo {
+    margin: 0;
+    color: hsl(var(--color-primary));
+    font-size: 20px;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.02em;
+  }
+
+  .resq-report-print-subtitle {
+    margin: 4px 0 0;
+    color: #7d716a;
+    font-size: 9px;
+  }
+
+  .resq-report-print-meta {
+    text-align: left;
+    color: #7d716a;
+    font-size: 8.5px;
+    line-height: 1.7;
+  }
+
+  .resq-report-print-meta p {
+    margin: 0;
+  }
+
+  .resq-report-print-accent {
+    height: 3px;
+    border-radius: 999px;
+    background: hsl(var(--color-primary));
+  }
+
+  .resq-report-print-title {
+    padding: 22px 0 15px;
+    border-bottom: 1px solid #eee7e2;
+  }
+
+  .resq-report-print-eyebrow {
+    margin: 0 0 6px;
+    color: hsl(var(--color-primary));
+    font-size: 8.5px;
+    font-weight: 700;
+  }
+
+  .resq-report-print-title h1 {
+    margin: 0;
+    color: #211914;
+    font-size: 23px;
+    font-weight: 750;
+    line-height: 1.35;
+  }
+
+  .resq-report-print-title > p:not(.resq-report-print-eyebrow) {
+    margin: 7px 0 0;
+    color: #70655f;
+    font-size: 10px;
+    line-height: 1.8;
+  }
+
+  .resq-report-print-period {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+    padding: 6px 9px;
+    border: 1px solid #eee5de;
+    border-radius: 8px;
+    background: #fffaf7;
+    font-size: 8.5px;
+  }
+
+  .resq-report-print-period span {
+    color: #8a7c74;
+  }
+
+  .resq-report-print-period strong {
+    color: #3a2d26;
+    font-weight: 650;
+  }
+
+  .resq-report-print-summary {
+    margin-top: 16px;
+    padding: 11px 13px;
+    border: 1px solid #f5dfd2;
+    border-radius: 10px;
+    background: #fffaf7;
+    break-inside: avoid;
+  }
+
+  .resq-report-print-summary h2,
+  .resq-report-print-section h2 {
+    margin: 0;
+    color: #2e241e;
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  .resq-report-print-summary p {
+    margin: 5px 0 0;
+    color: #625750;
+    font-size: 9.5px;
+    line-height: 1.9;
+  }
+
+  .resq-report-print-metrics {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 7px;
+    margin-top: 14px;
+    break-inside: avoid;
+  }
+
+  .resq-report-print-metrics > div {
+    min-height: 64px;
+    padding: 9px 10px;
+    border: 1px solid #eee7e2;
+    border-radius: 9px;
+    background: #fff;
+  }
+
+  .resq-report-print-metrics span {
+    display: block;
+    color: #877970;
+    font-size: 8px;
+  }
+
+  .resq-report-print-metrics strong {
+    display: block;
+    margin-top: 6px;
+    color: #251c17;
+    font-size: 15px;
+    font-weight: 750;
+    line-height: 1.2;
+  }
+
+  .resq-report-print-metrics small {
+    display: block;
+    margin-top: 5px;
+    color: #8a7d75;
+    font-size: 7.5px;
+    line-height: 1.5;
+  }
+
+  .resq-report-print-section {
+    margin-top: 16px;
+    break-inside: auto;
+  }
+
+  .resq-report-print-section h2 {
+    margin-bottom: 7px;
+    padding-right: 8px;
+    border-right: 3px solid hsl(var(--color-primary));
+  }
+
+  .resq-report-print-section table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: auto;
+    font-size: 8px;
+  }
+
+  .resq-report-print-section thead {
+    display: table-header-group;
+  }
+
+  .resq-report-print-section tr {
+    break-inside: avoid;
+  }
+
+  .resq-report-print-section th {
+    padding: 7px 6px;
+    border: 1px solid #eae1db;
+    background: #faf7f5;
+    color: #645851;
+    text-align: right;
+    font-weight: 650;
+  }
+
+  .resq-report-print-section td {
+    padding: 7px 6px;
+    border: 1px solid #eee7e2;
+    color: #342a24;
+    text-align: right;
+    vertical-align: middle;
+    overflow-wrap: anywhere;
+  }
+
+  .resq-report-print-footer {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    margin-top: 20px;
+    padding-top: 8px;
+    border-top: 1px solid #eee7e2;
+    color: #92857d;
+    font-size: 7.5px;
+  }
+}

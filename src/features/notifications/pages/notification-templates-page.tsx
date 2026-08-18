@@ -1,0 +1,4 @@
+import { ErrorState,PageHeader,Skeleton } from '@/components/ui';
+import { useNotificationTemplates } from '../hooks';
+import { NotificationTemplatesList } from '../components/notification-templates';
+export function NotificationTemplatesPage(){const query=useNotificationTemplates();return <div className="space-y-6"><PageHeader title="القوالب التلقائية" description="رسائل نصية آمنة يستهلكها الخادم عند أحداث المنتج؛ لا تمثل بثًا يدويًا." breadcrumbs={[{label:'الرئيسية',href:'/dashboard'},{label:'الإشعارات',href:'/notifications'},{label:'القوالب التلقائية'}]}/>{query.isLoading?<div className="grid gap-3 lg:grid-cols-2"><Skeleton className="h-44"/><Skeleton className="h-44"/><Skeleton className="h-44"/></div>:query.isError?<ErrorState description={query.error.message} onRetry={()=>void query.refetch()}/>:<NotificationTemplatesList templates={query.data??[]}/>}</div>}
