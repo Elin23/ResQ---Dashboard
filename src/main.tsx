@@ -1,5 +1,4 @@
 import { createRoot } from 'react-dom/client';
-import { HashRouter } from 'react-router';
 
 import { App } from '@/app/app';
 import { AppErrorBoundary } from '@/app/error-boundary';
@@ -15,10 +14,8 @@ if (!rootElement) {
 
 createRoot(rootElement).render(
   <AppErrorBoundary>
-    <HashRouter>
-      <AppProviders>
-        <App />
-      </AppProviders>
-    </HashRouter>
+    <AppProviders>
+      <App />
+    </AppProviders>
   </AppErrorBoundary>,
 );
