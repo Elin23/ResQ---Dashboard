@@ -1,7 +1,7 @@
 import { commitSearchParams } from '@/lib/search-params';
 import { useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router';
-import { Button, EmptyState, ErrorState, PageHeader } from '@/components/ui';
+import { Button, EmptyState, ErrorState, ExportMenuButton, PageHeader } from '@/components/ui';
 import type { DataTableQueryState } from '@/components/ui/data-table';
 import { UserFilterBar } from '../components/user-filter-bar';
 import { UserSummaryCards } from '../components/user-summary';
@@ -10,9 +10,10 @@ import { useUsers, useUserSummary } from '../hooks';
 import {
   userAccountStatuses,
   userVerificationStatuses,
+  type User,
   type UserFilters,
 } from '../types';
-import { userGovernorates } from '../constants';
+import { accountStatusLabels, userGovernorates, verificationLabels } from '../constants';
 import { hasUserFilters } from '../utils';
 
 const valid = <T extends string>(
@@ -139,6 +140,7 @@ export function UsersPage() {
           { label: 'الرئيسية', href: '/dashboard' },
           { label: 'المستخدمون' },
         ]}
+        actions={<ExportMenuButton title="المستخدمون" fileName="resq-users" rows={query.data?.items ?? []} disabled={query.isLoading} subtitle="تصدير بيانات إدارية أساسية للنتائج الظاهرة حاليًا." columns={[{ label:'الاسم', value:(item:User)=>item.fullName },{ label:'المحافظة', value:(item:User)=>item.governorate ?? '' },{ label:'المدينة', value:(item:User)=>item.city ?? '' },{ label:'حالة الحساب', value:(item:User)=>accountStatusLabels[item.accountStatus] },{ label:'التوثيق', value:(item:User)=>verificationLabels[item.verificationStatus] },{ label:'تاريخ التسجيل', value:(item:User)=>new Date(item.createdAt).toLocaleDateString('ar-SY-u-nu-latn') }]} />}
       />
 
       <UserSummaryCards

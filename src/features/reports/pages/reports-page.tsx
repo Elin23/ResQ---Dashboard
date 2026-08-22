@@ -3,7 +3,7 @@ import { Download } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { useSearchParams } from 'react-router';
 import { toast } from 'sonner';
-import { Button, EmptyState, ErrorState } from '@/components/ui';
+import { Button, EmptyState, ErrorState, ExportMenuButton } from '@/components/ui';
 import type { DataTableQueryState } from '@/components/ui/data-table';
 import { usePermission } from '@/features/auth/rbac';
 import {
@@ -13,6 +13,7 @@ import {
   type ReportFilters,
 } from '../types';
 import { hasActiveFilters } from '../utils';
+import { animalTypeLabels, reportStatusLabels } from '../constants';
 import { useEligibleOrganizations, useReports, useReportsSummary } from '../hooks';
 import { ReportsFilterBar } from '../components/reports-filter-bar';
 import { ReportsSummaryCards } from '../components/reports-summary';
@@ -150,6 +151,7 @@ export function ReportsPage() {
   }
 
   const data = reportsQuery.data;
+  const exportRows = data?.items ?? [];
   const active = hasActiveFilters(filters);
   const empty = (
     <EmptyState
@@ -167,16 +169,34 @@ export function ReportsPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-1">
-        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground/70">
-          <span>الرئيسية</span>
-          <span>/</span>
-          <span>البلاغات</span>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground/70">
+            <span>الرئيسية</span>
+            <span>/</span>
+            <span>البلاغات</span>
+          </div>
+          <h1 className="text-[19px] font-semibold leading-6 tracking-tight text-foreground">إدارة البلاغات</h1>
+          <p className="text-[12px] text-muted-foreground/75">
+            البلاغات تظهر فور نشرها. دور الإدارة هو المتابعة، تغيير الجمعية عند الحاجة، والتدخل الاستثنائي فقط.
+          </p>
         </div>
-        <h1 className="text-[19px] font-semibold leading-6 tracking-tight text-foreground">إدارة البلاغات</h1>
-        <p className="text-[12px] text-muted-foreground/75">
-          البلاغات تظهر فور نشرها. دور الإدارة هو المتابعة، تغيير الجمعية عند الحاجة، والتدخل الاستثنائي فقط.
-        </p>
+        <ExportMenuButton
+          title="البلاغات"
+          fileName="resq-reports"
+          rows={exportRows}
+          disabled={reportsQuery.isLoading}
+          subtitle="تصدير النتائج الظاهرة حاليًا وفق الفلاتر المطبقة."
+          columns={[
+            { label: 'رقم البلاغ', value: (report: Report) => report.id },
+            { label: 'الحيوان', value: (report: Report) => animalTypeLabels[report.animalType] },
+            { label: 'الحالة', value: (report: Report) => reportStatusLabels[report.status] },
+            { label: 'المحافظة', value: (report: Report) => report.governorate },
+            { label: 'المدينة', value: (report: Report) => report.city ?? '' },
+            { label: 'الجمعية', value: (report: Report) => report.assignedOrganization?.name ?? 'غير مسند' },
+            { label: 'تاريخ البلاغ', value: (report: Report) => new Date(report.createdAt).toLocaleString('ar-SY-u-nu-latn') },
+          ]}
+        />
       </div>
 
       <ReportsSummaryCards

@@ -2,11 +2,14 @@ export const advertisementStatuses = ['DRAFT', 'PENDING_REVIEW', 'SCHEDULED', 'A
 export type AdvertisementStatus = (typeof advertisementStatuses)[number];
 export const advertisementPlacements = ['HOME_BANNER', 'ADOPTION', 'ORGANIZATIONS', 'MAP', 'SEARCH'] as const;
 export type AdvertisementPlacement = (typeof advertisementPlacements)[number];
+export const advertisementPaymentMethods = ['CASH', 'TRANSFER'] as const;
+export type AdvertisementPaymentMethod = (typeof advertisementPaymentMethods)[number];
 export type AdvertiserType = 'CLIENT';
 
 export interface AdvertisementCreative {
   type: 'IMAGE' | 'BANNER';
   imageUrl: string;
+  galleryUrls?: string[];
   altText: string;
   callToActionLabel?: string;
 }
@@ -26,7 +29,8 @@ export interface Advertisement {
   agreedAmountMinor: number;
   currency: 'SYP';
   paid: boolean;
-  paymentReference?: string;
+  paymentMethod: AdvertisementPaymentMethod;
+  transferReference?: string;
   title: string;
   description?: string;
   creative: AdvertisementCreative;
@@ -34,7 +38,7 @@ export interface Advertisement {
   publicationPhone?: string;
   publicationEmail?: string;
   publicationTitle: string;
-  targetUrl?: string;
+  websiteUrl?: string;
   startAt?: string;
   endAt?: string;
   status: AdvertisementStatus;
@@ -109,13 +113,14 @@ export interface CreateAdvertisementInput {
   ownerPhone: string;
   agreedAmountMinor: number;
   paid: boolean;
-  paymentReference?: string;
+  paymentMethod: AdvertisementPaymentMethod;
+  transferReference?: string;
   publicationTitle: string;
   description?: string;
-  imageUrl: string;
+  imageUrls: string[];
   publicationPhone?: string;
   publicationEmail?: string;
-  targetUrl?: string;
+  websiteUrl?: string;
   placement: AdvertisementPlacement;
   startAt?: string;
   endAt?: string;

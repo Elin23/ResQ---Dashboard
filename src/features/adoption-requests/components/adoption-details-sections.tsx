@@ -1,18 +1,11 @@
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { Building2, CheckCircle2, Mail, Phone, UserRound } from 'lucide-react';
 import { Link } from 'react-router';
-import { toast } from 'sonner';
-import { Badge, Button, Card, SectionHeader, Textarea } from '@/components/ui';
-import { PermissionGuard } from '@/features/auth/rbac';
+import { Badge, Button, Card, SectionHeader } from '@/components/ui';
 import { adoptionAnimalSpeciesLabels } from '../constants';
-import { useAddAdoptionNote } from '../hooks';
-import { noteSchema } from '../schemas';
 import type { AdoptionRequestDetails } from '../types';
 import { formatAdoptionDate, formatEstimatedAge } from '../utils';
 import { AdoptionApplicationStatusBadge, AdoptionPublisherBadge } from './adoption-badges';
 
-type NoteValues = { note: string };
 
 export function AdoptionMainDetails({ details }: { details: AdoptionRequestDetails }) {
   const { request } = details;
@@ -32,13 +25,6 @@ export function AdoptionApplicationsSection({ details }: { details: AdoptionRequ
 
 export function AdoptionTimelineSection({ details }: { details: AdoptionRequestDetails }) {
   return <Card className="rounded-xl border-border/45 bg-white shadow-none"><SectionHeader title="سجل العرض" description="من طلب النشر إلى تفاعل المستخدمين وقرار صاحب الحيوان."/><div className="mt-4 space-y-0">{details.timeline.map((event, index) => <div key={event.id} className="relative flex gap-3 pb-4 last:pb-0">{index < details.timeline.length - 1 && <span className="absolute right-[7px] top-5 h-[calc(100%-8px)] w-px bg-border/60"/>}<span className="relative mt-1.5 size-[15px] shrink-0 rounded-full border-4 border-white bg-primary/55"/><div className="min-w-0"><p className="text-[12px] font-medium">{event.title}</p><p className="mt-0.5 text-[11px] text-muted-foreground">{[event.actor, formatAdoptionDate(event.timestamp)].filter(Boolean).join(' · ')}</p>{event.note && <p className="mt-1 text-[11px] leading-5 text-muted-foreground">{event.note}</p>}</div></div>)}</div></Card>;
-}
-
-export function AdoptionInternalNotesCard({ details }: { details: AdoptionRequestDetails }) {
-  const mutation = useAddAdoptionNote(details.request.id);
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<NoteValues>({ resolver: zodResolver(noteSchema), defaultValues: { note: '' } });
-  const submit = handleSubmit((values) => mutation.mutate(values.note, { onSuccess: () => { toast.success('تمت إضافة الملاحظة'); reset(); }, onError: () => toast.error('تعذر إضافة الملاحظة') }));
-  return <Card className="rounded-xl border-border/45 bg-white shadow-none"><SectionHeader title="ملاحظات داخلية"/><PermissionGuard permission="adoption:notes:create"><form className="mt-3" onSubmit={(event) => { event.preventDefault(); void submit(); }}><Textarea {...register('note')} placeholder="ملاحظة لفريق الإدارة…"/>{errors.note && <p className="mt-1 text-xs text-critical">{errors.note.message}</p>}<Button type="submit" size="sm" className="mt-2 h-9 rounded-xl" disabled={mutation.isPending}>إضافة</Button></form></PermissionGuard>{details.notes.length > 0 && <div className="mt-4 space-y-2 border-t border-border/40 pt-4">{details.notes.map((note) => <div key={note.id} className="rounded-lg bg-muted/30 p-3"><p className="text-[11px] font-semibold">{note.adminName}</p><p className="mt-1 text-[12px] leading-5">{note.note}</p></div>)}</div>}</Card>;
 }
 
 function Info({ label, value }: { label: string; value: string }) {

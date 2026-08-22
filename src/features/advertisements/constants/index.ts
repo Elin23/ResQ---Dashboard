@@ -1,4 +1,4 @@
-import type { AdvertisementPlacement, AdvertisementStatus } from '../types';
+import type { AdvertisementPaymentMethod, AdvertisementPlacement, AdvertisementStatus } from '../types';
 
 export const advertisementStatusLabels: Record<AdvertisementStatus, string> = {
   DRAFT: 'مسودة',
@@ -17,4 +17,9 @@ export const advertisementPlacementConfig: Record<AdvertisementPlacement, { labe
   ORGANIZATIONS: { label: 'الجمعيات' },
   MAP: { label: 'الخريطة' },
   SEARCH: { label: 'البحث' },
+};
+
+export const advertisementPaymentMethodLabels: Record<AdvertisementPaymentMethod, string> = {
+  CASH: 'كاش',
+  TRANSFER: 'حوالة',
 };

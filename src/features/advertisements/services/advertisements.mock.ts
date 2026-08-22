@@ -11,15 +11,15 @@ const clone = <T,>(value: T): T => structuredClone(value);
 
 const rows: Advertisement[] = [
   {
-    id: 'ADVT-2026-0031', advertiser: { type: 'CLIENT', name: 'شركة بيت الحيوان' }, ownerName: 'شركة بيت الحيوان', ownerPhone: '0999 123 456', agreedAmountMinor: 3_500_000 * 100, currency: 'SYP', paid: true, paymentReference: 'PAY-2026-118',
-    title: 'خصم على مستلزمات الحيوانات', publicationTitle: 'خصم خاص لمستخدمي ResQ', description: 'عرض على مستلزمات الطعام والعناية لفترة محدودة.', creative: { type: 'BANNER', imageUrl: image('1548199973-03cce0bbc87b'), altText: 'إعلان مستلزمات الحيوانات', callToActionLabel: 'اعرف أكثر' }, placement: 'HOME_BANNER', publicationPhone: '0999 123 456', publicationEmail: 'ads@pet-house.example', targetUrl: 'https://example.org/pet-house', startAt: days(-2), endAt: days(12), status: 'ACTIVE', createdAt: days(-4), updatedAt: hours(-8), activatedAt: days(-2), performance: { impressions: 13400, clicks: 620, clickThroughRate: 4.6, mockData: true },
+    id: 'ADVT-2026-0031', advertiser: { type: 'CLIENT', name: 'شركة بيت الحيوان' }, ownerName: 'شركة بيت الحيوان', ownerPhone: '0999 123 456', agreedAmountMinor: 3_500_000 * 100, currency: 'SYP', paid: true, paymentMethod: 'TRANSFER', transferReference: 'TR-2026-118',
+    title: 'خصم على مستلزمات الحيوانات', publicationTitle: 'خصم خاص لمستخدمي ResQ', description: 'عرض على مستلزمات الطعام والعناية لفترة محدودة.', creative: { type: 'BANNER', imageUrl: image('1548199973-03cce0bbc87b'), altText: 'إعلان مستلزمات الحيوانات', callToActionLabel: 'اعرف أكثر' }, placement: 'HOME_BANNER', publicationPhone: '0999 123 456', publicationEmail: 'ads@pet-house.example', websiteUrl: 'https://example.org/pet-house', startAt: days(-2), endAt: days(12), status: 'ACTIVE', createdAt: days(-4), updatedAt: hours(-8), activatedAt: days(-2), performance: { impressions: 13400, clicks: 620, clickThroughRate: 4.6, mockData: true },
   },
   {
-    id: 'ADVT-2026-0032', advertiser: { type: 'CLIENT', name: 'متجر رفيق' }, ownerName: 'متجر رفيق', ownerPhone: '0944 555 221', agreedAmountMinor: 2_000_000 * 100, currency: 'SYP', paid: false,
+    id: 'ADVT-2026-0032', advertiser: { type: 'CLIENT', name: 'متجر رفيق' }, ownerName: 'متجر رفيق', ownerPhone: '0944 555 221', agreedAmountMinor: 2_000_000 * 100, currency: 'SYP', paid: false, paymentMethod: 'TRANSFER',
     title: 'حملة متجر رفيق', publicationTitle: 'احتياجات يومية للحيوانات', description: 'إعلان جاهز للنشر بعد تأكيد الدفع.', creative: { type: 'IMAGE', imageUrl: image('1517849845537-4d257902454a'), altText: 'إعلان متجر رفيق' }, placement: 'ADOPTION', publicationPhone: '0944 555 221', publicationEmail: 'contact@rafeeq.example', startAt: days(3), endAt: days(17), status: 'DRAFT', createdAt: days(-1), updatedAt: hours(-5), performance: { mockData: true },
   },
   {
-    id: 'ADVT-2026-0028', advertiser: { type: 'CLIENT', name: 'مركز أليف' }, ownerName: 'مركز أليف', ownerPhone: '0933 771 004', agreedAmountMinor: 2_750_000 * 100, currency: 'SYP', paid: true, paymentReference: 'PAY-2026-102',
+    id: 'ADVT-2026-0028', advertiser: { type: 'CLIENT', name: 'مركز أليف' }, ownerName: 'مركز أليف', ownerPhone: '0933 771 004', agreedAmountMinor: 2_750_000 * 100, currency: 'SYP', paid: true, paymentMethod: 'CASH',
     title: 'تعريف بخدمات مركز أليف', publicationTitle: 'رعاية يومية للحيوانات المنزلية', description: 'إعلان تعريفي.', creative: { type: 'BANNER', imageUrl: image('1558788353-f76d92427f16'), altText: 'إعلان مركز أليف' }, placement: 'SEARCH', publicationPhone: '0933 771 004', publicationEmail: 'hello@aleef.example', startAt: days(-10), endAt: days(5), status: 'PAUSED', createdAt: days(-15), updatedAt: hours(-20), activatedAt: days(-10), pausedAt: hours(-20), pauseReason: 'طلب صاحب الإعلان إيقافه مؤقتًا.', performance: { impressions: 9200, clicks: 311, clickThroughRate: 3.4, mockData: true },
   },
 ];
@@ -42,7 +42,7 @@ function filtered(filters: AdvertisementFilters) {
   const needle = filters.search.trim().toLocaleLowerCase('ar');
   return rows.filter((ad) => {
     if (ad.status === 'DELETED') return false;
-    if (needle && !`${ad.id} ${ad.publicationTitle} ${ad.ownerName} ${ad.paymentReference ?? ''}`.toLocaleLowerCase('ar').includes(needle)) return false;
+    if (needle && !`${ad.id} ${ad.publicationTitle} ${ad.ownerName} ${ad.transferReference ?? ''}`.toLocaleLowerCase('ar').includes(needle)) return false;
     if (filters.status && ad.status !== filters.status) return false;
     if (filters.placement && ad.placement !== filters.placement) return false;
     if (filters.dateFrom && new Date(ad.createdAt) < new Date(`${filters.dateFrom}T00:00:00`)) return false;
@@ -94,15 +94,16 @@ export async function createAdvertisement(input: CreateAdvertisementInput, actor
     agreedAmountMinor: input.agreedAmountMinor,
     currency: 'SYP',
     paid: input.paid,
-    paymentReference: input.paymentReference,
+    paymentMethod: input.paymentMethod,
+    transferReference: input.paymentMethod === 'TRANSFER' ? input.transferReference : undefined,
     title: input.publicationTitle,
     publicationTitle: input.publicationTitle,
     description: input.description,
-    creative: { type: 'BANNER', imageUrl: input.imageUrl, altText: input.publicationTitle },
+    creative: { type: 'BANNER', imageUrl: input.imageUrls[0]!, galleryUrls: input.imageUrls.slice(1), altText: input.publicationTitle },
     placement: input.placement,
     publicationPhone: input.publicationPhone,
     publicationEmail: input.publicationEmail,
-    targetUrl: input.targetUrl,
+    websiteUrl: input.websiteUrl,
     startAt: input.startAt,
     endAt: input.endAt,
     status: 'DRAFT',

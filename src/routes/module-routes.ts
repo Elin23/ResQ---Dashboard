@@ -3,7 +3,6 @@ import {
   Bell,
   Building2,
   CircleDollarSign,
-  FileBarChart,
   HeartHandshake,
   Home,
   Map,
@@ -54,7 +53,6 @@ export const routeGroups: RouteGroup[] = [
       { label: 'المحتوى', path: '/content', icon: Newspaper, description: 'إدارة المحتوى التحريري والنشر في المنصة.', permission: 'content.read' },
       { label: 'الإشعارات', path: '/notifications', icon: Bell, description: 'إدارة رسائل البث والقوالب التلقائية والتسليم.', permission: 'notifications.read' },
       { label: 'الدعم', path: '/support', icon: MessageCircleQuestion, description: 'متابعة طلبات الدعم والشكاوى وتوزيعها ومعالجتها.', permission: 'support.read' },
-      { label: 'التقارير', path: '/analytics', icon: FileBarChart, description: 'تقارير إدارية قابلة للتصدير مع إحصائيات مساندة.', permission: 'analytics.read' },
     ],
   },
   {

@@ -5,7 +5,6 @@ export type SemanticStatus =
   | 'report:EN_ROUTE' | 'report:RECEIVED' | 'report:NEW' | 'report:UNDER_REVIEW' | 'report:VERIFIED' | 'report:WAITING_FOR_ORGANIZATION' | 'report:ASSIGNED' | 'report:IN_PROGRESS' | 'report:RESCUED' | 'report:CLOSED' | 'report:REJECTED'
   | 'animal:RESCUED' | 'animal:UNDER_TREATMENT' | 'animal:RECOVERING' | 'animal:AVAILABLE_FOR_ADOPTION' | 'animal:RESERVED' | 'animal:ADOPTED' | 'animal:NOT_AVAILABLE' | 'animal:DECEASED'
   | 'animal-health:CRITICAL' | 'animal-health:NEEDS_TREATMENT' | 'animal-health:STABLE' | 'animal-health:RECOVERING' | 'animal-health:HEALTHY'
-  | 'mission:PENDING' | 'mission:ASSIGNED' | 'mission:ACCEPTED' | 'mission:ON_THE_WAY' | 'mission:ARRIVED' | 'mission:RESCUING' | 'mission:TRANSPORTING' | 'mission:IN_PROGRESS' | 'mission:COMPLETED' | 'mission:CANCELLED'
   | 'adoption:PENDING_REVIEW' | 'adoption:PUBLISHED' | 'adoption:REJECTED' | 'adoption:ADOPTED'
   | 'organization:PENDING_VERIFICATION' | 'organization:ACTIVE' | 'organization:SUSPENDED' | 'organization:REJECTED'
   | 'user:ACTIVE' | 'user:SUSPENDED' | 'user:BLOCKED' | 'user:DEACTIVATED'
@@ -24,9 +23,6 @@ export const statusCatalog: Record<string, Record<string, StatusMeta>> = {
   },
   animal: { RESCUED:{label:'تم الإنقاذ',tone:'info'}, UNDER_TREATMENT:{label:'تحت العلاج',tone:'pending'}, RECOVERING:{label:'في التعافي',tone:'info'}, AVAILABLE_FOR_ADOPTION:{label:'جاهز للتبني',tone:'success'}, RESERVED:{label:'محجوز',tone:'pending'}, ADOPTED:{label:'تم تبنيه',tone:'success'}, NOT_AVAILABLE:{label:'غير متاح',tone:'neutral'}, DECEASED:{label:'متوفى',tone:'neutral'} },
   'animal-health': { CRITICAL:{label:'حرجة',tone:'critical'}, NEEDS_TREATMENT:{label:'يحتاج علاجاً',tone:'pending'}, STABLE:{label:'مستقرة',tone:'info'}, RECOVERING:{label:'يتعافى',tone:'info'}, HEALTHY:{label:'سليم',tone:'success'} },
-  mission: {
-    PENDING: { label: 'بانتظار الإسناد', tone: 'pending' }, ASSIGNED: { label: 'تم الإسناد', tone: 'info' }, ACCEPTED: { label: 'تم قبول المهمة', tone: 'info' }, ON_THE_WAY: { label: 'في الطريق', tone: 'info' }, ARRIVED: { label: 'وصلت الجمعية', tone: 'success' }, RESCUING: { label: 'جاري الإنقاذ', tone: 'pending' }, TRANSPORTING: { label: 'نقل الحيوان', tone: 'info' }, IN_PROGRESS: { label: 'قيد التنفيذ', tone: 'info' }, COMPLETED: { label: 'مكتمل', tone: 'success' }, CANCELLED: { label: 'ملغي', tone: 'critical' },
-  },
   adoption: { PENDING_REVIEW: { label: 'بانتظار مراجعة النشر', tone: 'pending' }, PUBLISHED: { label: 'منشور', tone: 'success' }, REJECTED: { label: 'مرفوض النشر', tone: 'critical' }, ADOPTED: { label: 'تم التبني', tone: 'success' } },
   organization: { PENDING_VERIFICATION:{label:'تنتظر التحقق',tone:'pending'}, ACTIVE:{label:'فعالة',tone:'success'}, SUSPENDED:{label:'معلقة',tone:'critical'}, REJECTED:{label:'مرفوضة',tone:'critical'} },
   user: { ACTIVE:{label:'نشط',tone:'success'}, SUSPENDED:{label:'معلق',tone:'pending'}, BLOCKED:{label:'محظور',tone:'critical'}, DEACTIVATED:{label:'معطل',tone:'neutral'} },
@@ -64,16 +60,6 @@ const semanticStatusMap: Record<SemanticStatus, StatusMeta> = {
   'animal-health:STABLE': statusCatalog['animal-health']?.STABLE ?? { label: 'مستقرة', tone: 'info' },
   'animal-health:RECOVERING': statusCatalog['animal-health']?.RECOVERING ?? { label: 'يتعافى', tone: 'info' },
   'animal-health:HEALTHY': statusCatalog['animal-health']?.HEALTHY ?? { label: 'سليم', tone: 'success' },
-  'mission:PENDING': statusCatalog.mission?.PENDING ?? { label: 'بانتظار الإسناد', tone: 'pending' },
-  'mission:ASSIGNED': statusCatalog.mission?.ASSIGNED ?? { label: 'تم الإسناد', tone: 'info' },
-  'mission:ACCEPTED': statusCatalog.mission?.ACCEPTED ?? { label: 'تم قبول المهمة', tone: 'info' },
-  'mission:ON_THE_WAY': statusCatalog.mission?.ON_THE_WAY ?? { label: 'في الطريق', tone: 'info' },
-  'mission:ARRIVED': statusCatalog.mission?.ARRIVED ?? { label: 'وصلت الجمعية', tone: 'success' },
-  'mission:RESCUING': statusCatalog.mission?.RESCUING ?? { label: 'جاري الإنقاذ', tone: 'pending' },
-  'mission:TRANSPORTING': statusCatalog.mission?.TRANSPORTING ?? { label: 'نقل الحيوان', tone: 'info' },
-  'mission:IN_PROGRESS': statusCatalog.mission?.IN_PROGRESS ?? { label: 'قيد التنفيذ', tone: 'info' },
-  'mission:COMPLETED': statusCatalog.mission?.COMPLETED ?? { label: 'مكتمل', tone: 'success' },
-  'mission:CANCELLED': statusCatalog.mission?.CANCELLED ?? { label: 'ملغي', tone: 'critical' },
   'adoption:PENDING_REVIEW': statusCatalog.adoption?.PENDING_REVIEW ?? { label: 'بانتظار مراجعة النشر', tone: 'pending' },
   'adoption:PUBLISHED': statusCatalog.adoption?.PUBLISHED ?? { label: 'منشور', tone: 'success' },
   'adoption:REJECTED': statusCatalog.adoption?.REJECTED ?? { label: 'مرفوض', tone: 'critical' },

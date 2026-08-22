@@ -1,8 +1,8 @@
 /**
- * Compatibility query keys kept after removing the standalone rescue-missions pages.
- * Operational rescue state now comes from reports; no rescue-mission UI/routes depend on this module.
+ * Query keys for operational analytics derived from assigned reports.
+ * There is no standalone rescue-mission feature or route.
  */
-export const missionKeys = {
+export const reportOperationKeys = {
   all: ['report-operations'] as const,
   lists: () => ['report-operations', 'list'] as const,
   detail: (id: string) => ['report-operations', 'detail', id] as const,

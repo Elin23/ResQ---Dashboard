@@ -29,7 +29,6 @@ import { NotFoundPage, UnauthorizedPage } from '@/features/foundation/pages';
 import { ContentLandingPage, EditorialDetailsPage, EditorialEditorPage, EditorialListPage } from '@/features/content/pages/content-pages';
 import { FaqPage } from '@/features/content/pages/faq-page';
 import { OperationsMapPage } from '@/features/map/pages/operations-map-page';
-import { AnalyticsPage } from '@/features/analytics/pages/analytics-page';
 import { SettingsLandingPage } from '@/features/settings/pages/settings-landing-page';
 import { AdminUsersPage } from '@/features/settings/pages/admin-users-page';
 import { AdminDetailsPage } from '@/features/settings/pages/admin-details-page';
@@ -81,7 +80,6 @@ export function AppRouter(){
       <Route path="map" element={<ProtectedRoute permission="map.read"><OperationsMapPage/></ProtectedRoute>}/>
       <Route path="support" element={<ProtectedRoute permission="support.read"><SupportPage/></ProtectedRoute>}/>
       <Route path="support/:ticketId" element={<ProtectedRoute permission="support.read"><SupportTicketDetailsPage/></ProtectedRoute>}/>
-      <Route path="analytics" element={<ProtectedRoute permission="analytics.read"><AnalyticsPage/></ProtectedRoute>}/>
       <Route path="audit-log" element={<ProtectedRoute permission="audit.read"><AuditLogPage/></ProtectedRoute>}/>
       <Route path="settings" element={<ProtectedRoute permission="settings.read"><SettingsLandingPage/></ProtectedRoute>}/>
       <Route path="settings/admin-users" element={<ProtectedRoute permission="admins.read"><AdminUsersPage/></ProtectedRoute>}/>

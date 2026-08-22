@@ -1,17 +1,17 @@
 import { getReports } from '@/features/reports/services/reports.mock';
 import { organizationFixtures } from '@/features/organizations/services/organization-fixtures';
 import type { Report, ReportSeverity } from '@/features/reports/types';
-import type { RescueMissionPriority, RescueMissionStatus } from '../types';
+import type { ReportOperationPriority, ReportOperationStatus } from '../types';
 
-export const missionOrganizations = organizationFixtures
+export const reportOperationOrganizations = organizationFixtures
   .filter((organization) => organization.status === 'ACTIVE' && organization.verificationStatus === 'VERIFIED')
   .map((organization) => ({ id: organization.id, name: organization.name, governorate: organization.governorate }));
 
-export interface RescueMissionCompat {
+export interface ReportOperationRecord {
   id: string;
   reportId: string;
-  status: RescueMissionStatus;
-  priority: RescueMissionPriority;
+  status: ReportOperationStatus;
+  priority: ReportOperationPriority;
   animal: { type: string; description?: string };
   location: { governorate: string; city?: string; address: string; latitude: number; longitude: number };
   organization: { id: string; name: string };
@@ -35,16 +35,16 @@ type CompatFilters = {
   sortDirection?: 'asc' | 'desc';
 };
 
-function missionStatus(report: Report): RescueMissionStatus {
+function operationStatus(report: Report): ReportOperationStatus {
   if (report.status === 'CLOSED' || report.status === 'RECEIVED') return 'COMPLETED';
   return report.assignedOrganization ? 'ON_THE_WAY' : 'ASSIGNED';
 }
 
-function priority(severity: ReportSeverity): RescueMissionPriority {
+function priority(severity: ReportSeverity): ReportOperationPriority {
   return severity;
 }
 
-function toMission(report: Report): RescueMissionCompat | null {
+function toOperation(report: Report): ReportOperationRecord | null {
   if (!report.assignedOrganization) return null;
   const assignedAt = report.assignedAt ?? report.createdAt;
   const completed = report.status === 'RECEIVED' || report.status === 'CLOSED';
@@ -52,7 +52,7 @@ function toMission(report: Report): RescueMissionCompat | null {
   return {
     id: `CASE-${report.id}`,
     reportId: report.id,
-    status: missionStatus(report),
+    status: operationStatus(report),
     priority: priority(report.severity),
     animal: { type: report.animalType, description: report.animalDescription },
     location: { governorate: report.governorate, city: report.city, address: report.address, latitude: report.latitude, longitude: report.longitude },
@@ -67,7 +67,7 @@ function toMission(report: Report): RescueMissionCompat | null {
   };
 }
 
-export async function getRescueMissions(filters: CompatFilters = {}) {
+export async function getReportOperations(filters: CompatFilters = {}) {
   const page = Math.max(1, filters.page ?? 1);
   const pageSize = Math.max(1, filters.pageSize ?? 50);
   const result = await getReports({
@@ -81,7 +81,7 @@ export async function getRescueMissions(filters: CompatFilters = {}) {
     sortBy: 'updatedAt',
     sortDirection: filters.sortDirection ?? 'desc',
   });
-  const rows = result.items.map(toMission).filter((value): value is RescueMissionCompat => value !== null);
+  const rows = result.items.map(toOperation).filter((value): value is ReportOperationRecord => value !== null);
   const total = rows.length;
   const pageCount = Math.max(1, Math.ceil(total / pageSize));
   const safePage = Math.min(page, pageCount);
@@ -89,9 +89,9 @@ export async function getRescueMissions(filters: CompatFilters = {}) {
   return { items, total, page: safePage, pageSize, pageCount };
 }
 
-export async function getMissionDashboardSnapshot() {
-  const result = await getRescueMissions({ page: 1, pageSize: 100 });
-  const active = result.items.filter((mission) => mission.status !== 'COMPLETED' && mission.status !== 'CANCELLED');
-  const overdueCount = active.filter((mission) => Date.now() - new Date(mission.assignedAt).getTime() > 45 * 60_000).length;
+export async function getReportOperationDashboardSnapshot() {
+  const result = await getReportOperations({ page: 1, pageSize: 100 });
+  const active = result.items.filter((operation) => operation.status !== 'COMPLETED' && operation.status !== 'CANCELLED');
+  const overdueCount = active.filter((operation) => Date.now() - new Date(operation.assignedAt).getTime() > 45 * 60_000).length;
   return { activeCount: active.length, overdueCount, active };
 }
