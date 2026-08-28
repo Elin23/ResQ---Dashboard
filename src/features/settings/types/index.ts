@@ -90,11 +90,6 @@ export interface MediaLimits {
   allowedTypes: Array<'image/jpeg' | 'image/png' | 'image/webp' | 'video/mp4'>;
 }
 
-/**
- * Legacy analytics targets kept for compatibility with the current mock analytics layer.
- * They are intentionally no longer exposed in System Settings because reports are
- * published immediately and Rescue Missions is no longer a standalone admin feature.
- */
 export interface OperationalTargets {
   reportReviewMinutes: number;
   missionAcceptanceMinutes: number;
@@ -129,6 +124,7 @@ export interface SystemBackupExport {
   payload: string;
 }
 
+// Central system settings consumed by the settings pages and mock service.
 export interface SystemSettings {
   lookups: Record<LookupType, SystemLookupItem[]>;
   emergencyContacts: EmergencyContact[];

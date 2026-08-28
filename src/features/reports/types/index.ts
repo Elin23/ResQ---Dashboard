@@ -3,11 +3,13 @@ export type ReportStatus = (typeof reportStatuses)[number];
 
 /** @deprecated Legacy field kept temporarily for cross-feature compatibility. It is not part of the reports workflow UI. */
 export const reportSeverities = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'] as const;
+
 /** @deprecated Legacy field kept temporarily for cross-feature compatibility. */
 export type ReportSeverity = (typeof reportSeverities)[number];
 
 export const animalTypes = ['DOG', 'CAT', 'BIRD', 'OTHER'] as const;
 export type AnimalType = (typeof animalTypes)[number];
+
 export type ReportMediaType = 'IMAGE' | 'VIDEO';
 
 export interface ReportMedia {
@@ -34,8 +36,10 @@ export interface AssignedOrganization {
 export interface Report {
   id: string;
   status: ReportStatus;
+
   /** @deprecated Not used by the reports admin UI. */
   severity: ReportSeverity;
+
   animalType: AnimalType;
   animalDescription?: string;
   title: string;
@@ -62,8 +66,10 @@ export interface ReportFilters {
   search: string;
   status?: ReportStatus;
   animalType?: AnimalType;
+
   /** @deprecated Legacy analytics filter; not exposed in the reports admin UI. */
   severity?: ReportSeverity;
+
   governorate?: string;
   organizationId?: string;
   userId?: string;
@@ -83,6 +89,7 @@ export interface ReportListResult {
   pageCount: number;
 }
 
+// Summary values power the operational cards above the reports table.
 export interface ReportSummary {
   todayCount: number;
   unassignedCount: number;

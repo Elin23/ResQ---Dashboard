@@ -1,9 +1,13 @@
 import { formatDistanceToNowStrict } from 'date-fns';
 import { arSA } from 'date-fns/locale';
+
 import type { ReportFilters } from '../types';
 
 export function formatRelativeTime(value: string): string {
-  return formatDistanceToNowStrict(new Date(value), { addSuffix: true, locale: arSA });
+  return formatDistanceToNowStrict(new Date(value), {
+    addSuffix: true,
+    locale: arSA,
+  });
 }
 
 export function hasActiveFilters(filters: ReportFilters): boolean {
@@ -26,8 +30,14 @@ export function formatReportDate(value: string): string {
   }).format(new Date(value));
 }
 
+// Compare calendar parts to avoid timezone-sensitive string matching.
 export function isTodayIso(value: string): boolean {
   const date = new Date(value);
   const now = new Date();
-  return date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth() && date.getDate() === now.getDate();
+
+  return (
+    date.getFullYear() === now.getFullYear() &&
+    date.getMonth() === now.getMonth() &&
+    date.getDate() === now.getDate()
+  );
 }

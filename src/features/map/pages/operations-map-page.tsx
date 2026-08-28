@@ -2,46 +2,771 @@ import { useCallback, useMemo, useState } from 'react';
 import { Check, LocateFixed, MapPinned, Plus, RefreshCw, Trash2, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button, ConfirmDialog, EmptyState, ErrorState, Input, Modal, PageHeader, Select, Skeleton, Textarea } from '@/components/ui';
-import { MapProvider } from '@/components/map/MapProvider';
 import { MapCanvas } from '@/components/map/MapCanvas';
+import { MapProvider } from '@/components/map/MapProvider';
+import { MapControls } from '../components/map-controls';
+import { MapEntityList } from '../components/map-entity-list';
+import { MapEntityPanel } from '../components/map-entity-panel';
 import { entityTypeLabels, mapLayerConfigs, syrianGovernorates } from '../constants';
 import { useApproveMapListing, useCreateMapListing, useDeleteMapListing, useOperationalMapData, useRejectMapListing, useToggleMapListing } from '../hooks';
 import type { CreateMapListingInput, MapEntity, MapFilters, MapLayerKey, MapListingRequest } from '../types';
 import { matchesSearch } from '../utils';
-import { MapControls } from '../components/map-controls';
-import { MapEntityList } from '../components/map-entity-list';
-import { MapEntityPanel } from '../components/map-entity-panel';
 
-type View='MAP'|'REQUESTS'|'MANAGE';
-const manualTypes=mapLayerConfigs.filter(x=>!['ORGANIZATION','FEEDING_POINT'].includes(x.key)).map(x=>({value:x.key,label:x.label}));
+type View = 'MAP' | 'REQUESTS' | 'MANAGE';
 
-function AddListingModal({open,onOpenChange}:{open:boolean;onOpenChange:(v:boolean)=>void}){
- const mutation=useCreateMapListing();
- const [form,setForm]=useState<CreateMapListingInput>({type:'PET_SUPPLIES',title:'',governorate:'دمشق',city:'',address:'',latitude:33.5138,longitude:36.2765,ownerName:'إدارة ResQ',phone:'',email:'',website:'',openingHours:'',description:''});
- const update=<K extends keyof CreateMapListingInput>(key:K,value:CreateMapListingInput[K])=>setForm(current=>({...current,[key]:value}));
- const submit=async()=>{if(!form.title.trim()||!form.address.trim()||!Number.isFinite(form.latitude)||!Number.isFinite(form.longitude)){toast.error('أكمل الاسم والعنوان والإحداثيات.');return;}try{await mutation.mutateAsync(form);toast.success('تمت إضافة المكان إلى الخريطة.');onOpenChange(false);}catch{toast.error('تعذر إضافة المكان.')}};
- return <Modal open={open} onOpenChange={onOpenChange} title="إضافة مكان إلى الخريطة" description="الإضافة اليدوية من الإدارة تنشر مباشرة. الجمعيات ونقاط الإطعام تضاف تلقائيًا من سجلاتها." footer={<><Button variant="secondary" onClick={()=>onOpenChange(false)}>إلغاء</Button><Button disabled={mutation.isPending} onClick={()=>void submit()}><Plus className="size-4"/>إضافة ونشر</Button></>}><div className="grid gap-3 sm:grid-cols-2"><label className="text-[12px] font-medium">الفئة<Select value={form.type} onValueChange={v=>update('type',v as CreateMapListingInput['type'])} options={manualTypes}/></label><label className="text-[12px] font-medium">اسم المكان<Input className="mt-1" value={form.title} onChange={e=>update('title',e.target.value)}/></label><label className="text-[12px] font-medium">المحافظة<Select value={form.governorate} onValueChange={v=>update('governorate',v)} options={syrianGovernorates.map(value=>({value,label:value}))}/></label><label className="text-[12px] font-medium">المدينة / المنطقة<Input className="mt-1" value={form.city??''} onChange={e=>update('city',e.target.value)}/></label><label className="text-[12px] font-medium sm:col-span-2">العنوان<Input className="mt-1" value={form.address} onChange={e=>update('address',e.target.value)}/></label><label className="text-[12px] font-medium">خط العرض<Input dir="ltr" className="mt-1 text-left" type="number" step="any" value={form.latitude} onChange={e=>update('latitude',Number(e.target.value))}/></label><label className="text-[12px] font-medium">خط الطول<Input dir="ltr" className="mt-1 text-left" type="number" step="any" value={form.longitude} onChange={e=>update('longitude',Number(e.target.value))}/></label><label className="text-[12px] font-medium">اسم صاحب المكان<Input className="mt-1" value={form.ownerName} onChange={e=>update('ownerName',e.target.value)}/></label><label className="text-[12px] font-medium">رقم التواصل<Input dir="ltr" className="mt-1 text-left" value={form.phone??''} onChange={e=>update('phone',e.target.value)}/></label><label className="text-[12px] font-medium">البريد الإلكتروني<Input dir="ltr" className="mt-1 text-left" value={form.email??''} onChange={e=>update('email',e.target.value)}/></label><label className="text-[12px] font-medium">الموقع الإلكتروني<Input dir="ltr" className="mt-1 text-left" value={form.website??''} onChange={e=>update('website',e.target.value)}/></label><label className="text-[12px] font-medium sm:col-span-2">ساعات العمل<Input className="mt-1" value={form.openingHours??''} onChange={e=>update('openingHours',e.target.value)} placeholder="مثال: 09:00 - 21:00"/></label><label className="text-[12px] font-medium sm:col-span-2">وصف مختصر<Textarea className="mt-1" value={form.description??''} onChange={e=>update('description',e.target.value)}/></label></div></Modal>;
+const manualTypes = mapLayerConfigs
+  .filter((item) => !['ORGANIZATION', 'FEEDING_POINT'].includes(item.key))
+  .map((item) => ({
+    value: item.key,
+    label: item.label,
+  }));
+
+function AddListingModal({ open, onOpenChange }: { open: boolean; onOpenChange: (value: boolean) => void }) {
+  const mutation = useCreateMapListing();
+
+  const [form, setForm] = useState<CreateMapListingInput>({
+    type: 'PET_SUPPLIES',
+    title: '',
+    governorate: 'دمشق',
+    city: '',
+    address: '',
+    latitude: 33.5138,
+    longitude: 36.2765,
+    ownerName: 'إدارة ResQ',
+    phone: '',
+    email: '',
+    website: '',
+    openingHours: '',
+    description: '',
+  });
+
+  const update = <K extends keyof CreateMapListingInput>(key: K, value: CreateMapListingInput[K]) =>
+    setForm((current) => ({
+      ...current,
+      [key]: value,
+    }));
+
+  // Manual admin listings are published immediately after basic validation.
+  const submit = async () => {
+    if (
+      !form.title.trim() ||
+      !form.address.trim() ||
+      !Number.isFinite(form.latitude) ||
+      !Number.isFinite(form.longitude)
+    ) {
+      toast.error('أكمل الاسم والعنوان والإحداثيات.');
+      return;
+    }
+
+    try {
+      await mutation.mutateAsync(form);
+      toast.success('تمت إضافة المكان إلى الخريطة.');
+      onOpenChange(false);
+    } catch {
+      toast.error('تعذر إضافة المكان.');
+    }
+  };
+
+  return (
+    <Modal
+      open={open}
+      onOpenChange={onOpenChange}
+      title="إضافة مكان إلى الخريطة"
+      description="الإضافة اليدوية من الإدارة تنشر مباشرة. الجمعيات ونقاط الإطعام تضاف تلقائيًا من سجلاتها."
+      footer={
+        <>
+          <Button
+            variant="secondary"
+            onClick={() => onOpenChange(false)}
+          >
+            إلغاء
+          </Button>
+
+          <Button
+            disabled={mutation.isPending}
+            onClick={() => void submit()}
+          >
+            <Plus className="size-4" />
+            إضافة ونشر
+          </Button>
+        </>
+      }
+    >
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className="text-[12px] font-medium">
+          الفئة
+          <Select
+            value={form.type}
+            onValueChange={(value) =>
+              update('type', value as CreateMapListingInput['type'])
+            }
+            options={manualTypes}
+          />
+        </label>
+
+        <label className="text-[12px] font-medium">
+          اسم المكان
+          <Input
+            className="mt-1"
+            value={form.title}
+            onChange={(event) => update('title', event.target.value)}
+          />
+        </label>
+
+        <label className="text-[12px] font-medium">
+          المحافظة
+          <Select
+            value={form.governorate}
+            onValueChange={(value) => update('governorate', value)}
+            options={syrianGovernorates.map((value) => ({
+              value,
+              label: value,
+            }))}
+          />
+        </label>
+
+        <label className="text-[12px] font-medium">
+          المدينة / المنطقة
+          <Input
+            className="mt-1"
+            value={form.city ?? ''}
+            onChange={(event) => update('city', event.target.value)}
+          />
+        </label>
+
+        <label className="text-[12px] font-medium sm:col-span-2">
+          العنوان
+          <Input
+            className="mt-1"
+            value={form.address}
+            onChange={(event) => update('address', event.target.value)}
+          />
+        </label>
+
+        <label className="text-[12px] font-medium">
+          خط العرض
+          <Input
+            dir="ltr"
+            className="mt-1 text-left"
+            type="number"
+            step="any"
+            value={form.latitude}
+            onChange={(event) => update('latitude', Number(event.target.value))}
+          />
+        </label>
+
+        <label className="text-[12px] font-medium">
+          خط الطول
+          <Input
+            dir="ltr"
+            className="mt-1 text-left"
+            type="number"
+            step="any"
+            value={form.longitude}
+            onChange={(event) => update('longitude', Number(event.target.value))}
+          />
+        </label>
+
+        <label className="text-[12px] font-medium">
+          اسم صاحب المكان
+          <Input
+            className="mt-1"
+            value={form.ownerName}
+            onChange={(event) => update('ownerName', event.target.value)}
+          />
+        </label>
+
+        <label className="text-[12px] font-medium">
+          رقم التواصل
+          <Input
+            dir="ltr"
+            className="mt-1 text-left"
+            value={form.phone ?? ''}
+            onChange={(event) => update('phone', event.target.value)}
+          />
+        </label>
+
+        <label className="text-[12px] font-medium">
+          البريد الإلكتروني
+          <Input
+            dir="ltr"
+            className="mt-1 text-left"
+            value={form.email ?? ''}
+            onChange={(event) => update('email', event.target.value)}
+          />
+        </label>
+
+        <label className="text-[12px] font-medium">
+          الموقع الإلكتروني
+          <Input
+            dir="ltr"
+            className="mt-1 text-left"
+            value={form.website ?? ''}
+            onChange={(event) => update('website', event.target.value)}
+          />
+        </label>
+
+        <label className="text-[12px] font-medium sm:col-span-2">
+          ساعات العمل
+          <Input
+            className="mt-1"
+            value={form.openingHours ?? ''}
+            onChange={(event) => update('openingHours', event.target.value)}
+            placeholder="مثال: 09:00 - 21:00"
+          />
+        </label>
+
+        <label className="text-[12px] font-medium sm:col-span-2">
+          وصف مختصر
+          <Textarea
+            className="mt-1"
+            value={form.description ?? ''}
+            onChange={(event) => update('description', event.target.value)}
+          />
+        </label>
+      </div>
+    </Modal>
+  );
 }
 
-function RequestsView({requests}:{requests:MapListingRequest[]}){
- const approve=useApproveMapListing(),reject=useRejectMapListing();
- const [rejecting,setRejecting]=useState<MapListingRequest>();const [reason,setReason]=useState('المعلومات أو الصور لا تثبت وجود المكان بالشكل المطلوب.');
- const pending=requests.filter(x=>x.metadata.reviewStatus==='PENDING');
- return <><div className="overflow-hidden rounded-xl border border-border/45 bg-white"><div className="border-b border-border/35 px-4 py-3"><p className="text-[13px] font-semibold">طلبات الظهور على الخريطة</p><p className="mt-0.5 text-[11px] text-muted-foreground">طلبات المستخدمين العاديين فقط تحتاج موافقة الإدارة قبل أن تصبح ظاهرة للعامة.</p></div>{pending.length?<div className="overflow-x-auto"><table dir="rtl" className="w-full min-w-[760px] text-[12px]"><thead className="bg-muted/30 text-muted-foreground"><tr>{['المكان','الفئة','مقدم الطلب','الموقع','التواصل','الإجراءات'].map(h=><th key={h} className="px-3.5 py-2.5 text-start font-medium">{h}</th>)}</tr></thead><tbody>{pending.map(item=><tr key={item.id} className="border-t border-border/35 hover:bg-primary/[0.02]"><td className="px-3.5 py-3 align-middle"><p className="font-medium">{item.title}</p><p className="mt-0.5 max-w-56 truncate text-[11px] text-muted-foreground">{item.metadata.description??item.address}</p></td><td className="px-3.5 py-3 align-middle">{entityTypeLabels[item.type]}</td><td className="px-3.5 py-3 align-middle">{item.metadata.ownerName}</td><td className="px-3.5 py-3 align-middle">{item.governorate}{item.city?` — ${item.city}`:''}</td><td dir="ltr" className="px-3.5 py-3 text-left align-middle text-muted-foreground">{item.metadata.phone??'—'}</td><td className="px-3.5 py-3 align-middle"><div className="flex gap-2"><Button size="sm" disabled={approve.isPending} onClick={()=>approve.mutate(item.id,{onSuccess:()=>toast.success('تمت الموافقة ونشر المكان.')})}><Check className="size-4"/>نشر</Button><Button size="sm" variant="secondary" onClick={()=>setRejecting(item)}><X className="size-4"/>رفض</Button></div></td></tr>)}</tbody></table></div>:<div className="p-8"><EmptyState title="لا توجد طلبات تنتظر المراجعة" description="ستظهر هنا طلبات المستخدمين الراغبين بإضافة مكان جديد إلى الخريطة."/></div>}</div><Modal open={Boolean(rejecting)} onOpenChange={open=>{if(!open)setRejecting(undefined)}} title="رفض طلب الظهور" description={rejecting?.title} footer={<><Button variant="secondary" onClick={()=>setRejecting(undefined)}>إلغاء</Button><Button variant="danger" disabled={reason.trim().length<3||reject.isPending} onClick={()=>rejecting&&reject.mutate({id:rejecting.id,reason},{onSuccess:()=>{toast.success('تم رفض الطلب وتسجيل السبب.');setRejecting(undefined)}})}>تأكيد الرفض</Button></>}><label className="text-[12px] font-medium">سبب الرفض<Textarea className="mt-1" value={reason} onChange={e=>setReason(e.target.value)}/></label></Modal></>;
+function RequestsView({ requests }: { requests: MapListingRequest[] }) {
+  const approve = useApproveMapListing();
+  const reject = useRejectMapListing();
+
+  const [rejecting, setRejecting] = useState<MapListingRequest>();
+  const [reason, setReason] = useState(
+    'المعلومات أو الصور لا تثبت وجود المكان بالشكل المطلوب.',
+  );
+
+  // Only pending user-submitted requests need an admin decision.
+  const pending = requests.filter(
+    (item) => item.metadata.reviewStatus === 'PENDING',
+  );
+
+  return (
+    <>
+      <div className="overflow-hidden rounded-xl border border-border/45 bg-white">
+        <div className="border-b border-border/35 px-4 py-3">
+          <p className="text-[13px] font-semibold">
+            طلبات الظهور على الخريطة
+          </p>
+
+          <p className="mt-0.5 text-[11px] text-muted-foreground">
+            طلبات المستخدمين العاديين فقط تحتاج موافقة الإدارة قبل أن تصبح ظاهرة للعامة.
+          </p>
+        </div>
+
+        {pending.length ? (
+          <div className="overflow-x-auto">
+            <table dir="rtl" className="w-full min-w-[760px] text-[12px]">
+              <thead className="bg-muted/30 text-muted-foreground">
+                <tr>
+                  {['المكان', 'الفئة', 'مقدم الطلب', 'الموقع', 'التواصل', 'الإجراءات'].map((header) => (
+                    <th
+                      key={header}
+                      className="px-3.5 py-2.5 text-start font-medium"
+                    >
+                      {header}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+
+              <tbody>
+                {pending.map((item) => (
+                  <tr
+                    key={item.id}
+                    className="border-t border-border/35 hover:bg-primary/[0.02]"
+                  >
+                    <td className="px-3.5 py-3 align-middle">
+                      <p className="font-medium">
+                        {item.title}
+                      </p>
+
+                      <p className="mt-0.5 max-w-56 truncate text-[11px] text-muted-foreground">
+                        {item.metadata.description ?? item.address}
+                      </p>
+                    </td>
+
+                    <td className="px-3.5 py-3 align-middle">
+                      {entityTypeLabels[item.type]}
+                    </td>
+
+                    <td className="px-3.5 py-3 align-middle">
+                      {item.metadata.ownerName}
+                    </td>
+
+                    <td className="px-3.5 py-3 align-middle">
+                      {item.governorate}
+                      {item.city ? ` — ${item.city}` : ''}
+                    </td>
+
+                    <td dir="ltr" className="px-3.5 py-3 text-left align-middle text-muted-foreground">
+                      {item.metadata.phone ?? '—'}
+                    </td>
+
+                    <td className="px-3.5 py-3 align-middle">
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          disabled={approve.isPending}
+                          onClick={() =>
+                            approve.mutate(item.id, {
+                              onSuccess: () =>
+                                toast.success('تمت الموافقة ونشر المكان.'),
+                            })
+                          }
+                        >
+                          <Check className="size-4" />
+                          نشر
+                        </Button>
+
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => setRejecting(item)}
+                        >
+                          <X className="size-4" />
+                          رفض
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="p-8">
+            <EmptyState
+              title="لا توجد طلبات تنتظر المراجعة"
+              description="ستظهر هنا طلبات المستخدمين الراغبين بإضافة مكان جديد إلى الخريطة."
+            />
+          </div>
+        )}
+      </div>
+
+      <Modal
+        open={Boolean(rejecting)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setRejecting(undefined);
+          }
+        }}
+        title="رفض طلب الظهور"
+        description={rejecting?.title}
+        footer={
+          <>
+            <Button
+              variant="secondary"
+              onClick={() => setRejecting(undefined)}
+            >
+              إلغاء
+            </Button>
+
+            <Button
+              variant="danger"
+              disabled={reason.trim().length < 3 || reject.isPending}
+              onClick={() =>
+                rejecting &&
+                reject.mutate(
+                  {
+                    id: rejecting.id,
+                    reason,
+                  },
+                  {
+                    onSuccess: () => {
+                      toast.success('تم رفض الطلب وتسجيل السبب.');
+                      setRejecting(undefined);
+                    },
+                  },
+                )
+              }
+            >
+              تأكيد الرفض
+            </Button>
+          </>
+        }
+      >
+        <label className="text-[12px] font-medium">
+          سبب الرفض
+          <Textarea
+            className="mt-1"
+            value={reason}
+            onChange={(event) => setReason(event.target.value)}
+          />
+        </label>
+      </Modal>
+    </>
+  );
 }
 
-function ManageView({entities}:{entities:MapEntity[]}){
- const toggle=useToggleMapListing(),remove=useDeleteMapListing();
- const [deleting,setDeleting]=useState<MapEntity>();
- return <><div className="overflow-hidden rounded-xl border border-border/45 bg-white"><div className="border-b border-border/35 px-4 py-3"><p className="text-[13px] font-semibold">إدارة الأماكن المنشورة</p><p className="mt-0.5 text-[11px] text-muted-foreground">يمكن تعطيل أو حذف الإدخالات اليدوية وطلبات المستخدمين. الجمعيات ونقاط الإطعام تُدار من صفحاتها الأصلية.</p></div><div className="overflow-x-auto"><table dir="rtl" className="w-full min-w-[780px] text-[12px]"><thead className="bg-muted/30 text-muted-foreground"><tr>{['المكان','الفئة','المصدر','الموقع','الحالة','الإجراءات'].map(h=><th key={h} className="px-3.5 py-2.5 text-start font-medium">{h}</th>)}</tr></thead><tbody>{entities.map(item=>{const managed=!['ORGANIZATION_AUTO','FEEDING_POINT_AUTO'].includes(item.metadata.source);return <tr key={item.id} className="border-t border-border/35 hover:bg-primary/[0.02]"><td className="px-3.5 py-3 align-middle font-medium">{item.title}</td><td className="px-3.5 py-3 align-middle">{entityTypeLabels[item.type]}</td><td className="px-3.5 py-3 align-middle text-muted-foreground">{item.metadata.source==='ADMIN'?'إضافة الإدارة':item.metadata.source==='USER_REQUEST'?'طلب مستخدم':item.metadata.source==='ORGANIZATION_AUTO'?'تلقائي من الجمعية':'تلقائي من نقطة الإطعام'}</td><td className="px-3.5 py-3 align-middle">{item.governorate}{item.city?` — ${item.city}`:''}</td><td className="px-3.5 py-3 align-middle">{item.metadata.status==='ACTIVE'?'نشط':'متوقف'}</td><td className="px-3.5 py-3 align-middle">{managed?<div className="flex gap-2"><Button size="sm" variant="secondary" onClick={()=>toggle.mutate(item.id)}>{item.metadata.status==='ACTIVE'?'إيقاف':'إعادة تفعيل'}</Button><Button size="sm" variant="ghost" className="text-critical" onClick={()=>setDeleting(item)}><Trash2 className="size-4"/>حذف</Button></div>:<span className="text-[11px] text-muted-foreground">من السجل الأصلي</span>}</td></tr>})}</tbody></table></div></div><ConfirmDialog open={Boolean(deleting)} onOpenChange={open=>{if(!open)setDeleting(undefined)}} title="حذف المكان من الخريطة" description={deleting ? `سيتم حذف ${deleting.title} من الخريطة.` : 'سيتم حذف المكان المحدد من الخريطة.'} confirmLabel="حذف" destructive onConfirm={()=>deleting&&remove.mutate(deleting.id,{onSuccess:()=>{toast.success('تم حذف المكان.');setDeleting(undefined)}})}/></>;
+function ManageView({ entities }: { entities: MapEntity[] }) {
+  const toggle = useToggleMapListing();
+  const remove = useDeleteMapListing();
+
+  const [deleting, setDeleting] = useState<MapEntity>();
+
+  return (
+    <>
+      <div className="overflow-hidden rounded-xl border border-border/45 bg-white">
+        <div className="border-b border-border/35 px-4 py-3">
+          <p className="text-[13px] font-semibold">
+            إدارة الأماكن المنشورة
+          </p>
+
+          <p className="mt-0.5 text-[11px] text-muted-foreground">
+            يمكن تعطيل أو حذف الإدخالات اليدوية وطلبات المستخدمين. الجمعيات ونقاط الإطعام تُدار من صفحاتها الأصلية.
+          </p>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table dir="rtl" className="w-full min-w-[780px] text-[12px]">
+            <thead className="bg-muted/30 text-muted-foreground">
+              <tr>
+                {['المكان', 'الفئة', 'المصدر', 'الموقع', 'الحالة', 'الإجراءات'].map((header) => (
+                  <th
+                    key={header}
+                    className="px-3.5 py-2.5 text-start font-medium"
+                  >
+                    {header}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+
+            <tbody>
+              {entities.map((item) => {
+                // Auto-generated records are managed from their original modules.
+                const managed = !['ORGANIZATION_AUTO', 'FEEDING_POINT_AUTO'].includes(
+                  item.metadata.source,
+                );
+
+                return (
+                  <tr
+                    key={item.id}
+                    className="border-t border-border/35 hover:bg-primary/[0.02]"
+                  >
+                    <td className="px-3.5 py-3 align-middle font-medium">
+                      {item.title}
+                    </td>
+
+                    <td className="px-3.5 py-3 align-middle">
+                      {entityTypeLabels[item.type]}
+                    </td>
+
+                    <td className="px-3.5 py-3 align-middle text-muted-foreground">
+                      {item.metadata.source === 'ADMIN'
+                        ? 'إضافة الإدارة'
+                        : item.metadata.source === 'USER_REQUEST'
+                          ? 'طلب مستخدم'
+                          : item.metadata.source === 'ORGANIZATION_AUTO'
+                            ? 'تلقائي من الجمعية'
+                            : 'تلقائي من نقطة الإطعام'}
+                    </td>
+
+                    <td className="px-3.5 py-3 align-middle">
+                      {item.governorate}
+                      {item.city ? ` — ${item.city}` : ''}
+                    </td>
+
+                    <td className="px-3.5 py-3 align-middle">
+                      {item.metadata.status === 'ACTIVE' ? 'نشط' : 'متوقف'}
+                    </td>
+
+                    <td className="px-3.5 py-3 align-middle">
+                      {managed ? (
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            onClick={() => toggle.mutate(item.id)}
+                          >
+                            {item.metadata.status === 'ACTIVE'
+                              ? 'إيقاف'
+                              : 'إعادة تفعيل'}
+                          </Button>
+
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="text-critical"
+                            onClick={() => setDeleting(item)}
+                          >
+                            <Trash2 className="size-4" />
+                            حذف
+                          </Button>
+                        </div>
+                      ) : (
+                        <span className="text-[11px] text-muted-foreground">
+                          من السجل الأصلي
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <ConfirmDialog
+        open={Boolean(deleting)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDeleting(undefined);
+          }
+        }}
+        title="حذف المكان من الخريطة"
+        description={
+          deleting
+            ? `سيتم حذف ${deleting.title} من الخريطة.`
+            : 'سيتم حذف المكان المحدد من الخريطة.'
+        }
+        confirmLabel="حذف"
+        destructive
+        onConfirm={() =>
+          deleting &&
+          remove.mutate(deleting.id, {
+            onSuccess: () => {
+              toast.success('تم حذف المكان.');
+              setDeleting(undefined);
+            },
+          })
+        }
+      />
+    </>
+  );
 }
 
-export function OperationsMapPage(){
- const query=useOperationalMapData();const [view,setView]=useState<View>('MAP');const [addOpen,setAddOpen]=useState(false);const [fitNonce,setFitNonce]=useState(0);const [filters,setFilters]=useState<MapFilters>({search:''});const [layers,setLayers]=useState<Set<MapLayerKey>>(()=>new Set(mapLayerConfigs.filter(x=>x.defaultVisible).map(x=>x.key)));const [selectedId,setSelectedId]=useState<string>();
- const visible=useMemo(()=>(query.data?.entities??[]).filter(entity=>entity.metadata.status==='ACTIVE'&&layers.has(entity.type)&&(!filters.governorate||entity.governorate===filters.governorate)&&matchesSearch(entity,filters.search)),[query.data,filters,layers]);
- const selected=useMemo(()=>visible.find(x=>x.id===selectedId),[visible,selectedId]);
- const toggle=useCallback((key:MapLayerKey,show:boolean)=>setLayers(current=>{const next=new Set(current);show?next.add(key):next.delete(key);return next}),[]);
- if(query.isLoading)return <div className="space-y-6"><PageHeader title="دليل الخريطة" description="خريطة عامة للأماكن والخدمات المهمة للمهتمين بالحيوانات."/><Skeleton className="h-[42rem] rounded-xl"/></div>;
- if(query.isError)return <ErrorState title="تعذر تحميل دليل الخريطة" description="يمكن إعادة المحاولة دون إعادة تحميل الصفحة." onRetry={()=>void query.refetch()}/>;
- return <div dir="rtl" className="space-y-6 pb-6"><PageHeader title="دليل الخريطة" description="أماكن وخدمات موثوقة للمهتمين بالحيوانات؛ الجمعيات ونقاط الإطعام تظهر تلقائيًا، وطلبات المستخدمين تخضع لمراجعة الإدارة." actions={<><Button variant="secondary" onClick={()=>void query.refetch()}><RefreshCw className="size-4"/>تحديث</Button><Button onClick={()=>setAddOpen(true)}><Plus className="size-4"/>إضافة مكان</Button></>}/><div className="flex w-fit items-center gap-1 rounded-xl border border-border/45 bg-white p-1">{([{key:'MAP',label:'الخريطة العامة'},{key:'REQUESTS',label:`طلبات الظهور (${query.data?.requests.filter(x=>x.metadata.reviewStatus==='PENDING').length??0})`},{key:'MANAGE',label:'إدارة الأماكن'}] as Array<{key:View;label:string}>).map(tab=><button key={tab.key} type="button" onClick={()=>setView(tab.key)} className={`h-8 rounded-lg px-3 text-[12px] font-medium transition-colors ${view===tab.key?'bg-primary text-primary-foreground':'text-muted-foreground hover:bg-muted/50 hover:text-foreground'}`}>{tab.label}</button>)}</div>{view==='MAP'&&<div className="grid items-start gap-4 xl:grid-cols-[240px_minmax(0,1fr)_280px]"><aside><MapControls filters={filters} onFilters={setFilters} layers={layers} onLayer={toggle}/></aside><main className="min-w-0 space-y-3"><div className="rounded-xl border border-border/45 bg-white p-3"><div className="mb-3 flex items-center justify-between gap-3"><div><p className="text-[13px] font-semibold">{visible.length} مكانًا ظاهرًا</p><p className="mt-0.5 text-[11px] text-muted-foreground">اضغط على أي علامة لعرض بياناتها.</p></div><Button size="sm" variant="secondary" disabled={!visible.length} onClick={()=>{setSelectedId(undefined);setFitNonce(v=>v+1)}}><LocateFixed className="size-4"/>إظهار الكل</Button></div>{visible.length?<MapProvider><MapCanvas entities={visible} selectedId={selected?.id} onSelect={e=>setSelectedId(e.id)} fitNonce={fitNonce} focusEntity={selected}/></MapProvider>:<div className="py-10"><EmptyState title="لا توجد أماكن مطابقة" description="غيّر البحث أو المحافظة أو فعّل فئات إضافية."/></div>}</div><div className="rounded-xl border border-border/45 bg-white p-3.5"><div className="mb-3 flex items-center gap-2"><MapPinned className="size-4 text-primary"/><p className="text-[13px] font-semibold">الأماكن الظاهرة</p></div><MapEntityList entities={visible} selectedId={selected?.id} onSelect={e=>setSelectedId(e.id)}/></div></main><aside className="xl:sticky xl:top-24"><MapEntityPanel entity={selected}/></aside></div>}{view==='REQUESTS'&&<RequestsView requests={query.data?.requests??[]}/>} {view==='MANAGE'&&<ManageView entities={query.data?.entities??[]}/>}<AddListingModal open={addOpen} onOpenChange={setAddOpen}/></div>;
+export function OperationsMapPage() {
+  const query = useOperationalMapData();
+
+  const [view, setView] = useState<View>('MAP');
+  const [addOpen, setAddOpen] = useState(false);
+  const [fitNonce, setFitNonce] = useState(0);
+  const [filters, setFilters] = useState<MapFilters>({
+    search: '',
+  });
+  const [layers, setLayers] = useState<Set<MapLayerKey>>(
+    () =>
+      new Set(
+        mapLayerConfigs
+          .filter((item) => item.defaultVisible)
+          .map((item) => item.key),
+      ),
+  );
+  const [selectedId, setSelectedId] = useState<string>();
+
+  // Apply status, layer, governorate, and search filters before rendering the map.
+  const visible = useMemo(
+    () =>
+      (query.data?.entities ?? []).filter(
+        (entity) =>
+          entity.metadata.status === 'ACTIVE' &&
+          layers.has(entity.type) &&
+          (!filters.governorate ||
+            entity.governorate === filters.governorate) &&
+          matchesSearch(entity, filters.search),
+      ),
+    [query.data, filters, layers],
+  );
+
+  const selected = useMemo(
+    () =>
+      visible.find(
+        (item) => item.id === selectedId,
+      ),
+    [visible, selectedId],
+  );
+
+  const toggle = useCallback(
+    (key: MapLayerKey, show: boolean) =>
+      setLayers((current) => {
+        const next = new Set(current);
+
+        if (show) {
+          next.add(key);
+        } else {
+          next.delete(key);
+        }
+
+        return next;
+      }),
+    [],
+  );
+
+  if (query.isLoading) {
+    return (
+      <div className="space-y-6">
+        <PageHeader
+          title="دليل الخريطة"
+          description="خريطة عامة للأماكن والخدمات المهمة للمهتمين بالحيوانات."
+        />
+
+        <Skeleton className="h-[42rem] rounded-xl" />
+      </div>
+    );
+  }
+
+  if (query.isError) {
+    return (
+      <ErrorState
+        title="تعذر تحميل دليل الخريطة"
+        description="يمكن إعادة المحاولة دون إعادة تحميل الصفحة."
+        onRetry={() => void query.refetch()}
+      />
+    );
+  }
+
+  return (
+    <div dir="rtl" className="space-y-6 pb-6">
+      <PageHeader
+        title="دليل الخريطة"
+        description="أماكن وخدمات موثوقة للمهتمين بالحيوانات؛ الجمعيات ونقاط الإطعام تظهر تلقائيًا، وطلبات المستخدمين تخضع لمراجعة الإدارة."
+        actions={
+          <>
+            <Button
+              variant="secondary"
+              onClick={() => void query.refetch()}
+            >
+              <RefreshCw className="size-4" />
+              تحديث
+            </Button>
+
+            <Button onClick={() => setAddOpen(true)}>
+              <Plus className="size-4" />
+              إضافة مكان
+            </Button>
+          </>
+        }
+      />
+
+      <div className="flex w-fit items-center gap-1 rounded-xl border border-border/45 bg-white p-1">
+        {(
+          [
+            {
+              key: 'MAP',
+              label: 'الخريطة العامة',
+            },
+            {
+              key: 'REQUESTS',
+              label: `طلبات الظهور (${query.data?.requests.filter((item) => item.metadata.reviewStatus === 'PENDING').length ?? 0})`,
+            },
+            {
+              key: 'MANAGE',
+              label: 'إدارة الأماكن',
+            },
+          ] as Array<{ key: View; label: string }>
+        ).map((tab) => (
+          <button
+            key={tab.key}
+            type="button"
+            onClick={() => setView(tab.key)}
+            className={`h-8 rounded-lg px-3 text-[12px] font-medium transition-colors ${view === tab.key ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'}`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {view === 'MAP' && (
+        <div className="grid items-start gap-4 xl:grid-cols-[240px_minmax(0,1fr)_280px]">
+          <aside>
+            <MapControls
+              filters={filters}
+              onFilters={setFilters}
+              layers={layers}
+              onLayer={toggle}
+            />
+          </aside>
+
+          <main className="min-w-0 space-y-3">
+            <div className="rounded-xl border border-border/45 bg-white p-3">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-[13px] font-semibold">
+                    {visible.length} مكانًا ظاهرًا
+                  </p>
+
+                  <p className="mt-0.5 text-[11px] text-muted-foreground">
+                    اضغط على أي علامة لعرض بياناتها.
+                  </p>
+                </div>
+
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  disabled={!visible.length}
+                  onClick={() => {
+                    setSelectedId(undefined);
+                    setFitNonce((value) => value + 1);
+                  }}
+                >
+                  <LocateFixed className="size-4" />
+                  إظهار الكل
+                </Button>
+              </div>
+
+              {visible.length ? (
+                <MapProvider>
+                  <MapCanvas
+                    entities={visible}
+                    selectedId={selected?.id}
+                    onSelect={(entity) => setSelectedId(entity.id)}
+                    fitNonce={fitNonce}
+                    focusEntity={selected}
+                  />
+                </MapProvider>
+              ) : (
+                <div className="py-10">
+                  <EmptyState
+                    title="لا توجد أماكن مطابقة"
+                    description="غيّر البحث أو المحافظة أو فعّل فئات إضافية."
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className="rounded-xl border border-border/45 bg-white p-3.5">
+              <div className="mb-3 flex items-center gap-2">
+                <MapPinned className="size-4 text-primary" />
+                <p className="text-[13px] font-semibold">
+                  الأماكن الظاهرة
+                </p>
+              </div>
+
+              <MapEntityList
+                entities={visible}
+                selectedId={selected?.id}
+                onSelect={(entity) => setSelectedId(entity.id)}
+              />
+            </div>
+          </main>
+
+          <aside className="xl:sticky xl:top-24">
+            <MapEntityPanel entity={selected} />
+          </aside>
+        </div>
+      )}
+
+      {view === 'REQUESTS' && (
+        <RequestsView
+          requests={query.data?.requests ?? []}
+        />
+      )}
+
+      {view === 'MANAGE' && (
+        <ManageView
+          entities={query.data?.entities ?? []}
+        />
+      )}
+
+      <AddListingModal
+        open={addOpen}
+        onOpenChange={setAddOpen}
+      />
+    </div>
+  );
 }

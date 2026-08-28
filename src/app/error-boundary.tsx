@@ -11,7 +11,6 @@ export class AppErrorBoundary extends Component<Props, State> {
   static getDerivedStateFromError(error: Error): State { return { hasError: true, errorMessage: error.message }; }
 
   override componentDidCatch(_error: Error, _info: ErrorInfo): void {
-    // Production observability can be connected here without exposing stack traces in the UI.
   }
 
   override render(): ReactNode {

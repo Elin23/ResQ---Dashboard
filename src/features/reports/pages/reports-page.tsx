@@ -1,4 +1,3 @@
-import { commitSearchParams } from '@/lib/search-params';
 import { Download } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { useSearchParams } from 'react-router';
@@ -6,18 +5,14 @@ import { toast } from 'sonner';
 import { Button, EmptyState, ErrorState, ExportMenuButton } from '@/components/ui';
 import type { DataTableQueryState } from '@/components/ui/data-table';
 import { usePermission } from '@/features/auth/rbac';
-import {
-  animalTypes,
-  reportStatuses,
-  type Report,
-  type ReportFilters,
-} from '../types';
-import { hasActiveFilters } from '../utils';
-import { animalTypeLabels, reportStatusLabels } from '../constants';
-import { useEligibleOrganizations, useReports, useReportsSummary } from '../hooks';
+import { commitSearchParams } from '@/lib/search-params';
 import { ReportsFilterBar } from '../components/reports-filter-bar';
 import { ReportsSummaryCards } from '../components/reports-summary';
 import { ReportsTable } from '../components/reports-table';
+import { animalTypeLabels, reportStatusLabels } from '../constants';
+import { useEligibleOrganizations, useReports, useReportsSummary } from '../hooks';
+import { animalTypes, reportStatuses, type Report, type ReportFilters } from '../types';
+import { hasActiveFilters } from '../utils';
 
 const valid = <T extends string>(value: string | null, options: readonly T[]): T | undefined =>
   value && options.includes(value as T) ? (value as T) : undefined;
@@ -43,6 +38,7 @@ function filtersFromParams(params: URLSearchParams): ReportFilters {
 
 function paramsFromFilters(filters: ReportFilters): URLSearchParams {
   const params = new URLSearchParams();
+
   const entries: Array<[string, string | number | undefined]> = [
     ['q', filters.search || undefined],
     ['status', filters.status],
@@ -58,8 +54,11 @@ function paramsFromFilters(filters: ReportFilters): URLSearchParams {
     ['direction', filters.sortBy && filters.sortDirection ? filters.sortDirection : undefined],
   ];
 
+  // Keep only active filters and non-default table state in the URL.
   for (const [key, value] of entries) {
-    if (value !== undefined) params.set(key, String(value));
+    if (value !== undefined) {
+      params.set(key, String(value));
+    }
   }
 
   return params;
@@ -79,43 +78,67 @@ function downloadSelected(reports: Report[]) {
   ];
 
   const csv = `\uFEFF${rows
-    .map((row) => row.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(','))
+    .map((row) =>
+      row
+        .map((cell) => `"${String(cell).replaceAll('"', '""')}"`)
+        .join(','),
+    )
     .join('\n')}`;
 
-  const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+  const url = URL.createObjectURL(
+    new Blob([csv], {
+      type: 'text/csv;charset=utf-8',
+    }),
+  );
+
   const anchor = document.createElement('a');
+
   anchor.href = url;
   anchor.download = 'resq-selected-reports.csv';
   anchor.click();
+
   URL.revokeObjectURL(url);
+
   toast.success('تم تصدير البلاغات المحددة');
 }
 
 export function ReportsPage() {
   const [params, setParams] = useSearchParams();
+
   const filters = filtersFromParams(params);
   const reportsQuery = useReports(filters);
   const summaryQuery = useReportsSummary();
   const organizationsQuery = useEligibleOrganizations('');
+
   const [selected, setSelected] = useState<Report[]>([]);
 
   const canUpdate = usePermission('reports:update');
   const canAssign = usePermission('reports:assign');
-  // Compatibility seam: the current RBAC package has reports:reject as the destructive report permission.
-  // Rename it to reports:delete in the central permission model when that package is migrated.
+
+  // Compatibility seam until the central RBAC model exposes reports:delete.
   const canDelete = usePermission('reports:reject');
 
   const updateFilters = useCallback(
     (patch: Partial<ReportFilters>) =>
-      commitSearchParams(params, paramsFromFilters({ ...filters, ...patch }), setParams),
+      commitSearchParams(
+        params,
+        paramsFromFilters({
+          ...filters,
+          ...patch,
+        }),
+        setParams,
+      ),
     [filters, params, setParams],
   );
 
-  const clearFilters = () => setParams(new URLSearchParams());
+  const clearFilters = () => {
+    setParams(new URLSearchParams());
+  };
 
   const onQueryChange = useCallback(
     (state: DataTableQueryState) => {
       const sort = state.sorting[0];
+
       const nextSort =
         sort && ['createdAt', 'updatedAt', 'status'].includes(sort.id)
           ? (sort.id as ReportFilters['sortBy'])
@@ -131,14 +154,27 @@ export function ReportsPage() {
           page: state.pageIndex + 1,
           pageSize: state.pageSize,
           sortBy: nextSort,
-          sortDirection: nextSort ? (sort?.desc ? 'desc' : 'asc') : undefined,
+          sortDirection: nextSort
+            ? sort?.desc
+              ? 'desc'
+              : 'asc'
+            : undefined,
         });
       }
     },
-    [filters.page, filters.pageSize, filters.sortBy, filters.sortDirection, updateFilters],
+    [
+      filters.page,
+      filters.pageSize,
+      filters.sortBy,
+      filters.sortDirection,
+      updateFilters,
+    ],
   );
 
-  const onSelectionChange = useCallback((rows: Report[]) => setSelected(rows), []);
+  const onSelectionChange = useCallback(
+    (rows: Report[]) => setSelected(rows),
+    [],
+  );
 
   if (reportsQuery.isError && !reportsQuery.data) {
     return (
@@ -153,13 +189,26 @@ export function ReportsPage() {
   const data = reportsQuery.data;
   const exportRows = data?.items ?? [];
   const active = hasActiveFilters(filters);
+
   const empty = (
     <EmptyState
-      title={active ? 'لا توجد بلاغات تطابق الفلاتر الحالية.' : 'لا توجد بلاغات مسجلة حتى الآن.'}
-      description={active ? 'عدّل الفلاتر أو امسحها للوصول إلى نتائج أخرى.' : 'ستظهر البلاغات فور نشرها.'}
+      title={
+        active
+          ? 'لا توجد بلاغات تطابق الفلاتر الحالية.'
+          : 'لا توجد بلاغات مسجلة حتى الآن.'
+      }
+      description={
+        active
+          ? 'عدّل الفلاتر أو امسحها للوصول إلى نتائج أخرى.'
+          : 'ستظهر البلاغات فور نشرها.'
+      }
       action={
         active ? (
-          <Button variant="secondary" className="h-9 rounded-xl" onClick={clearFilters}>
+          <Button
+            variant="secondary"
+            className="h-9 rounded-xl"
+            onClick={clearFilters}
+          >
             مسح الفلاتر
           </Button>
         ) : undefined
@@ -176,11 +225,16 @@ export function ReportsPage() {
             <span>/</span>
             <span>البلاغات</span>
           </div>
-          <h1 className="text-[19px] font-semibold leading-6 tracking-tight text-foreground">إدارة البلاغات</h1>
+
+          <h1 className="text-[19px] font-semibold leading-6 tracking-tight text-foreground">
+            إدارة البلاغات
+          </h1>
+
           <p className="text-[12px] text-muted-foreground/75">
             البلاغات تظهر فور نشرها. دور الإدارة هو المتابعة، تغيير الجمعية عند الحاجة، والتدخل الاستثنائي فقط.
           </p>
         </div>
+
         <ExportMenuButton
           title="البلاغات"
           fileName="resq-reports"
@@ -188,13 +242,38 @@ export function ReportsPage() {
           disabled={reportsQuery.isLoading}
           subtitle="تصدير النتائج الظاهرة حاليًا وفق الفلاتر المطبقة."
           columns={[
-            { label: 'رقم البلاغ', value: (report: Report) => report.id },
-            { label: 'الحيوان', value: (report: Report) => animalTypeLabels[report.animalType] },
-            { label: 'الحالة', value: (report: Report) => reportStatusLabels[report.status] },
-            { label: 'المحافظة', value: (report: Report) => report.governorate },
-            { label: 'المدينة', value: (report: Report) => report.city ?? '' },
-            { label: 'الجمعية', value: (report: Report) => report.assignedOrganization?.name ?? 'غير مسند' },
-            { label: 'تاريخ البلاغ', value: (report: Report) => new Date(report.createdAt).toLocaleString('ar-SY-u-nu-latn') },
+            {
+              label: 'رقم البلاغ',
+              value: (report: Report) => report.id,
+            },
+            {
+              label: 'الحيوان',
+              value: (report: Report) =>
+                animalTypeLabels[report.animalType],
+            },
+            {
+              label: 'الحالة',
+              value: (report: Report) =>
+                reportStatusLabels[report.status],
+            },
+            {
+              label: 'المحافظة',
+              value: (report: Report) => report.governorate,
+            },
+            {
+              label: 'المدينة',
+              value: (report: Report) => report.city ?? '',
+            },
+            {
+              label: 'الجمعية',
+              value: (report: Report) =>
+                report.assignedOrganization?.name ?? 'غير مسند',
+            },
+            {
+              label: 'تاريخ البلاغ',
+              value: (report: Report) =>
+                new Date(report.createdAt).toLocaleString('ar-SY-u-nu-latn'),
+            },
           ]}
         />
       </div>
@@ -223,7 +302,11 @@ export function ReportsPage() {
         onRetry={() => void reportsQuery.refetch()}
         onQueryChange={onQueryChange}
         onSelectionChange={onSelectionChange}
-        permissions={{ update: canUpdate, assign: canAssign, delete: canDelete }}
+        permissions={{
+          update: canUpdate,
+          assign: canAssign,
+          delete: canDelete,
+        }}
         emptyState={empty}
         selectionActions={(rows) => (
           <Button
@@ -238,7 +321,11 @@ export function ReportsPage() {
         )}
       />
 
-      {selected.length > 0 && <span className="sr-only">تم تحديد {selected.length} بلاغات</span>}
+      {selected.length > 0 && (
+        <span className="sr-only">
+          تم تحديد {selected.length} بلاغات
+        </span>
+      )}
     </div>
   );
 }

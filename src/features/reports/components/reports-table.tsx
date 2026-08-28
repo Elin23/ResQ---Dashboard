@@ -3,16 +3,10 @@ import { Clipboard, MoreHorizontal, Trash2 } from 'lucide-react';
 import { useCallback, useMemo, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router';
 import { toast } from 'sonner';
-import {
-  Avatar,
-  Badge,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  IconButton,
-} from '@/components/ui';
+
+import { Avatar, Badge, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, IconButton } from '@/components/ui';
 import { DataTable, type DataTableQueryState } from '@/components/ui/data-table';
+
 import { animalTypeLabels } from '../constants';
 import type { Report, ReportFilters } from '../types';
 import { formatRelativeTime } from '../utils';
@@ -25,13 +19,7 @@ export interface ReportActionPermissions {
   delete: boolean;
 }
 
-function RowActions({
-  report,
-  permissions,
-}: {
-  report: Report;
-  permissions: ReportActionPermissions;
-}) {
+function RowActions({ report, permissions }: { report: Report; permissions: ReportActionPermissions }) {
   const navigate = useNavigate();
   const [workflow, setWorkflow] = useState<ReportWorkflow | null>(null);
 
@@ -44,24 +32,41 @@ function RowActions({
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <IconButton label={`إجراءات ${report.id}`} className="size-8 rounded-lg">
+          <IconButton
+            label={`إجراءات ${report.id}`}
+            className="size-8 rounded-lg"
+          >
             <MoreHorizontal className="size-4" />
           </IconButton>
         </DropdownMenuTrigger>
 
         <DropdownMenuContent>
-          <DropdownMenuItem onSelect={() => navigate(`/reports/${report.id}`)}>
+          <DropdownMenuItem
+            onSelect={() =>
+              navigate(`/reports/${report.id}`)
+            }
+          >
             عرض التفاصيل
           </DropdownMenuItem>
 
           {permissions.assign && report.status !== 'CLOSED' && (
-            <DropdownMenuItem onSelect={() => setWorkflow('assign')}>
-              {report.assignedOrganization ? 'تغيير الجمعية' : 'تعيين جمعية'}
+            <DropdownMenuItem
+              onSelect={() =>
+                setWorkflow('assign')
+              }
+            >
+              {report.assignedOrganization
+                ? 'تغيير الجمعية'
+                : 'تعيين جمعية'}
             </DropdownMenuItem>
           )}
 
           {permissions.update && (
-            <DropdownMenuItem onSelect={() => setWorkflow('status-override')}>
+            <DropdownMenuItem
+              onSelect={() =>
+                setWorkflow('status-override')
+              }
+            >
               تجاوز إداري للحالة
             </DropdownMenuItem>
           )}
@@ -72,7 +77,12 @@ function RowActions({
           </DropdownMenuItem>
 
           {permissions.delete && (
-            <DropdownMenuItem className="text-critical" onSelect={() => setWorkflow('delete')}>
+            <DropdownMenuItem
+              className="text-critical"
+              onSelect={() =>
+                setWorkflow('delete')
+              }
+            >
               <Trash2 className="size-4" />
               حذف البلاغ
             </DropdownMenuItem>
@@ -80,13 +90,16 @@ function RowActions({
         </DropdownMenuContent>
       </DropdownMenu>
 
+      {/* Keep the workflow dialog tied to the selected row action. */}
       {workflow && (
         <ReportWorkflowDialog
           report={report}
           workflow={workflow}
           open
           onOpenChange={(open) => {
-            if (!open) setWorkflow(null);
+            if (!open) {
+              setWorkflow(null);
+            }
           }}
         />
       )}
@@ -94,33 +107,7 @@ function RowActions({
   );
 }
 
-export function ReportsTable({
-  reports,
-  total,
-  pageCount,
-  filters,
-  loading,
-  error,
-  onRetry,
-  onQueryChange,
-  onSelectionChange,
-  selectionActions,
-  permissions,
-  emptyState,
-}: {
-  reports: Report[];
-  total: number;
-  pageCount: number;
-  filters: ReportFilters;
-  loading: boolean;
-  error?: string;
-  onRetry: () => void;
-  onQueryChange: (state: DataTableQueryState) => void;
-  onSelectionChange: (reports: Report[]) => void;
-  selectionActions: (reports: Report[]) => ReactNode;
-  permissions: ReportActionPermissions;
-  emptyState: ReactNode;
-}) {
+export function ReportsTable({ reports, total, pageCount, filters, loading, error, onRetry, onQueryChange, onSelectionChange, selectionActions, permissions, emptyState }: { reports: Report[]; total: number; pageCount: number; filters: ReportFilters; loading: boolean; error?: string; onRetry: () => void; onQueryChange: (state: DataTableQueryState) => void; onSelectionChange: (reports: Report[]) => void; selectionActions: (reports: Report[]) => ReactNode; permissions: ReportActionPermissions; emptyState: ReactNode }) {
   const navigate = useNavigate();
 
   const columns = useMemo<Array<ColumnDef<Report, unknown>>>(
@@ -132,6 +119,7 @@ export function ReportsTable({
         cell: ({ row }) => {
           const report = row.original;
           const image = report.media[0];
+
           return (
             <div className="flex min-w-[230px] items-center gap-2.5">
               {image?.type === 'IMAGE' ? (
@@ -142,19 +130,28 @@ export function ReportsTable({
                   loading="lazy"
                 />
               ) : (
-                <Avatar name={animalTypeLabels[report.animalType]} size="sm" />
+                <Avatar
+                  name={animalTypeLabels[report.animalType]}
+                  size="sm"
+                />
               )}
 
               <div className="min-w-0">
                 <div className="flex min-w-0 items-center gap-2">
-                  <p className="truncate text-[12px] font-medium text-foreground">{report.title}</p>
+                  <p className="truncate text-[12px] font-medium text-foreground">
+                    {report.title}
+                  </p>
+
                   <span dir="ltr" className="shrink-0 text-[10px] text-muted-foreground/60">
                     {report.id}
                   </span>
                 </div>
+
                 <p className="mt-0.5 truncate text-[11px] text-muted-foreground/70">
                   {animalTypeLabels[report.animalType]}
-                  {report.animalDescription ? ` · ${report.animalDescription}` : ''}
+                  {report.animalDescription
+                    ? ` · ${report.animalDescription}`
+                    : ''}
                 </p>
               </div>
             </div>
@@ -168,7 +165,9 @@ export function ReportsTable({
           row.original.status ? (
             <ReportStatusBadge status={row.original.status} />
           ) : (
-            <Badge tone="neutral">بانتظار جمعية</Badge>
+            <Badge tone="neutral">
+              بانتظار جمعية
+            </Badge>
           ),
       },
       {
@@ -181,7 +180,9 @@ export function ReportsTable({
               {row.original.assignedOrganization.name}
             </span>
           ) : (
-            <span className="text-[12px] text-muted-foreground">بدون جمعية</span>
+            <span className="text-[12px] text-muted-foreground">
+              بدون جمعية
+            </span>
           ),
       },
       {
@@ -191,7 +192,9 @@ export function ReportsTable({
         cell: ({ row }) => (
           <span className="block max-w-[170px] truncate text-[12px] text-muted-foreground">
             {row.original.governorate}
-            {row.original.city ? ` — ${row.original.city}` : ''}
+            {row.original.city
+              ? ` — ${row.original.city}`
+              : ''}
           </span>
         ),
       },
@@ -209,10 +212,18 @@ export function ReportsTable({
   );
 
   const sorting: SortingState = filters.sortBy
-    ? [{ id: filters.sortBy, desc: filters.sortDirection !== 'asc' }]
+    ? [
+        {
+          id: filters.sortBy,
+          desc: filters.sortDirection !== 'asc',
+        },
+      ]
     : [];
 
-  const getReportRowId = useCallback((report: Report) => report.id, []);
+  const getReportRowId = useCallback(
+    (report: Report) => report.id,
+    [],
+  );
 
   return (
     <DataTable
@@ -236,11 +247,20 @@ export function ReportsTable({
         sorting,
       }}
       onStateChange={onQueryChange}
-      onRowClick={(report) => navigate(`/reports/${report.id}`)}
-      rowAriaLabel={(report) => `فتح تفاصيل البلاغ ${report.id}`}
+      onRowClick={(report) =>
+        navigate(`/reports/${report.id}`)
+      }
+      rowAriaLabel={(report) =>
+        `فتح تفاصيل البلاغ ${report.id}`
+      }
       onSelectionChange={onSelectionChange}
       selectionActions={selectionActions}
-      rowActions={(report) => <RowActions report={report} permissions={permissions} />}
+      rowActions={(report) => (
+        <RowActions
+          report={report}
+          permissions={permissions}
+        />
+      )}
       emptyState={emptyState}
     />
   );

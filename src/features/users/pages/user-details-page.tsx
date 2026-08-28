@@ -1,12 +1,167 @@
+import { Ban, PauseCircle, PlayCircle, ShieldOff } from 'lucide-react';
 import { useState } from 'react';
-import { Ban,PauseCircle,PlayCircle,ShieldOff } from 'lucide-react';
 import { useParams } from 'react-router';
-import { Avatar,Button,Card,ErrorState,PageHeader,Skeleton } from '@/components/ui';
+import { Avatar, Button, Card, ErrorState, PageHeader, Skeleton } from '@/components/ui';
 import { PermissionGuard } from '@/features/auth/rbac';
+import { UserAccountStatusBadge, UserVerificationBadge } from '../components/user-badges';
+import { AccountContextCard, AccountOverviewCard, ActivityCard, ModerationHistoryCard, SensitiveContactCard, StatisticsCard, SupportCard, UserAdoptionsCard, UserNotesCard, UserReportsCard } from '../components/user-details-sections';
+import { BlockUserDialog, ReactivateUserDialog, SuspendUserDialog, UnblockUserDialog } from '../components/user-workflow-dialogs';
 import { useUser } from '../hooks';
-import { AccountContextCard,AccountOverviewCard,ActivityCard,ModerationHistoryCard,SensitiveContactCard,StatisticsCard,SupportCard,UserAdoptionsCard,UserNotesCard,UserReportsCard } from '../components/user-details-sections';
-import { BlockUserDialog,ReactivateUserDialog,SuspendUserDialog,UnblockUserDialog } from '../components/user-workflow-dialogs';
-import { UserAccountStatusBadge,UserVerificationBadge } from '../components/user-badges';
 import { formatUserDate } from '../utils';
-function Loading(){return <div className="space-y-6"><Skeleton className="h-28"/><div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]"><div className="space-y-6"><Skeleton className="h-72"/><Skeleton className="h-96"/><Skeleton className="h-72"/></div><Skeleton className="h-96"/></div></div>;}
-export function UserDetailsPage(){const{userId=''}=useParams();const query=useUser(userId);const[suspendOpen,setSuspendOpen]=useState(false),[reactivateOpen,setReactivateOpen]=useState(false),[blockOpen,setBlockOpen]=useState(false),[unblockOpen,setUnblockOpen]=useState(false);if(query.isLoading)return <Loading/>;if(query.isError)return <ErrorState title="تعذر تحميل حساب المستخدم" description={query.error.message} onRetry={()=>void query.refetch()}/>;if(!query.data)return <ErrorState title="المستخدم غير موجود" description="تحقق من رقم المستخدم أو ارجع إلى قائمة المستخدمين."/>;const d=query.data,u=d.user;const actions=<div className="flex flex-wrap gap-2">{u.accountStatus==='ACTIVE'&&<PermissionGuard permission="users:suspend"><Button variant="secondary" onClick={()=>setSuspendOpen(true)}><PauseCircle className="size-4"/>تعليق الحساب</Button></PermissionGuard>}{u.accountStatus==='SUSPENDED'&&<PermissionGuard permission="users:reactivate"><Button onClick={()=>setReactivateOpen(true)}><PlayCircle className="size-4"/>إعادة التفعيل</Button></PermissionGuard>}{['ACTIVE','SUSPENDED'].includes(u.accountStatus)&&<PermissionGuard permission="users:block"><Button variant="danger" onClick={()=>setBlockOpen(true)}><Ban className="size-4"/>حظر الحساب</Button></PermissionGuard>}{u.accountStatus==='BLOCKED'&&<PermissionGuard permission="users:unblock"><Button onClick={()=>setUnblockOpen(true)}><ShieldOff className="size-4"/>رفع الحظر</Button></PermissionGuard>}</div>;return <div className="space-y-6"><PageHeader title={u.fullName} description={`${u.id} · حساب مستخدم مسجل`} breadcrumbs={[{label:'الرئيسية',href:'/dashboard'},{label:'المستخدمون',href:'/users'},{label:u.fullName}]} actions={actions}/><Card className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center"><div className="flex items-center gap-4"><Avatar name={u.fullName} src={u.avatarUrl} size="lg"/><div><p className="font-bold">{u.fullName}</p><p className="text-sm text-muted-foreground">عضو منذ {formatUserDate(u.createdAt)}</p></div></div><div className="flex flex-wrap gap-2"><UserAccountStatusBadge status={u.accountStatus}/><UserVerificationBadge status={u.verificationStatus}/></div></Card><div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]"><main className="space-y-6"><AccountOverviewCard details={d}/><UserReportsCard details={d}/><UserAdoptionsCard details={d}/><ActivityCard details={d}/><ModerationHistoryCard details={d}/></main><aside className="space-y-6 xl:sticky xl:top-24"><AccountContextCard details={d}/><StatisticsCard details={d}/><SensitiveContactCard details={d}/><PermissionGuard permission="support.read"><SupportCard details={d}/></PermissionGuard><PermissionGuard permission="users.notes.create"><UserNotesCard details={d}/></PermissionGuard></aside></div><SuspendUserDialog id={u.id} open={suspendOpen} onOpenChange={setSuspendOpen}/><ReactivateUserDialog id={u.id} open={reactivateOpen} onOpenChange={setReactivateOpen}/><BlockUserDialog id={u.id} open={blockOpen} onOpenChange={setBlockOpen}/><UnblockUserDialog id={u.id} open={unblockOpen} onOpenChange={setUnblockOpen}/></div>;}
+
+function Loading() {
+  return (
+    <div className="space-y-6">
+      <Skeleton className="h-28" />
+
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
+        <div className="space-y-6">
+          <Skeleton className="h-72" />
+          <Skeleton className="h-96" />
+          <Skeleton className="h-72" />
+        </div>
+
+        <Skeleton className="h-96" />
+      </div>
+    </div>
+  );
+}
+
+export function UserDetailsPage() {
+  const { userId = '' } = useParams();
+  const query = useUser(userId);
+
+  const [suspendOpen, setSuspendOpen] = useState(false);
+  const [reactivateOpen, setReactivateOpen] = useState(false);
+  const [blockOpen, setBlockOpen] = useState(false);
+  const [unblockOpen, setUnblockOpen] = useState(false);
+
+  if (query.isLoading) {
+    return <Loading />;
+  }
+
+  if (query.isError) {
+    return (
+      <ErrorState
+        title="تعذر تحميل حساب المستخدم"
+        description={query.error.message}
+        onRetry={() => void query.refetch()}
+      />
+    );
+  }
+
+  if (!query.data) {
+    return (
+      <ErrorState
+        title="المستخدم غير موجود"
+        description="تحقق من رقم المستخدم أو ارجع إلى قائمة المستخدمين."
+      />
+    );
+  }
+
+  const d = query.data;
+  const u = d.user;
+
+  // Moderation actions depend on both account status and admin permissions.
+  const actions = (
+    <div className="flex flex-wrap gap-2">
+      {u.accountStatus === 'ACTIVE' && (
+        <PermissionGuard permission="users:suspend">
+          <Button variant="secondary" onClick={() => setSuspendOpen(true)}>
+            <PauseCircle className="size-4" />
+            تعليق الحساب
+          </Button>
+        </PermissionGuard>
+      )}
+
+      {u.accountStatus === 'SUSPENDED' && (
+        <PermissionGuard permission="users:reactivate">
+          <Button onClick={() => setReactivateOpen(true)}>
+            <PlayCircle className="size-4" />
+            إعادة التفعيل
+          </Button>
+        </PermissionGuard>
+      )}
+
+      {['ACTIVE', 'SUSPENDED'].includes(u.accountStatus) && (
+        <PermissionGuard permission="users:block">
+          <Button variant="danger" onClick={() => setBlockOpen(true)}>
+            <Ban className="size-4" />
+            حظر الحساب
+          </Button>
+        </PermissionGuard>
+      )}
+
+      {u.accountStatus === 'BLOCKED' && (
+        <PermissionGuard permission="users:unblock">
+          <Button onClick={() => setUnblockOpen(true)}>
+            <ShieldOff className="size-4" />
+            رفع الحظر
+          </Button>
+        </PermissionGuard>
+      )}
+    </div>
+  );
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        title={u.fullName}
+        description={`${u.id} · حساب مستخدم مسجل`}
+        breadcrumbs={[
+          { label: 'الرئيسية', href: '/dashboard' },
+          { label: 'المستخدمون', href: '/users' },
+          { label: u.fullName },
+        ]}
+        actions={actions}
+      />
+
+      <Card className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+        <div className="flex items-center gap-4">
+          <Avatar name={u.fullName} src={u.avatarUrl} size="lg" />
+
+          <div>
+            <p className="font-bold">{u.fullName}</p>
+            <p className="text-sm text-muted-foreground">
+              عضو منذ {formatUserDate(u.createdAt)}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          <UserAccountStatusBadge status={u.accountStatus} />
+          <UserVerificationBadge status={u.verificationStatus} />
+        </div>
+      </Card>
+
+      <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
+        <main className="space-y-6">
+          <AccountOverviewCard details={d} />
+          <UserReportsCard details={d} />
+          <UserAdoptionsCard details={d} />
+          <ActivityCard details={d} />
+          <ModerationHistoryCard details={d} />
+        </main>
+
+        <aside className="space-y-6 xl:sticky xl:top-24">
+          <AccountContextCard details={d} />
+          <StatisticsCard details={d} />
+          <SensitiveContactCard details={d} />
+
+          <PermissionGuard permission="support.read">
+            <SupportCard details={d} />
+          </PermissionGuard>
+
+          <PermissionGuard permission="users.notes.create">
+            <UserNotesCard details={d} />
+          </PermissionGuard>
+        </aside>
+      </div>
+
+      <SuspendUserDialog id={u.id} open={suspendOpen} onOpenChange={setSuspendOpen} />
+      <ReactivateUserDialog id={u.id} open={reactivateOpen} onOpenChange={setReactivateOpen} />
+      <BlockUserDialog id={u.id} open={blockOpen} onOpenChange={setBlockOpen} />
+      <UnblockUserDialog id={u.id} open={unblockOpen} onOpenChange={setUnblockOpen} />
+    </div>
+  );
+}

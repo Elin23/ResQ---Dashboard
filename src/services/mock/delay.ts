@@ -7,7 +7,14 @@ import { env } from '@/config/env';
  */
 export function mockDelay(requestedMs = 180): Promise<void> {
   const configured = env.mockLatencyMs;
-  if (configured <= 0) return Promise.resolve();
+
+  // Skip artificial delay entirely unless mock latency is explicitly enabled.
+  if (configured <= 0) {
+    return Promise.resolve();
+  }
+
+  // Never exceed either the requested delay, configured cap, or hard safety limit.
   const duration = Math.min(Math.max(0, requestedMs), configured, 2_000);
+
   return new Promise((resolve) => globalThis.setTimeout(resolve, duration));
 }

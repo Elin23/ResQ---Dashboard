@@ -19,18 +19,7 @@ const verificationOptions = [
   })),
 ];
 
-export function UserFilterBar({
-  filters,
-  onChange,
-  onClear,
-  active,
-}: {
-  filters: UserFilters;
-  governorates: string[];
-  onChange: (patch: Partial<UserFilters>) => void;
-  onClear: () => void;
-  active: boolean;
-}) {
+export function UserFilterBar({ filters, onChange, onClear, active }: { filters: UserFilters; governorates: string[]; onChange: (patch: Partial<UserFilters>) => void; onClear: () => void; active: boolean }) {
   return (
     <FilterBar>
       <label className="min-w-0 flex-1 sm:min-w-72">
@@ -70,6 +59,7 @@ export function UserFilterBar({
         />
       </label>
 
+      {/* Only show the reset action when at least one filter is active. */}
       {active && (
         <Button
           variant="ghost"

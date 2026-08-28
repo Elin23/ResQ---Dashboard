@@ -4,15 +4,7 @@ import type { UserFilters, UserSummary } from '../types';
 
 const numberFormatter = new Intl.NumberFormat('ar-SA-u-nu-latn');
 
-export function UserSummaryCards({
-  summary,
-  loading,
-  onFilter,
-}: {
-  summary?: UserSummary;
-  loading: boolean;
-  onFilter: (patch: Partial<UserFilters>) => void;
-}) {
+export function UserSummaryCards({ summary, loading, onFilter }: { summary?: UserSummary; loading: boolean; onFilter: (patch: Partial<UserFilters>) => void }) {
   const cards = [
     {
       key: 'total',
@@ -55,6 +47,7 @@ export function UserSummaryCards({
     );
   }
 
+  // Summary cards also provide quick access to the most common account filters.
   return (
     <div className="grid gap-2.5 sm:grid-cols-3">
       {cards.map((card) => {
@@ -81,9 +74,7 @@ export function UserSummaryCards({
                   </p>
                 </div>
 
-                <span
-                  className={`flex size-9 shrink-0 items-center justify-center rounded-lg ${card.tone} transition-[background-color,color] duration-200 group-hover:bg-primary group-hover:text-primary-foreground`}
-                >
+                <span className={`flex size-9 shrink-0 items-center justify-center rounded-lg ${card.tone} transition-[background-color,color] duration-200 group-hover:bg-primary group-hover:text-primary-foreground`}>
                   <Icon className="size-4" strokeWidth={1.7} />
                 </span>
               </div>

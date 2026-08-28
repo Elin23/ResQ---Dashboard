@@ -1,4 +1,5 @@
 import { env } from '@/config/env';
+
 import type { ApiError } from '@/types/api';
 
 export class ApiClientError extends Error implements ApiError {
@@ -9,6 +10,7 @@ export class ApiClientError extends Error implements ApiError {
 
   constructor(error: ApiError) {
     super(error.message);
+
     this.name = 'ApiClientError';
     this.code = error.code;
     this.status = error.status;
@@ -29,15 +31,22 @@ export interface ApiClient {
   get<T>(path: string, signal?: AbortSignal): Promise<T>;
 }
 
+// Accept absolute URLs as-is; otherwise resolve requests against the configured API base URL.
 function resolveUrl(path: string): string {
-  if (/^https?:\/\//u.test(path)) return path;
+  if (/^https?:\/\//u.test(path)) {
+    return path;
+  }
+
   return `${env.apiBaseUrl}${path.startsWith('/') ? path : `/${path}`}`;
 }
 
+// Normalize backend errors into one predictable shape for the rest of the application.
 async function readError(response: Response): Promise<ApiError> {
   const correlationId = response.headers.get('x-correlation-id') ?? undefined;
+
   try {
-    const payload = await response.json() as Partial<ApiError>;
+    const payload = (await response.json()) as Partial<ApiError>;
+
     return {
       code: payload.code ?? 'HTTP_ERROR',
       message: payload.message ?? 'تعذر إتمام الطلب.',
@@ -46,7 +55,12 @@ async function readError(response: Response): Promise<ApiError> {
       correlationId: payload.correlationId ?? correlationId,
     };
   } catch {
-    return { code: 'HTTP_ERROR', message: 'تعذر إتمام الطلب.', status: response.status, correlationId };
+    return {
+      code: 'HTTP_ERROR',
+      message: 'تعذر إتمام الطلب.',
+      status: response.status,
+      correlationId,
+    };
   }
 }
 
@@ -62,10 +76,20 @@ export const apiClient: ApiClient = {
       },
       body: options.body === undefined ? undefined : JSON.stringify(options.body),
     });
-    if (!response.ok) throw new ApiClientError(await readError(response));
-    if (response.status === 204) return undefined as T;
-    return await response.json() as T;
+
+    // Convert non-success HTTP responses into the shared client error type.
+    if (!response.ok) {
+      throw new ApiClientError(await readError(response));
+    }
+
+    // A 204 response intentionally has no JSON body to deserialize.
+    if (response.status === 204) {
+      return undefined as T;
+    }
+
+    return (await response.json()) as T;
   },
+
   get<T>(path: string, signal?: AbortSignal) {
     return this.request<T>(path, { signal });
   },

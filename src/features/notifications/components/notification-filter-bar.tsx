@@ -1,4 +1,105 @@
-import { Button,FilterBar,Input,DebouncedSearchInput,Select } from '@/components/ui';
-import { notificationChannelLabels,notificationStatusLabels } from '../constants';
-import { notificationChannels,notificationDeliveryStatuses,type BroadcastFilters } from '../types';
-export function NotificationFilterBar({filters,onChange,onClear,active}:{filters:BroadcastFilters;onChange:(p:Partial<BroadcastFilters>)=>void;onClear:()=>void;active:boolean}){return <FilterBar><DebouncedSearchInput aria-label="البحث في الإشعارات" placeholder="رقم الإشعار، العنوان، النص…" value={filters.search} onValueChange={value=>onChange({search:value,page:1})}/><Select value={filters.status??'ALL'} onValueChange={(v)=>onChange({status:v==='ALL'?undefined:v as BroadcastFilters['status'],page:1})} options={[{value:'ALL',label:'كل الحالات'},...notificationDeliveryStatuses.map((value)=>({value,label:notificationStatusLabels[value]}))]}/><Select value={filters.channel??'ALL'} onValueChange={(v)=>onChange({channel:v==='ALL'?undefined:v as BroadcastFilters['channel'],page:1})} options={[{value:'ALL',label:'كل القنوات'},...notificationChannels.map((value)=>({value,label:notificationChannelLabels[value]}))]}/><Select value={filters.audienceType??'ALL'} onValueChange={(v)=>onChange({audienceType:v==='ALL'?undefined:v as BroadcastFilters['audienceType'],page:1})} options={[{value:'ALL',label:'كل الجماهير'},{value:'EVERYONE',label:'الجميع'},{value:'USER',label:'المستخدمون'},{value:'ORGANIZATION',label:'الجمعيات'}]}/><Input type="date" aria-label="من تاريخ" value={filters.dateFrom??''} onChange={(e)=>onChange({dateFrom:e.target.value||undefined,page:1})}/><Input type="date" aria-label="إلى تاريخ" value={filters.dateTo??''} onChange={(e)=>onChange({dateTo:e.target.value||undefined,page:1})}/>{active&&<Button variant="ghost" onClick={onClear}>مسح الفلاتر</Button>}</FilterBar>}
+import { Button, DebouncedSearchInput, FilterBar, Input, Select } from '@/components/ui';
+import { notificationChannelLabels, notificationStatusLabels } from '../constants';
+import { notificationChannels, notificationDeliveryStatuses, type BroadcastFilters } from '../types';
+
+export function NotificationFilterBar({ filters, onChange, onClear, active }: { filters: BroadcastFilters; onChange: (patch: Partial<BroadcastFilters>) => void; onClear: () => void; active: boolean }) {
+  return (
+    <FilterBar>
+      <DebouncedSearchInput
+        aria-label="البحث في الإشعارات"
+        placeholder="رقم الإشعار، العنوان، النص…"
+        value={filters.search}
+        onValueChange={(value) =>
+          onChange({
+            search: value,
+            page: 1,
+          })
+        }
+      />
+
+      <Select
+        value={filters.status ?? 'ALL'}
+        onValueChange={(value) =>
+          onChange({
+            status: value === 'ALL' ? undefined : (value as BroadcastFilters['status']),
+            page: 1,
+          })
+        }
+        options={[
+          { value: 'ALL', label: 'كل الحالات' },
+          ...notificationDeliveryStatuses.map((value) => ({
+            value,
+            label: notificationStatusLabels[value],
+          })),
+        ]}
+      />
+
+      <Select
+        value={filters.channel ?? 'ALL'}
+        onValueChange={(value) =>
+          onChange({
+            channel: value === 'ALL' ? undefined : (value as BroadcastFilters['channel']),
+            page: 1,
+          })
+        }
+        options={[
+          { value: 'ALL', label: 'كل القنوات' },
+          ...notificationChannels.map((value) => ({
+            value,
+            label: notificationChannelLabels[value],
+          })),
+        ]}
+      />
+
+      <Select
+        value={filters.audienceType ?? 'ALL'}
+        onValueChange={(value) =>
+          onChange({
+            audienceType: value === 'ALL' ? undefined : (value as BroadcastFilters['audienceType']),
+            page: 1,
+          })
+        }
+        options={[
+          { value: 'ALL', label: 'كل الجماهير' },
+          { value: 'EVERYONE', label: 'الجميع' },
+          { value: 'USER', label: 'المستخدمون' },
+          { value: 'ORGANIZATION', label: 'الجمعيات' },
+        ]}
+      />
+
+      {/* Date filters always reset pagination to the first page. */}
+      <Input
+        type="date"
+        aria-label="من تاريخ"
+        value={filters.dateFrom ?? ''}
+        onChange={(event) =>
+          onChange({
+            dateFrom: event.target.value || undefined,
+            page: 1,
+          })
+        }
+      />
+
+      <Input
+        type="date"
+        aria-label="إلى تاريخ"
+        value={filters.dateTo ?? ''}
+        onChange={(event) =>
+          onChange({
+            dateTo: event.target.value || undefined,
+            page: 1,
+          })
+        }
+      />
+
+      {active && (
+        <Button
+          variant="ghost"
+          onClick={onClear}
+        >
+          مسح الفلاتر
+        </Button>
+      )}
+    </FilterBar>
+  );
+}

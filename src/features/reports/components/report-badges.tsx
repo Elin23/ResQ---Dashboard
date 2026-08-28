@@ -1,8 +1,20 @@
 import { Badge } from '@/components/ui';
-import type { ReportStatus } from '../types';
+
 import { reportStatusLabels } from '../constants';
+import type { ReportStatus } from '../types';
 
 export function ReportStatusBadge({ status }: { status: ReportStatus }) {
-  const tone = status === 'RECEIVED' ? 'success' : status === 'CLOSED' ? 'neutral' : 'pending';
-  return <Badge tone={tone}>{reportStatusLabels[status]}</Badge>;
+  // Map report workflow states to a simple visual tone.
+  const tone =
+    status === 'RECEIVED'
+      ? 'success'
+      : status === 'CLOSED'
+        ? 'neutral'
+        : 'pending';
+
+  return (
+    <Badge tone={tone}>
+      {reportStatusLabels[status]}
+    </Badge>
+  );
 }

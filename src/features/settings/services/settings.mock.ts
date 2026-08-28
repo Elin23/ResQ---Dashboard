@@ -1,62 +1,1260 @@
-import{mockDelay}from'@/services/mock/delay';
-import{getRolePermissions,permissionDefinitions,replaceRolePermissions,roleDescriptions,roleLabels,roles,type AdminRole}from'@/features/auth/permissions';
-import{recordAdminAuditEvent}from'@/features/audit-log/services/audit-log.mock';
-import{organizationServiceLabels}from'@/features/organizations/constants';
-import{animalTypeLabels}from'@/features/reports/constants';
-import type{AdminFilters,AdminListResult,AdminRoleRecord,AdminUser,CreateRoleInput,InviteAdminInput,LookupType,SystemLookupItem,SystemSettings,UpdateAdminRolesInput,UpdateRoleInput}from'../types';
-import{createRoleKey}from'../utils';
+import { recordAdminAuditEvent } from '@/features/audit-log/services/audit-log.mock';
+import { getRolePermissions, permissionDefinitions, replaceRolePermissions, roleDescriptions, roleLabels, roles, type AdminRole } from '@/features/auth/permissions';
+import { organizationServiceLabels } from '@/features/organizations/constants';
+import { animalTypeLabels } from '@/features/reports/constants';
+import { mockDelay } from '@/services/mock/delay';
+import type { AdminFilters, AdminListResult, AdminRoleRecord, AdminUser, CreateRoleInput, InviteAdminInput, LookupType, SystemLookupItem, SystemSettings, UpdateAdminRolesInput, UpdateRoleInput } from '../types';
+import { createRoleKey } from '../utils';
 
-type Actor={id:string;name:string;roleLabel:string};const clone=<T>(v:T):T=>structuredClone(v);const now=()=>new Date().toISOString();
-const roleId=(role:AdminRole)=>`ROLE-${role}`;
-const systemRoles:AdminRoleRecord[]=roles.map((role,index)=>({id:roleId(role),key:role,name:roleLabels[role],description:roleDescriptions[role],system:true,permissions:getRolePermissions(role),usersCount:1,createdAt:`2026-01-0${index+1}T09:00:00+03:00`,updatedAt:'2026-08-15T17:00:00+03:00',systemRole:role}));
-const customRoles:AdminRoleRecord[]=[{id:'ROLE-CUSTOM-READER',key:'CUSTOM_READ_ONLY',name:'مراقب تشغيلي',description:'عرض سياق تشغيلي محدود دون صلاحيات تعديل.',system:false,permissions:['dashboard:view','reports:view','organizations:read','map.read'],usersCount:1,createdAt:'2026-07-10T10:00:00+03:00',updatedAt:'2026-07-10T10:00:00+03:00'}];
-let roleRecords=[...systemRoles,...customRoles];
-const summary=(id:string):{id:string;key:string;name:string}=>{const r=roleRecords.find(x=>x.id===id);if(!r)throw new Error('ROLE_NOT_FOUND');return{id:r.id,key:r.key,name:r.name}};
-let admins:AdminUser[]=[
-{id:'ADM-001',fullName:'أحمد الخطيب',email:'ahmad.khatib@resq.test',status:'ACTIVE',roles:[summary(roleId('OPERATIONS_ADMIN'))],createdAt:'2026-01-03T09:00:00+03:00',updatedAt:'2026-08-15T17:00:00+03:00',acceptedAt:'2026-01-03T10:00:00+03:00',lastLoginAt:'2026-08-15T20:45:00+03:00',mfaEnabled:true},
-{id:'ADM-002',fullName:'رنا محمد',email:'rana.mohammad@resq.test',status:'ACTIVE',roles:[summary(roleId('ORGANIZATION_REVIEWER'))],createdAt:'2026-01-04T09:00:00+03:00',updatedAt:'2026-08-15T16:00:00+03:00',acceptedAt:'2026-01-04T11:00:00+03:00',lastLoginAt:'2026-08-15T18:20:00+03:00',mfaEnabled:true},
-{id:'ADM-003',fullName:'ليان يوسف',email:'layan.yousef@resq.test',status:'ACTIVE',roles:[summary(roleId('CONTENT_MANAGER'))],createdAt:'2026-02-01T09:00:00+03:00',updatedAt:'2026-08-14T14:00:00+03:00',acceptedAt:'2026-02-01T12:00:00+03:00',lastLoginAt:'2026-08-15T16:40:00+03:00'},
-{id:'ADM-004',fullName:'سامر حسن',email:'samer.hassan@resq.test',status:'ACTIVE',roles:[summary(roleId('SUPPORT_AGENT'))],createdAt:'2026-02-10T09:00:00+03:00',updatedAt:'2026-08-15T12:00:00+03:00',acceptedAt:'2026-02-10T10:30:00+03:00',lastLoginAt:'2026-08-15T19:10:00+03:00'},
-{id:'ADM-005',fullName:'نور المصري',email:'nour.masri@resq.test',status:'ACTIVE',roles:[summary(roleId('FINANCE_ADMIN'))],createdAt:'2026-03-02T09:00:00+03:00',updatedAt:'2026-08-15T11:00:00+03:00',acceptedAt:'2026-03-02T10:00:00+03:00',lastLoginAt:'2026-08-15T17:50:00+03:00',mfaEnabled:true},
-{id:'ADM-006',fullName:'ميساء الدروبي',email:'maysa.droubi@resq.test',status:'ACTIVE',roles:[summary(roleId('SUPER_ADMIN'))],createdAt:'2025-12-15T09:00:00+03:00',updatedAt:'2026-08-15T09:00:00+03:00',acceptedAt:'2025-12-15T09:30:00+03:00',lastLoginAt:'2026-08-15T21:05:00+03:00',mfaEnabled:true},
-{id:'ADM-007',fullName:'نادر سليمان',email:'nader.suleiman@resq.test',status:'INVITED',roles:[summary('ROLE-CUSTOM-READER')],createdAt:'2026-08-14T10:00:00+03:00',updatedAt:'2026-08-14T10:00:00+03:00',invitedAt:'2026-08-14T10:00:00+03:00',createdBy:{id:'ADM-006',name:'ميساء الدروبي'}}];
-const baseLookups:Record<LookupType,SystemLookupItem[]>={
-REPORT_REJECTION_REASONS:['بلاغ مكرر','معلومات غير كافية','خارج نطاق الخدمة','لا توجد حالة إنقاذ','محتوى غير مناسب','سبب آخر'].map((label,i)=>({id:`RR-${i+1}`,key:`REPORT_REASON_${i+1}`,label,active:true,order:i+1})),
-ADOPTION_REJECTION_REASONS:['بيئة السكن غير مناسبة','عدم اكتمال المعلومات','عدم ملاءمة الطلب لاحتياجات الحيوان','عدم القدرة على توفير الرعاية المطلوبة','تعذر التواصل مع مقدم الطلب','تم اختيار طلب آخر','سبب آخر'].map((label,i)=>({id:`AR-${i+1}`,key:`ADOPTION_REASON_${i+1}`,label,active:true,order:i+1})),
-ORGANIZATION_REASONS:['مستندات غير صحيحة','عدم اكتمال المتطلبات','مخالفة سياسات المنصة','تعذر التحقق من الجهة','سبب آخر'].map((label,i)=>({id:`OR-${i+1}`,key:`ORG_REASON_${i+1}`,label,active:true,order:i+1})),
-ORGANIZATION_SERVICES:([['RESCUE','إنقاذ الحيوانات'],['SHELTER','الإيواء'],['FOSTER','الرعاية المؤقتة'],['ADOPTION','التبني'],['AWARENESS','التوعية'],['TRANSPORT','النقل'],['FOOD_SUPPORT','الدعم الغذائي']] as Array<[string,string]>).map(([key,label],i)=>({id:`OS-${i+1}`,key,label,active:true,order:i+1,locked:true})),
-ANIMAL_TYPES:([['DOG','كلاب'],['CAT','قطط'],['BIRD','طيور'],['OTHER','أخرى']] as Array<[string,string]>).map(([key,label],i)=>({id:`AT-${i+1}`,key,label,active:true,order:i+1,locked:true})),
-GOVERNORATES:['دمشق','ريف دمشق','حلب','حمص','حماة','اللاذقية','طرطوس','إدلب','درعا','السويداء','القنيطرة','دير الزور','الرقة','الحسكة'].map((label,i)=>({id:`GOV-${i+1}`,key:`GOV_${i+1}`,label,active:true,order:i+1,locked:true}))};
-let settings:SystemSettings={lookups:baseLookups,emergencyContacts:[{id:'EC-001',name:'تنسيق إسعاف بيطري دمشق',phone:'+963 11 555 0101',category:'VETERINARY',governorate:'دمشق',active:true},{id:'EC-002',name:'فريق طوارئ الحيوانات في حلب',phone:'+963 21 555 0110',category:'RESCUE',governorate:'حلب',active:true}],media:{maxImages:8,maxImageMb:8,maxVideoMb:40,allowedTypes:['image/jpeg','image/png','image/webp','video/mp4']},targets:{reportReviewMinutes:120,missionAcceptanceMinutes:30,missionArrivalMinutes:90,supportFirstResponseMinutes:60,adoptionReviewHours:72},backup:{automaticEnabled:true,frequency:'DAILY',retentionCount:14,includeAuditLog:true,lastBackupAt:'2026-08-18T03:00:00+03:00',lastBackupBy:{id:'SYSTEM',name:'نسخة تلقائية'}},backupHistory:[{id:'BKP-20260818-0300',createdAt:'2026-08-18T03:00:00+03:00',createdBy:{id:'SYSTEM',name:'نسخة تلقائية'},kind:'AUTOMATIC',fileName:'resq-backup-2026-08-18-0300.json',sizeBytes:184320}],updatedAt:'2026-08-15T16:30:00+03:00',updatedBy:{id:'ADM-006',name:'ميساء الدروبي'}};
-export const operationalTargets=settings.targets;
-const refreshCounts=()=>{roleRecords=roleRecords.map(r=>({...r,usersCount:admins.filter(a=>a.roles.some(x=>x.id===r.id)&&a.status!=='DISABLED').length,permissions:r.system&&r.systemRole?getRolePermissions(r.systemRole):r.permissions}));admins=admins.map(admin=>({...admin,roles:admin.roles.map(role=>summary(role.id))}))};
-const actorObj=(a:Actor)=>({id:a.id,name:a.name,roleLabel:a.roleLabel});
-export async function getAdminUsers(filters:AdminFilters):Promise<AdminListResult>{await mockDelay(40);refreshCounts();const n=filters.search.trim().toLocaleLowerCase('ar');let rows=admins.filter(a=>(!n||`${a.id} ${a.fullName} ${a.email}`.toLocaleLowerCase('ar').includes(n))&&(!filters.status||a.status===filters.status)&&(!filters.roleId||a.roles.some(r=>r.id===filters.roleId))&&(!filters.lastLogin||(filters.lastLogin==='NEVER'?!a.lastLoginAt:Boolean(a.lastLoginAt&&Date.now()-new Date(a.lastLoginAt).getTime()<=30*86400000))));const total=rows.length,pageCount=Math.max(1,Math.ceil(total/filters.pageSize));return{items:clone(rows.slice((filters.page-1)*filters.pageSize,filters.page*filters.pageSize)),total,page:filters.page,pageSize:filters.pageSize,pageCount}};
-export async function getAdminUser(id:string){await mockDelay(25);refreshCounts();return clone(admins.find(a=>a.id===id)??null)}
-export async function getRoles(){await mockDelay(20);refreshCounts();return clone(roleRecords)}
-export async function getRole(id:string){await mockDelay(20);refreshCounts();return clone(roleRecords.find(r=>r.id===id)??null)}
-export async function inviteAdmin(input:InviteAdminInput,actor:Actor){await mockDelay(35);if(admins.some(a=>a.email.toLowerCase()===input.email.toLowerCase()))throw new Error('البريد مستخدم لحساب إداري آخر.');const id=`ADM-${String(Math.max(...admins.map(a=>Number(a.id.split('-')[1])))+1).padStart(3,'0')}`;const admin:AdminUser={id,fullName:input.fullName,email:input.email,status:'INVITED',roles:input.roleIds.map(summary),createdAt:now(),updatedAt:now(),invitedAt:now(),createdBy:{id:actor.id,name:actor.name}};admins=[admin,...admins];recordAdminAuditEvent(actorObj(actor),{action:'ADMIN_INVITED',resource:{type:'ADMIN',id,label:admin.fullName},newValue:{status:'INVITED',roles:admin.roles.map(r=>r.name).join('، ')},metadata:{source:'إدارة المسؤولين'}});return clone(admin)}
-const activeSuperAdmins=()=>admins.filter(a=>a.status==='ACTIVE'&&a.roles.some(r=>r.key==='SUPER_ADMIN'));
-export async function suspendAdmin(id:string,reason:string,actor:Actor){await mockDelay(30);if(id===actor.id)throw new Error('لا يمكنك تعليق حسابك الإداري الحالي.');const a=admins.find(x=>x.id===id);if(!a)throw new Error('المسؤول غير موجود.');if(a.roles.some(r=>r.key==='SUPER_ADMIN')&&activeSuperAdmins().length<=1)throw new Error('لا يمكن تعليق آخر مدير نظام نشط.');const prev=a.status;a.status='SUSPENDED';a.updatedAt=now();recordAdminAuditEvent(actorObj(actor),{action:'ADMIN_SUSPENDED',resource:{type:'ADMIN',id,label:a.fullName},reason,previousValue:{status:prev},newValue:{status:a.status},metadata:{source:'إدارة المسؤولين'}});return clone(a)}
-export async function reactivateAdmin(id:string,actor:Actor){await mockDelay(30);const a=admins.find(x=>x.id===id);if(!a)throw new Error('المسؤول غير موجود.');const prev=a.status;a.status='ACTIVE';a.updatedAt=now();recordAdminAuditEvent(actorObj(actor),{action:'ADMIN_REACTIVATED',resource:{type:'ADMIN',id,label:a.fullName},previousValue:{status:prev},newValue:{status:a.status},metadata:{source:'إدارة المسؤولين'}});return clone(a)}
-export async function updateAdminRoles(id:string,input:UpdateAdminRolesInput,actor:Actor){await mockDelay(35);if(!input.roleIds.length)throw new Error('يجب أن يبقى للمسؤول دور واحد على الأقل.');const a=admins.find(x=>x.id===id);if(!a)throw new Error('المسؤول غير موجود.');const wasSuper=a.roles.some(r=>r.key==='SUPER_ADMIN'),willSuper=input.roleIds.some(id=>roleRecords.find(r=>r.id===id)?.key==='SUPER_ADMIN');if(wasSuper&&!willSuper&&a.status==='ACTIVE'&&activeSuperAdmins().length<=1)throw new Error('لا يمكن إزالة صلاحيات آخر مدير نظام نشط.');if(id===actor.id&&wasSuper&&!willSuper)throw new Error('لا يمكنك إزالة دور مدير النظام من حسابك الحالي عبر هذه الواجهة.');const prev=a.roles.map(r=>r.name).join('، ');a.roles=input.roleIds.map(summary);a.updatedAt=now();recordAdminAuditEvent(actorObj(actor),{action:'ADMIN_ROLES_UPDATED',resource:{type:'ADMIN',id,label:a.fullName},previousValue:{roles:prev},newValue:{roles:a.roles.map(r=>r.name).join('، ')},metadata:{source:'إدارة المسؤولين'}});return clone(a)}
-export async function createRole(input:CreateRoleInput,actor:Actor){await mockDelay(35);const role:AdminRoleRecord={id:`ROLE-CUSTOM-${Date.now().toString().slice(-6)}`,key:createRoleKey(input.name),name:input.name,description:input.description,system:false,permissions:[...new Set(input.permissions)],usersCount:0,createdAt:now(),updatedAt:now()};roleRecords=[...roleRecords,role];recordAdminAuditEvent(actorObj(actor),{action:'ROLE_CREATED',resource:{type:'ROLE',id:role.id,label:role.name},newValue:{permissions:role.permissions.join(', ')},metadata:{source:'إدارة الأدوار'}});return clone(role)}
-export async function updateRole(id:string,input:UpdateRoleInput,actor:Actor){await mockDelay(35);const role=roleRecords.find(r=>r.id===id);if(!role)throw new Error('الدور غير موجود.');if(role.systemRole==='SUPER_ADMIN')throw new Error('لا يمكن تعديل صلاحيات مدير النظام في المحاكاة.');const prev=role.permissions;role.name=role.system?role.name:input.name;role.description=input.description;role.permissions=[...new Set(input.permissions)];role.updatedAt=now();if(role.system&&role.systemRole)replaceRolePermissions(role.systemRole,role.permissions);refreshCounts();const added=role.permissions.filter(p=>!prev.includes(p)),removed=prev.filter(p=>!role.permissions.includes(p));recordAdminAuditEvent(actorObj(actor),{action:'ROLE_UPDATED',resource:{type:'ROLE',id:role.id,label:role.name},previousValue:{permissions:prev.join(', ')},newValue:{permissions:role.permissions.join(', ')},metadata:{source:'إدارة الأدوار',note:`مضافة: ${added.join(', ')||'لا شيء'}؛ مزالة: ${removed.join(', ')||'لا شيء'}`}});return clone(role)}
-export async function deleteRole(id:string,actor:Actor){await mockDelay(25);refreshCounts();const role=roleRecords.find(r=>r.id===id);if(!role)throw new Error('الدور غير موجود.');if(role.system)throw new Error('لا يمكن حذف دور نظام.');if(role.usersCount>0)throw new Error(`لا يمكن حذف الدور لأنه مستخدم من قبل ${role.usersCount} مسؤولين.`);roleRecords=roleRecords.filter(r=>r.id!==id);recordAdminAuditEvent(actorObj(actor),{action:'ROLE_DELETED',resource:{type:'ROLE',id:role.id,label:role.name},previousValue:{permissions:role.permissions.join(', ')},metadata:{source:'إدارة الأدوار'}})}
-export async function getSystemSettings(){await mockDelay(25);return clone(settings)}
-export async function updateOperationalTargets(next:SystemSettings['targets'],actor:Actor){await mockDelay(30);const prev=clone(settings.targets);Object.assign(settings.targets,next);settings.updatedAt=now();settings.updatedBy={id:actor.id,name:actor.name};recordAdminAuditEvent(actorObj(actor),{action:'SYSTEM_SETTING_CHANGED',resource:{type:'SYSTEM_SETTING',id:'operational-targets',label:'أهداف التشغيل الداخلية'},reason:'تحديث أهداف التشغيل الداخلية',previousValue:{reportReviewMinutes:prev.reportReviewMinutes,missionAcceptanceMinutes:prev.missionAcceptanceMinutes,missionArrivalMinutes:prev.missionArrivalMinutes,supportFirstResponseMinutes:prev.supportFirstResponseMinutes},newValue:{reportReviewMinutes:next.reportReviewMinutes,missionAcceptanceMinutes:next.missionAcceptanceMinutes,missionArrivalMinutes:next.missionArrivalMinutes,supportFirstResponseMinutes:next.supportFirstResponseMinutes},metadata:{source:'إعدادات النظام'}});return clone(settings)}
+type Actor = {
+  id: string;
+  name: string;
+  roleLabel: string;
+};
 
-export async function updateMediaLimits(next:SystemSettings['media'],actor:Actor){await mockDelay(30);const prev=clone(settings.media);settings.media=clone(next);settings.updatedAt=now();settings.updatedBy={id:actor.id,name:actor.name};recordAdminAuditEvent(actorObj(actor),{action:'SYSTEM_SETTING_CHANGED',resource:{type:'SYSTEM_SETTING',id:'media-limits',label:'حدود الوسائط'},reason:'تحديث حدود رفع الوسائط',previousValue:{maxImages:prev.maxImages,maxImageMb:prev.maxImageMb,maxVideoMb:prev.maxVideoMb},newValue:{maxImages:next.maxImages,maxImageMb:next.maxImageMb,maxVideoMb:next.maxVideoMb},metadata:{source:'إعدادات النظام'}});return clone(settings)}
-export async function addEmergencyContact(input:Omit<SystemSettings['emergencyContacts'][number],'id'>,actor:Actor){await mockDelay(25);const contact={...clone(input),id:`EC-${String(settings.emergencyContacts.length+1).padStart(3,'0')}`};settings.emergencyContacts=[...settings.emergencyContacts,contact];settings.updatedAt=now();settings.updatedBy={id:actor.id,name:actor.name};recordAdminAuditEvent(actorObj(actor),{action:'SYSTEM_SETTING_CHANGED',resource:{type:'SYSTEM_SETTING',id:`emergency-contact:${contact.id}`,label:contact.name},newValue:{name:contact.name,phone:contact.phone,active:contact.active},metadata:{source:'جهات اتصال الطوارئ'}});return clone(contact)}
-export async function updateEmergencyContact(contact:SystemSettings['emergencyContacts'][number],actor:Actor){await mockDelay(25);const idx=settings.emergencyContacts.findIndex(x=>x.id===contact.id);const prev=settings.emergencyContacts[idx];if(idx<0||!prev)throw new Error('جهة الاتصال غير موجودة.');settings.emergencyContacts[idx]=clone(contact);settings.updatedAt=now();settings.updatedBy={id:actor.id,name:actor.name};recordAdminAuditEvent(actorObj(actor),{action:'SYSTEM_SETTING_CHANGED',resource:{type:'SYSTEM_SETTING',id:`emergency-contact:${contact.id}`,label:contact.name},previousValue:{name:prev.name,phone:prev.phone,active:prev.active},newValue:{name:contact.name,phone:contact.phone,active:contact.active},metadata:{source:'جهات اتصال الطوارئ'}});return clone(contact)}
-export async function deleteEmergencyContact(id:string,actor:Actor){await mockDelay(25);const contact=settings.emergencyContacts.find(x=>x.id===id);if(!contact)throw new Error('جهة الاتصال غير موجودة.');settings.emergencyContacts=settings.emergencyContacts.filter(x=>x.id!==id);settings.updatedAt=now();settings.updatedBy={id:actor.id,name:actor.name};recordAdminAuditEvent(actorObj(actor),{action:'SYSTEM_SETTING_CHANGED',resource:{type:'SYSTEM_SETTING',id:`emergency-contact:${contact.id}`,label:contact.name},previousValue:{name:contact.name,phone:contact.phone,active:contact.active},newValue:{deleted:true},metadata:{source:'جهات اتصال الطوارئ'}})}
-export async function updateBackupSettings(next:SystemSettings['backup'],actor:Actor){await mockDelay(30);const prev=clone(settings.backup);settings.backup={...clone(next),lastBackupAt:settings.backup.lastBackupAt,lastBackupBy:settings.backup.lastBackupBy};settings.updatedAt=now();settings.updatedBy={id:actor.id,name:actor.name};recordAdminAuditEvent(actorObj(actor),{action:'SYSTEM_SETTING_CHANGED',resource:{type:'SYSTEM_SETTING',id:'backup-settings',label:'إعدادات النسخ الاحتياطي'},previousValue:{automaticEnabled:prev.automaticEnabled,frequency:prev.frequency,retentionCount:prev.retentionCount,includeAuditLog:prev.includeAuditLog},newValue:{automaticEnabled:next.automaticEnabled,frequency:next.frequency,retentionCount:next.retentionCount,includeAuditLog:next.includeAuditLog},metadata:{source:'النسخ الاحتياطي'}});return clone(settings.backup)}
-export async function createSystemBackup(actor:Actor){await mockDelay(120);const createdAt=now();const safeSnapshot={version:'resq-admin-backup-v1',createdAt,emergencyContacts:settings.emergencyContacts,backupConfiguration:{automaticEnabled:settings.backup.automaticEnabled,frequency:settings.backup.frequency,retentionCount:settings.backup.retentionCount,includeAuditLog:settings.backup.includeAuditLog},notice:'هذه نسخة تجريبية من بيانات لوحة الإدارة داخل بيئة الـMock. في بيئة الإنتاج يجب إنشاء النسخة الكاملة من الخادم وقاعدة البيانات.'};const payload=JSON.stringify(safeSnapshot,null,2);const stamp=createdAt.replace(/[:.]/g,'-');const fileName=`resq-system-backup-${stamp}.json`;const record={id:`BKP-${Date.now()}`,createdAt,createdBy:{id:actor.id,name:actor.name},kind:'MANUAL' as const,fileName,sizeBytes:new TextEncoder().encode(payload).length};settings.backupHistory=[record,...settings.backupHistory].slice(0,Math.max(1,settings.backup.retentionCount));settings.backup={...settings.backup,lastBackupAt:createdAt,lastBackupBy:{id:actor.id,name:actor.name}};settings.updatedAt=createdAt;settings.updatedBy={id:actor.id,name:actor.name};recordAdminAuditEvent(actorObj(actor),{action:'SYSTEM_SETTING_CHANGED',resource:{type:'SYSTEM_SETTING',id:record.id,label:'إنشاء نسخة احتياطية'},newValue:{fileName:record.fileName,sizeBytes:record.sizeBytes},metadata:{source:'النسخ الاحتياطي'}});return clone({record,fileName,payload})}
+const clone = <T>(v: T): T => structuredClone(v);
+const now = () => new Date().toISOString();
 
-export async function updateLookup(type:LookupType,item:SystemLookupItem,actor:Actor){await mockDelay(25);const rows=settings.lookups[type];const idx=rows.findIndex(x=>x.id===item.id);if(idx<0)throw new Error('القيمة غير موجودة.');const prev=rows[idx];if(!prev)throw new Error('القيمة غير موجودة.');const conflict=rows.find(row=>row.id!==item.id&&row.order===item.order);if(conflict)conflict.order=prev.order;rows[idx]=clone(item);if(type==='ORGANIZATION_SERVICES'&&item.key in organizationServiceLabels)organizationServiceLabels[item.key as keyof typeof organizationServiceLabels]=item.label;if(type==='ANIMAL_TYPES'&&item.key in animalTypeLabels)animalTypeLabels[item.key as keyof typeof animalTypeLabels]=item.label;settings.updatedAt=now();settings.updatedBy={id:actor.id,name:actor.name};recordAdminAuditEvent(actorObj(actor),{action:'LOOKUP_VALUE_UPDATED',resource:{type:'SYSTEM_SETTING',id:`${type}:${item.id}`,label:item.label},previousValue:{label:prev.label,active:prev.active,order:prev.order},newValue:{label:item.label,active:item.active,order:item.order},metadata:{source:'القيم المرجعية',field:type}});return clone(rows[idx])}
-export async function addLookup(type:LookupType,label:string,actor:Actor){await mockDelay(25);const rows=settings.lookups[type];const item:SystemLookupItem={id:`${type}-${Date.now().toString().slice(-5)}`,key:`CUSTOM_${Date.now()}`,label,active:true,order:rows.length+1};rows.push(item);settings.updatedAt=now();settings.updatedBy={id:actor.id,name:actor.name};recordAdminAuditEvent(actorObj(actor),{action:'LOOKUP_VALUE_CREATED',resource:{type:'SYSTEM_SETTING',id:`${type}:${item.id}`,label:item.label},newValue:{label:item.label,active:true},metadata:{source:'القيم المرجعية',field:type}});return clone(item)}
-export const getPermissionDefinitions=async()=>{await mockDelay(10);return clone(permissionDefinitions)};
-export async function getLookupValues(type:LookupType){await mockDelay(10);return clone(settings.lookups[type].filter(item=>item.active).sort((a,b)=>a.order-b.order));}
-export const getConfiguredGovernorates=()=>settings.lookups.GOVERNORATES.filter(x=>x.active).sort((a,b)=>a.order-b.order).map(x=>x.label);
-export const getConfiguredOrganizationServices=()=>clone(settings.lookups.ORGANIZATION_SERVICES.filter(x=>x.active).sort((a,b)=>a.order-b.order));
-export const getConfiguredOperationalTargets=()=>clone(settings.targets);
+const roleId = (role: AdminRole) => `ROLE-${role}`;
+
+const systemRoles: AdminRoleRecord[] = roles.map((role, index) => ({
+  id: roleId(role),
+  key: role,
+  name: roleLabels[role],
+  description: roleDescriptions[role],
+  system: true,
+  permissions: getRolePermissions(role),
+  usersCount: 1,
+  createdAt: `2026-01-0${index + 1}T09:00:00+03:00`,
+  updatedAt: '2026-08-15T17:00:00+03:00',
+  systemRole: role,
+}));
+
+const customRoles: AdminRoleRecord[] = [
+  {
+    id: 'ROLE-CUSTOM-READER',
+    key: 'CUSTOM_READ_ONLY',
+    name: 'مراقب تشغيلي',
+    description: 'عرض سياق تشغيلي محدود دون صلاحيات تعديل.',
+    system: false,
+    permissions: [
+      'dashboard:view',
+      'reports:view',
+      'organizations:read',
+      'map.read',
+    ],
+    usersCount: 1,
+    createdAt: '2026-07-10T10:00:00+03:00',
+    updatedAt: '2026-07-10T10:00:00+03:00',
+  },
+];
+
+let roleRecords = [...systemRoles, ...customRoles];
+
+const summary = (id: string): { id: string; key: string; name: string } => {
+  const r = roleRecords.find((x) => x.id === id);
+
+  if (!r) {
+    throw new Error('ROLE_NOT_FOUND');
+  }
+
+  return {
+    id: r.id,
+    key: r.key,
+    name: r.name,
+  };
+};
+
+let admins: AdminUser[] = [
+  {
+    id: 'ADM-001',
+    fullName: 'أحمد الخطيب',
+    email: 'ahmad.khatib@resq.test',
+    status: 'ACTIVE',
+    roles: [summary(roleId('OPERATIONS_ADMIN'))],
+    createdAt: '2026-01-03T09:00:00+03:00',
+    updatedAt: '2026-08-15T17:00:00+03:00',
+    acceptedAt: '2026-01-03T10:00:00+03:00',
+    lastLoginAt: '2026-08-15T20:45:00+03:00',
+    mfaEnabled: true,
+  },
+  {
+    id: 'ADM-002',
+    fullName: 'رنا محمد',
+    email: 'rana.mohammad@resq.test',
+    status: 'ACTIVE',
+    roles: [summary(roleId('ORGANIZATION_REVIEWER'))],
+    createdAt: '2026-01-04T09:00:00+03:00',
+    updatedAt: '2026-08-15T16:00:00+03:00',
+    acceptedAt: '2026-01-04T11:00:00+03:00',
+    lastLoginAt: '2026-08-15T18:20:00+03:00',
+    mfaEnabled: true,
+  },
+  {
+    id: 'ADM-003',
+    fullName: 'ليان يوسف',
+    email: 'layan.yousef@resq.test',
+    status: 'ACTIVE',
+    roles: [summary(roleId('CONTENT_MANAGER'))],
+    createdAt: '2026-02-01T09:00:00+03:00',
+    updatedAt: '2026-08-14T14:00:00+03:00',
+    acceptedAt: '2026-02-01T12:00:00+03:00',
+    lastLoginAt: '2026-08-15T16:40:00+03:00',
+  },
+  {
+    id: 'ADM-004',
+    fullName: 'سامر حسن',
+    email: 'samer.hassan@resq.test',
+    status: 'ACTIVE',
+    roles: [summary(roleId('SUPPORT_AGENT'))],
+    createdAt: '2026-02-10T09:00:00+03:00',
+    updatedAt: '2026-08-15T12:00:00+03:00',
+    acceptedAt: '2026-02-10T10:30:00+03:00',
+    lastLoginAt: '2026-08-15T19:10:00+03:00',
+  },
+  {
+    id: 'ADM-005',
+    fullName: 'نور المصري',
+    email: 'nour.masri@resq.test',
+    status: 'ACTIVE',
+    roles: [summary(roleId('FINANCE_ADMIN'))],
+    createdAt: '2026-03-02T09:00:00+03:00',
+    updatedAt: '2026-08-15T11:00:00+03:00',
+    acceptedAt: '2026-03-02T10:00:00+03:00',
+    lastLoginAt: '2026-08-15T17:50:00+03:00',
+    mfaEnabled: true,
+  },
+  {
+    id: 'ADM-006',
+    fullName: 'ميساء الدروبي',
+    email: 'maysa.droubi@resq.test',
+    status: 'ACTIVE',
+    roles: [summary(roleId('SUPER_ADMIN'))],
+    createdAt: '2025-12-15T09:00:00+03:00',
+    updatedAt: '2026-08-15T09:00:00+03:00',
+    acceptedAt: '2025-12-15T09:30:00+03:00',
+    lastLoginAt: '2026-08-15T21:05:00+03:00',
+    mfaEnabled: true,
+  },
+  {
+    id: 'ADM-007',
+    fullName: 'نادر سليمان',
+    email: 'nader.suleiman@resq.test',
+    status: 'INVITED',
+    roles: [summary('ROLE-CUSTOM-READER')],
+    createdAt: '2026-08-14T10:00:00+03:00',
+    updatedAt: '2026-08-14T10:00:00+03:00',
+    invitedAt: '2026-08-14T10:00:00+03:00',
+    createdBy: {
+      id: 'ADM-006',
+      name: 'ميساء الدروبي',
+    },
+  },
+];
+
+const baseLookups: Record<LookupType, SystemLookupItem[]> = {
+  REPORT_REJECTION_REASONS: [
+    'بلاغ مكرر',
+    'معلومات غير كافية',
+    'خارج نطاق الخدمة',
+    'لا توجد حالة إنقاذ',
+    'محتوى غير مناسب',
+    'سبب آخر',
+  ].map((label, i) => ({
+    id: `RR-${i + 1}`,
+    key: `REPORT_REASON_${i + 1}`,
+    label,
+    active: true,
+    order: i + 1,
+  })),
+
+  ADOPTION_REJECTION_REASONS: [
+    'بيئة السكن غير مناسبة',
+    'عدم اكتمال المعلومات',
+    'عدم ملاءمة الطلب لاحتياجات الحيوان',
+    'عدم القدرة على توفير الرعاية المطلوبة',
+    'تعذر التواصل مع مقدم الطلب',
+    'تم اختيار طلب آخر',
+    'سبب آخر',
+  ].map((label, i) => ({
+    id: `AR-${i + 1}`,
+    key: `ADOPTION_REASON_${i + 1}`,
+    label,
+    active: true,
+    order: i + 1,
+  })),
+
+  ORGANIZATION_REASONS: [
+    'مستندات غير صحيحة',
+    'عدم اكتمال المتطلبات',
+    'مخالفة سياسات المنصة',
+    'تعذر التحقق من الجهة',
+    'سبب آخر',
+  ].map((label, i) => ({
+    id: `OR-${i + 1}`,
+    key: `ORG_REASON_${i + 1}`,
+    label,
+    active: true,
+    order: i + 1,
+  })),
+
+  ORGANIZATION_SERVICES: (
+    [
+      ['RESCUE', 'إنقاذ الحيوانات'],
+      ['SHELTER', 'الإيواء'],
+      ['FOSTER', 'الرعاية المؤقتة'],
+      ['ADOPTION', 'التبني'],
+      ['AWARENESS', 'التوعية'],
+      ['TRANSPORT', 'النقل'],
+      ['FOOD_SUPPORT', 'الدعم الغذائي'],
+    ] as Array<[string, string]>
+  ).map(([key, label], i) => ({
+    id: `OS-${i + 1}`,
+    key,
+    label,
+    active: true,
+    order: i + 1,
+    locked: true,
+  })),
+
+  ANIMAL_TYPES: (
+    [
+      ['DOG', 'كلاب'],
+      ['CAT', 'قطط'],
+      ['BIRD', 'طيور'],
+      ['OTHER', 'أخرى'],
+    ] as Array<[string, string]>
+  ).map(([key, label], i) => ({
+    id: `AT-${i + 1}`,
+    key,
+    label,
+    active: true,
+    order: i + 1,
+    locked: true,
+  })),
+
+  GOVERNORATES: [
+    'دمشق',
+    'ريف دمشق',
+    'حلب',
+    'حمص',
+    'حماة',
+    'اللاذقية',
+    'طرطوس',
+    'إدلب',
+    'درعا',
+    'السويداء',
+    'القنيطرة',
+    'دير الزور',
+    'الرقة',
+    'الحسكة',
+  ].map((label, i) => ({
+    id: `GOV-${i + 1}`,
+    key: `GOV_${i + 1}`,
+    label,
+    active: true,
+    order: i + 1,
+    locked: true,
+  })),
+};
+
+let settings: SystemSettings = {
+  lookups: baseLookups,
+  emergencyContacts: [
+    {
+      id: 'EC-001',
+      name: 'تنسيق إسعاف بيطري دمشق',
+      phone: '+963 11 555 0101',
+      category: 'VETERINARY',
+      governorate: 'دمشق',
+      active: true,
+    },
+    {
+      id: 'EC-002',
+      name: 'فريق طوارئ الحيوانات في حلب',
+      phone: '+963 21 555 0110',
+      category: 'RESCUE',
+      governorate: 'حلب',
+      active: true,
+    },
+  ],
+  media: {
+    maxImages: 8,
+    maxImageMb: 8,
+    maxVideoMb: 40,
+    allowedTypes: [
+      'image/jpeg',
+      'image/png',
+      'image/webp',
+      'video/mp4',
+    ],
+  },
+  targets: {
+    reportReviewMinutes: 120,
+    missionAcceptanceMinutes: 30,
+    missionArrivalMinutes: 90,
+    supportFirstResponseMinutes: 60,
+    adoptionReviewHours: 72,
+  },
+  backup: {
+    automaticEnabled: true,
+    frequency: 'DAILY',
+    retentionCount: 14,
+    includeAuditLog: true,
+    lastBackupAt: '2026-08-18T03:00:00+03:00',
+    lastBackupBy: {
+      id: 'SYSTEM',
+      name: 'نسخة تلقائية',
+    },
+  },
+  backupHistory: [
+    {
+      id: 'BKP-20260818-0300',
+      createdAt: '2026-08-18T03:00:00+03:00',
+      createdBy: {
+        id: 'SYSTEM',
+        name: 'نسخة تلقائية',
+      },
+      kind: 'AUTOMATIC',
+      fileName: 'resq-backup-2026-08-18-0300.json',
+      sizeBytes: 184320,
+    },
+  ],
+  updatedAt: '2026-08-15T16:30:00+03:00',
+  updatedBy: {
+    id: 'ADM-006',
+    name: 'ميساء الدروبي',
+  },
+};
+
+export const operationalTargets = settings.targets;
+
+// Keep role usage counts and summaries aligned after every admin/role mutation.
+const refreshCounts = () => {
+  roleRecords = roleRecords.map((r) => ({
+    ...r,
+    usersCount: admins.filter(
+      (a) =>
+        a.roles.some((x) => x.id === r.id) &&
+        a.status !== 'DISABLED',
+    ).length,
+    permissions:
+      r.system && r.systemRole
+        ? getRolePermissions(r.systemRole)
+        : r.permissions,
+  }));
+
+  admins = admins.map((admin) => ({
+    ...admin,
+    roles: admin.roles.map((role) => summary(role.id)),
+  }));
+};
+
+const actorObj = (a: Actor) => ({
+  id: a.id,
+  name: a.name,
+  roleLabel: a.roleLabel,
+});
+
+export async function getAdminUsers(filters: AdminFilters): Promise<AdminListResult> {
+  await mockDelay(40);
+  refreshCounts();
+
+  const n = filters.search.trim().toLocaleLowerCase('ar');
+
+  const rows = admins.filter(
+    (a) =>
+      (
+        !n ||
+        `${a.id} ${a.fullName} ${a.email}`
+          .toLocaleLowerCase('ar')
+          .includes(n)
+      ) &&
+      (!filters.status || a.status === filters.status) &&
+      (!filters.roleId || a.roles.some((r) => r.id === filters.roleId)) &&
+      (
+        !filters.lastLogin ||
+        (
+          filters.lastLogin === 'NEVER'
+            ? !a.lastLoginAt
+            : Boolean(
+                a.lastLoginAt &&
+                Date.now() - new Date(a.lastLoginAt).getTime() <= 30 * 86400000,
+              )
+        )
+      ),
+  );
+
+  const total = rows.length;
+  const pageCount = Math.max(1, Math.ceil(total / filters.pageSize));
+
+  return {
+    items: clone(
+      rows.slice(
+        (filters.page - 1) * filters.pageSize,
+        filters.page * filters.pageSize,
+      ),
+    ),
+    total,
+    page: filters.page,
+    pageSize: filters.pageSize,
+    pageCount,
+  };
+}
+
+export async function getAdminUser(id: string) {
+  await mockDelay(25);
+  refreshCounts();
+
+  return clone(admins.find((a) => a.id === id) ?? null);
+}
+
+export async function getRoles() {
+  await mockDelay(20);
+  refreshCounts();
+
+  return clone(roleRecords);
+}
+
+export async function getRole(id: string) {
+  await mockDelay(20);
+  refreshCounts();
+
+  return clone(roleRecords.find((r) => r.id === id) ?? null);
+}
+
+export async function inviteAdmin(input: InviteAdminInput, actor: Actor) {
+  await mockDelay(35);
+
+  if (
+    admins.some(
+      (a) =>
+        a.email.toLowerCase() ===
+        input.email.toLowerCase(),
+    )
+  ) {
+    throw new Error('البريد مستخدم لحساب إداري آخر.');
+  }
+
+  const id = `ADM-${String(
+    Math.max(
+      ...admins.map((a) =>
+        Number(a.id.split('-')[1]),
+      ),
+    ) + 1,
+  ).padStart(3, '0')}`;
+
+  const admin: AdminUser = {
+    id,
+    fullName: input.fullName,
+    email: input.email,
+    status: 'INVITED',
+    roles: input.roleIds.map(summary),
+    createdAt: now(),
+    updatedAt: now(),
+    invitedAt: now(),
+    createdBy: {
+      id: actor.id,
+      name: actor.name,
+    },
+  };
+
+  admins = [admin, ...admins];
+
+  recordAdminAuditEvent(actorObj(actor), {
+    action: 'ADMIN_INVITED',
+    resource: {
+      type: 'ADMIN',
+      id,
+      label: admin.fullName,
+    },
+    newValue: {
+      status: 'INVITED',
+      roles: admin.roles.map((r) => r.name).join('، '),
+    },
+    metadata: {
+      source: 'إدارة المسؤولين',
+    },
+  });
+
+  return clone(admin);
+}
+
+const activeSuperAdmins = () =>
+  admins.filter(
+    (a) =>
+      a.status === 'ACTIVE' &&
+      a.roles.some((r) => r.key === 'SUPER_ADMIN'),
+  );
+
+export async function suspendAdmin(id: string, reason: string, actor: Actor) {
+  await mockDelay(30);
+
+  if (id === actor.id) {
+    throw new Error('لا يمكنك تعليق حسابك الإداري الحالي.');
+  }
+
+  const a = admins.find((x) => x.id === id);
+
+  if (!a) {
+    throw new Error('المسؤول غير موجود.');
+  }
+
+  if (
+    a.roles.some((r) => r.key === 'SUPER_ADMIN') &&
+    activeSuperAdmins().length <= 1
+  ) {
+    throw new Error('لا يمكن تعليق آخر مدير نظام نشط.');
+  }
+
+  const prev = a.status;
+
+  a.status = 'SUSPENDED';
+  a.updatedAt = now();
+
+  recordAdminAuditEvent(actorObj(actor), {
+    action: 'ADMIN_SUSPENDED',
+    resource: {
+      type: 'ADMIN',
+      id,
+      label: a.fullName,
+    },
+    reason,
+    previousValue: {
+      status: prev,
+    },
+    newValue: {
+      status: a.status,
+    },
+    metadata: {
+      source: 'إدارة المسؤولين',
+    },
+  });
+
+  return clone(a);
+}
+
+export async function reactivateAdmin(id: string, actor: Actor) {
+  await mockDelay(30);
+
+  const a = admins.find((x) => x.id === id);
+
+  if (!a) {
+    throw new Error('المسؤول غير موجود.');
+  }
+
+  const prev = a.status;
+
+  a.status = 'ACTIVE';
+  a.updatedAt = now();
+
+  recordAdminAuditEvent(actorObj(actor), {
+    action: 'ADMIN_REACTIVATED',
+    resource: {
+      type: 'ADMIN',
+      id,
+      label: a.fullName,
+    },
+    previousValue: {
+      status: prev,
+    },
+    newValue: {
+      status: a.status,
+    },
+    metadata: {
+      source: 'إدارة المسؤولين',
+    },
+  });
+
+  return clone(a);
+}
+
+export async function updateAdminRoles(id: string, input: UpdateAdminRolesInput, actor: Actor) {
+  await mockDelay(35);
+
+  if (!input.roleIds.length) {
+    throw new Error('يجب أن يبقى للمسؤول دور واحد على الأقل.');
+  }
+
+  const a = admins.find((x) => x.id === id);
+
+  if (!a) {
+    throw new Error('المسؤول غير موجود.');
+  }
+
+  const wasSuper = a.roles.some((r) => r.key === 'SUPER_ADMIN');
+
+  const willSuper = input.roleIds.some(
+    (id) =>
+      roleRecords.find((r) => r.id === id)?.key === 'SUPER_ADMIN',
+  );
+
+  if (
+    wasSuper &&
+    !willSuper &&
+    a.status === 'ACTIVE' &&
+    activeSuperAdmins().length <= 1
+  ) {
+    throw new Error('لا يمكن إزالة صلاحيات آخر مدير نظام نشط.');
+  }
+
+  if (id === actor.id && wasSuper && !willSuper) {
+    throw new Error('لا يمكنك إزالة دور مدير النظام من حسابك الحالي عبر هذه الواجهة.');
+  }
+
+  const prev = a.roles.map((r) => r.name).join('، ');
+
+  a.roles = input.roleIds.map(summary);
+  a.updatedAt = now();
+
+  recordAdminAuditEvent(actorObj(actor), {
+    action: 'ADMIN_ROLES_UPDATED',
+    resource: {
+      type: 'ADMIN',
+      id,
+      label: a.fullName,
+    },
+    previousValue: {
+      roles: prev,
+    },
+    newValue: {
+      roles: a.roles.map((r) => r.name).join('، '),
+    },
+    metadata: {
+      source: 'إدارة المسؤولين',
+    },
+  });
+
+  return clone(a);
+}
+
+export async function createRole(input: CreateRoleInput, actor: Actor) {
+  await mockDelay(35);
+
+  const role: AdminRoleRecord = {
+    id: `ROLE-CUSTOM-${Date.now().toString().slice(-6)}`,
+    key: createRoleKey(input.name),
+    name: input.name,
+    description: input.description,
+    system: false,
+    permissions: [...new Set(input.permissions)],
+    usersCount: 0,
+    createdAt: now(),
+    updatedAt: now(),
+  };
+
+  roleRecords = [...roleRecords, role];
+
+  recordAdminAuditEvent(actorObj(actor), {
+    action: 'ROLE_CREATED',
+    resource: {
+      type: 'ROLE',
+      id: role.id,
+      label: role.name,
+    },
+    newValue: {
+      permissions: role.permissions.join(', '),
+    },
+    metadata: {
+      source: 'إدارة الأدوار',
+    },
+  });
+
+  return clone(role);
+}
+
+export async function updateRole(id: string, input: UpdateRoleInput, actor: Actor) {
+  await mockDelay(35);
+
+  const role = roleRecords.find((r) => r.id === id);
+
+  if (!role) {
+    throw new Error('الدور غير موجود.');
+  }
+
+  if (role.systemRole === 'SUPER_ADMIN') {
+    throw new Error('لا يمكن تعديل صلاحيات مدير النظام في المحاكاة.');
+  }
+
+  const prev = role.permissions;
+
+  role.name = role.system
+    ? role.name
+    : input.name;
+
+  role.description = input.description;
+  role.permissions = [...new Set(input.permissions)];
+  role.updatedAt = now();
+
+  if (role.system && role.systemRole) {
+    replaceRolePermissions(
+      role.systemRole,
+      role.permissions,
+    );
+  }
+
+  refreshCounts();
+
+  const added = role.permissions.filter(
+    (p) => !prev.includes(p),
+  );
+
+  const removed = prev.filter(
+    (p) => !role.permissions.includes(p),
+  );
+
+  recordAdminAuditEvent(actorObj(actor), {
+    action: 'ROLE_UPDATED',
+    resource: {
+      type: 'ROLE',
+      id: role.id,
+      label: role.name,
+    },
+    previousValue: {
+      permissions: prev.join(', '),
+    },
+    newValue: {
+      permissions: role.permissions.join(', '),
+    },
+    metadata: {
+      source: 'إدارة الأدوار',
+      note: `مضافة: ${added.join(', ') || 'لا شيء'}؛ مزالة: ${removed.join(', ') || 'لا شيء'}`,
+    },
+  });
+
+  return clone(role);
+}
+
+export async function deleteRole(id: string, actor: Actor) {
+  await mockDelay(25);
+  refreshCounts();
+
+  const role = roleRecords.find((r) => r.id === id);
+
+  if (!role) {
+    throw new Error('الدور غير موجود.');
+  }
+
+  if (role.system) {
+    throw new Error('لا يمكن حذف دور نظام.');
+  }
+
+  if (role.usersCount > 0) {
+    throw new Error(
+      `لا يمكن حذف الدور لأنه مستخدم من قبل ${role.usersCount} مسؤولين.`,
+    );
+  }
+
+  roleRecords = roleRecords.filter((r) => r.id !== id);
+
+  recordAdminAuditEvent(actorObj(actor), {
+    action: 'ROLE_DELETED',
+    resource: {
+      type: 'ROLE',
+      id: role.id,
+      label: role.name,
+    },
+    previousValue: {
+      permissions: role.permissions.join(', '),
+    },
+    metadata: {
+      source: 'إدارة الأدوار',
+    },
+  });
+}
+
+export async function getSystemSettings() {
+  await mockDelay(25);
+
+  return clone(settings);
+}
+
+export async function updateOperationalTargets(next: SystemSettings['targets'], actor: Actor) {
+  await mockDelay(30);
+
+  const prev = clone(settings.targets);
+
+  Object.assign(settings.targets, next);
+
+  settings.updatedAt = now();
+  settings.updatedBy = {
+    id: actor.id,
+    name: actor.name,
+  };
+
+  recordAdminAuditEvent(actorObj(actor), {
+    action: 'SYSTEM_SETTING_CHANGED',
+    resource: {
+      type: 'SYSTEM_SETTING',
+      id: 'operational-targets',
+      label: 'أهداف التشغيل الداخلية',
+    },
+    reason: 'تحديث أهداف التشغيل الداخلية',
+    previousValue: {
+      reportReviewMinutes: prev.reportReviewMinutes,
+      missionAcceptanceMinutes: prev.missionAcceptanceMinutes,
+      missionArrivalMinutes: prev.missionArrivalMinutes,
+      supportFirstResponseMinutes: prev.supportFirstResponseMinutes,
+    },
+    newValue: {
+      reportReviewMinutes: next.reportReviewMinutes,
+      missionAcceptanceMinutes: next.missionAcceptanceMinutes,
+      missionArrivalMinutes: next.missionArrivalMinutes,
+      supportFirstResponseMinutes: next.supportFirstResponseMinutes,
+    },
+    metadata: {
+      source: 'إعدادات النظام',
+    },
+  });
+
+  return clone(settings);
+}
+
+export async function updateMediaLimits(next: SystemSettings['media'], actor: Actor) {
+  await mockDelay(30);
+
+  const prev = clone(settings.media);
+
+  settings.media = clone(next);
+  settings.updatedAt = now();
+  settings.updatedBy = {
+    id: actor.id,
+    name: actor.name,
+  };
+
+  recordAdminAuditEvent(actorObj(actor), {
+    action: 'SYSTEM_SETTING_CHANGED',
+    resource: {
+      type: 'SYSTEM_SETTING',
+      id: 'media-limits',
+      label: 'حدود الوسائط',
+    },
+    reason: 'تحديث حدود رفع الوسائط',
+    previousValue: {
+      maxImages: prev.maxImages,
+      maxImageMb: prev.maxImageMb,
+      maxVideoMb: prev.maxVideoMb,
+    },
+    newValue: {
+      maxImages: next.maxImages,
+      maxImageMb: next.maxImageMb,
+      maxVideoMb: next.maxVideoMb,
+    },
+    metadata: {
+      source: 'إعدادات النظام',
+    },
+  });
+
+  return clone(settings);
+}
+
+export async function addEmergencyContact(input: Omit<SystemSettings['emergencyContacts'][number], 'id'>, actor: Actor) {
+  await mockDelay(25);
+
+  const contact = {
+    ...clone(input),
+    id: `EC-${String(settings.emergencyContacts.length + 1).padStart(3, '0')}`,
+  };
+
+  settings.emergencyContacts = [
+    ...settings.emergencyContacts,
+    contact,
+  ];
+
+  settings.updatedAt = now();
+  settings.updatedBy = {
+    id: actor.id,
+    name: actor.name,
+  };
+
+  recordAdminAuditEvent(actorObj(actor), {
+    action: 'SYSTEM_SETTING_CHANGED',
+    resource: {
+      type: 'SYSTEM_SETTING',
+      id: `emergency-contact:${contact.id}`,
+      label: contact.name,
+    },
+    newValue: {
+      name: contact.name,
+      phone: contact.phone,
+      active: contact.active,
+    },
+    metadata: {
+      source: 'جهات اتصال الطوارئ',
+    },
+  });
+
+  return clone(contact);
+}
+
+export async function updateEmergencyContact(contact: SystemSettings['emergencyContacts'][number], actor: Actor) {
+  await mockDelay(25);
+
+  const idx = settings.emergencyContacts.findIndex(
+    (x) => x.id === contact.id,
+  );
+
+  const prev = settings.emergencyContacts[idx];
+
+  if (idx < 0 || !prev) {
+    throw new Error('جهة الاتصال غير موجودة.');
+  }
+
+  settings.emergencyContacts[idx] = clone(contact);
+
+  settings.updatedAt = now();
+  settings.updatedBy = {
+    id: actor.id,
+    name: actor.name,
+  };
+
+  recordAdminAuditEvent(actorObj(actor), {
+    action: 'SYSTEM_SETTING_CHANGED',
+    resource: {
+      type: 'SYSTEM_SETTING',
+      id: `emergency-contact:${contact.id}`,
+      label: contact.name,
+    },
+    previousValue: {
+      name: prev.name,
+      phone: prev.phone,
+      active: prev.active,
+    },
+    newValue: {
+      name: contact.name,
+      phone: contact.phone,
+      active: contact.active,
+    },
+    metadata: {
+      source: 'جهات اتصال الطوارئ',
+    },
+  });
+
+  return clone(contact);
+}
+
+export async function deleteEmergencyContact(id: string, actor: Actor) {
+  await mockDelay(25);
+
+  const contact = settings.emergencyContacts.find(
+    (x) => x.id === id,
+  );
+
+  if (!contact) {
+    throw new Error('جهة الاتصال غير موجودة.');
+  }
+
+  settings.emergencyContacts = settings.emergencyContacts.filter(
+    (x) => x.id !== id,
+  );
+
+  settings.updatedAt = now();
+  settings.updatedBy = {
+    id: actor.id,
+    name: actor.name,
+  };
+
+  recordAdminAuditEvent(actorObj(actor), {
+    action: 'SYSTEM_SETTING_CHANGED',
+    resource: {
+      type: 'SYSTEM_SETTING',
+      id: `emergency-contact:${contact.id}`,
+      label: contact.name,
+    },
+    previousValue: {
+      name: contact.name,
+      phone: contact.phone,
+      active: contact.active,
+    },
+    newValue: {
+      deleted: true,
+    },
+    metadata: {
+      source: 'جهات اتصال الطوارئ',
+    },
+  });
+}
+
+export async function updateBackupSettings(next: SystemSettings['backup'], actor: Actor) {
+  await mockDelay(30);
+
+  const prev = clone(settings.backup);
+
+  // Preserve runtime backup metadata while updating only the configuration.
+  settings.backup = {
+    ...clone(next),
+    lastBackupAt: settings.backup.lastBackupAt,
+    lastBackupBy: settings.backup.lastBackupBy,
+  };
+
+  settings.updatedAt = now();
+  settings.updatedBy = {
+    id: actor.id,
+    name: actor.name,
+  };
+
+  recordAdminAuditEvent(actorObj(actor), {
+    action: 'SYSTEM_SETTING_CHANGED',
+    resource: {
+      type: 'SYSTEM_SETTING',
+      id: 'backup-settings',
+      label: 'إعدادات النسخ الاحتياطي',
+    },
+    previousValue: {
+      automaticEnabled: prev.automaticEnabled,
+      frequency: prev.frequency,
+      retentionCount: prev.retentionCount,
+      includeAuditLog: prev.includeAuditLog,
+    },
+    newValue: {
+      automaticEnabled: next.automaticEnabled,
+      frequency: next.frequency,
+      retentionCount: next.retentionCount,
+      includeAuditLog: next.includeAuditLog,
+    },
+    metadata: {
+      source: 'النسخ الاحتياطي',
+    },
+  });
+
+  return clone(settings.backup);
+}
+
+export async function createSystemBackup(actor: Actor) {
+  await mockDelay(120);
+
+  const createdAt = now();
+
+  const safeSnapshot = {
+    version: 'resq-admin-backup-v1',
+    createdAt,
+    emergencyContacts: settings.emergencyContacts,
+    backupConfiguration: {
+      automaticEnabled: settings.backup.automaticEnabled,
+      frequency: settings.backup.frequency,
+      retentionCount: settings.backup.retentionCount,
+      includeAuditLog: settings.backup.includeAuditLog,
+    },
+    notice: 'هذه نسخة تجريبية من بيانات لوحة الإدارة داخل بيئة الـMock. في بيئة الإنتاج يجب إنشاء النسخة الكاملة من الخادم وقاعدة البيانات.',
+  };
+
+  const payload = JSON.stringify(
+    safeSnapshot,
+    null,
+    2,
+  );
+
+  const stamp = createdAt.replace(/[:.]/g, '-');
+  const fileName = `resq-system-backup-${stamp}.json`;
+
+  const record = {
+    id: `BKP-${Date.now()}`,
+    createdAt,
+    createdBy: {
+      id: actor.id,
+      name: actor.name,
+    },
+    kind: 'MANUAL' as const,
+    fileName,
+    sizeBytes: new TextEncoder().encode(payload).length,
+  };
+
+  settings.backupHistory = [
+    record,
+    ...settings.backupHistory,
+  ].slice(
+    0,
+    Math.max(1, settings.backup.retentionCount),
+  );
+
+  settings.backup = {
+    ...settings.backup,
+    lastBackupAt: createdAt,
+    lastBackupBy: {
+      id: actor.id,
+      name: actor.name,
+    },
+  };
+
+  settings.updatedAt = createdAt;
+  settings.updatedBy = {
+    id: actor.id,
+    name: actor.name,
+  };
+
+  recordAdminAuditEvent(actorObj(actor), {
+    action: 'SYSTEM_SETTING_CHANGED',
+    resource: {
+      type: 'SYSTEM_SETTING',
+      id: record.id,
+      label: 'إنشاء نسخة احتياطية',
+    },
+    newValue: {
+      fileName: record.fileName,
+      sizeBytes: record.sizeBytes,
+    },
+    metadata: {
+      source: 'النسخ الاحتياطي',
+    },
+  });
+
+  return clone({
+    record,
+    fileName,
+    payload,
+  });
+}
+
+export async function updateLookup(type: LookupType, item: SystemLookupItem, actor: Actor) {
+  await mockDelay(25);
+
+  const rows = settings.lookups[type];
+
+  const idx = rows.findIndex(
+    (x) => x.id === item.id,
+  );
+
+  if (idx < 0) {
+    throw new Error('القيمة غير موجودة.');
+  }
+
+  const prev = rows[idx];
+
+  if (!prev) {
+    throw new Error('القيمة غير موجودة.');
+  }
+
+  const conflict = rows.find(
+    (row) =>
+      row.id !== item.id &&
+      row.order === item.order,
+  );
+
+  if (conflict) {
+    conflict.order = prev.order;
+  }
+
+  rows[idx] = clone(item);
+
+  if (
+    type === 'ORGANIZATION_SERVICES' &&
+    item.key in organizationServiceLabels
+  ) {
+    organizationServiceLabels[
+      item.key as keyof typeof organizationServiceLabels
+    ] = item.label;
+  }
+
+  if (
+    type === 'ANIMAL_TYPES' &&
+    item.key in animalTypeLabels
+  ) {
+    animalTypeLabels[
+      item.key as keyof typeof animalTypeLabels
+    ] = item.label;
+  }
+
+  settings.updatedAt = now();
+  settings.updatedBy = {
+    id: actor.id,
+    name: actor.name,
+  };
+
+  recordAdminAuditEvent(actorObj(actor), {
+    action: 'LOOKUP_VALUE_UPDATED',
+    resource: {
+      type: 'SYSTEM_SETTING',
+      id: `${type}:${item.id}`,
+      label: item.label,
+    },
+    previousValue: {
+      label: prev.label,
+      active: prev.active,
+      order: prev.order,
+    },
+    newValue: {
+      label: item.label,
+      active: item.active,
+      order: item.order,
+    },
+    metadata: {
+      source: 'القيم المرجعية',
+      field: type,
+    },
+  });
+
+  return clone(rows[idx]);
+}
+
+export async function addLookup(type: LookupType, label: string, actor: Actor) {
+  await mockDelay(25);
+
+  const rows = settings.lookups[type];
+
+  const item: SystemLookupItem = {
+    id: `${type}-${Date.now().toString().slice(-5)}`,
+    key: `CUSTOM_${Date.now()}`,
+    label,
+    active: true,
+    order: rows.length + 1,
+  };
+
+  rows.push(item);
+
+  settings.updatedAt = now();
+  settings.updatedBy = {
+    id: actor.id,
+    name: actor.name,
+  };
+
+  recordAdminAuditEvent(actorObj(actor), {
+    action: 'LOOKUP_VALUE_CREATED',
+    resource: {
+      type: 'SYSTEM_SETTING',
+      id: `${type}:${item.id}`,
+      label: item.label,
+    },
+    newValue: {
+      label: item.label,
+      active: true,
+    },
+    metadata: {
+      source: 'القيم المرجعية',
+      field: type,
+    },
+  });
+
+  return clone(item);
+}
+
+export const getPermissionDefinitions = async () => {
+  await mockDelay(10);
+
+  return clone(permissionDefinitions);
+};
+
+export async function getLookupValues(type: LookupType) {
+  await mockDelay(10);
+
+  return clone(
+    settings.lookups[type]
+      .filter((item) => item.active)
+      .sort((a, b) => a.order - b.order),
+  );
+}
+
+export const getConfiguredGovernorates = () =>
+  settings.lookups.GOVERNORATES
+    .filter((x) => x.active)
+    .sort((a, b) => a.order - b.order)
+    .map((x) => x.label);
+
+export const getConfiguredOrganizationServices = () =>
+  clone(
+    settings.lookups.ORGANIZATION_SERVICES
+      .filter((x) => x.active)
+      .sort((a, b) => a.order - b.order),
+  );
+
+export const getConfiguredOperationalTargets = () =>
+  clone(settings.targets);

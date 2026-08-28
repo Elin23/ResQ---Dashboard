@@ -1,28 +1,447 @@
 import type { ReactNode } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { FileText,HeartHandshake,LockKeyhole,Mail,Phone,ShieldCheck,TicketCheck,UserRound } from 'lucide-react';
+import { FileText, HeartHandshake, LockKeyhole, Mail, Phone, ShieldCheck, TicketCheck, UserRound } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { Link } from 'react-router';
 import { toast } from 'sonner';
-import { Badge,Button,Card,SectionHeader,Textarea } from '@/components/ui';
+import { Badge, Button, Card, SectionHeader, Textarea } from '@/components/ui';
 import { OperationalTimeline } from '@/components/ui/operational-timeline';
-import { PermissionGuard,usePermission } from '@/features/auth/rbac';
+import { PermissionGuard, usePermission } from '@/features/auth/rbac';
+import { supportStatusLabels } from '@/features/support/constants';
+import { useUserSupportSummary } from '@/features/support/hooks';
 import { moderationLabels } from '../constants';
 import { useAddUserNote } from '../hooks';
-import { useUserSupportSummary } from '@/features/support/hooks';
-import { supportStatusLabels } from '@/features/support/constants';
-import { userNoteSchema,type UserNoteValues } from '../schemas';
+import { userNoteSchema, type UserNoteValues } from '../schemas';
 import type { UserDetails } from '../types';
-import { formatUserDate,formatUserRelative } from '../utils';
-import { UserAccountStatusBadge,UserVerificationBadge } from './user-badges';
-function Fact({label,value}:{label:string;value:ReactNode}){return <div><dt className="text-xs text-muted-foreground">{label}</dt><dd className="mt-1 text-sm font-semibold">{value}</dd></div>;}
-export function AccountOverviewCard({details}:{details:UserDetails}){const u=details.user;return <Card><SectionHeader title="نظرة عامة على الحساب"/><dl className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3"><Fact label="الاسم" value={u.fullName}/><Fact label="الموقع" value={[u.governorate,u.city].filter(Boolean).join(' — ')||'غير محدد'}/><Fact label="تاريخ إنشاء الحساب" value={formatUserDate(u.createdAt)}/><Fact label="الحالة" value={<UserAccountStatusBadge status={u.accountStatus}/>}/><Fact label="التوثيق" value={<UserVerificationBadge status={u.verificationStatus}/>}/><Fact label="آخر نشاط" value={u.lastActiveAt?formatUserRelative(u.lastActiveAt):'غير متاح'}/></dl>{u.profileBio&&<div className="mt-5 rounded-lg bg-muted/50 p-4"><p className="text-xs text-muted-foreground">نبذة الملف</p><p className="mt-2 text-sm leading-7">{u.profileBio}</p></div>}</Card>;}
-export function SensitiveContactCard({details}:{details:UserDetails}){const allowed=usePermission('users.sensitive.read');const u=details.user;return <Card><SectionHeader title="معلومات الاتصال" description="بيانات حساسة تُعرض فقط للصلاحيات المصرح بها."/>{allowed?<div className="mt-4 space-y-3 text-sm">{u.phone?<div className="flex items-center justify-between gap-3"><span className="flex items-center gap-2 text-muted-foreground"><Phone className="size-4"/>رقم الهاتف</span><span dir="ltr" className="font-medium">{u.phone}</span></div>:null}{u.email?<div className="flex items-center justify-between gap-3"><span className="flex items-center gap-2 text-muted-foreground"><Mail className="size-4"/>البريد الإلكتروني</span><span dir="ltr" className="font-medium">{u.email}</span></div>:null}{!u.phone&&!u.email?<p className="text-muted-foreground">لا توجد بيانات اتصال مسجلة.</p>:null}</div>:<div className="mt-4 flex items-start gap-3 rounded-lg border bg-muted/40 p-4 text-sm text-muted-foreground"><LockKeyhole className="mt-0.5 size-4 shrink-0"/><p>غير متاح حسب صلاحياتك. لا يتم تضمين الهاتف أو البريد في هذا العرض.</p></div>}</Card>;}
-export function StatisticsCard({details}:{details:UserDetails}){const s=details.user.statistics;const stats=[['البلاغات',s?.reportsCount??0],['بلاغات موثقة',s?.verifiedReportsCount??0],['طلبات التبني',s?.adoptionRequestsCount??0],['تبنيات مكتملة',s?.completedAdoptionsCount??0],['عمر الحساب بالأيام',s?.accountAgeDays??0]];return <Card><SectionHeader title="مؤشرات الحساب" description="أرقام واقعية من السجلات المرتبطة، دون درجات سمعة آلية."/><div className="mt-4 grid grid-cols-2 gap-3">{stats.map(([label,value])=><div key={String(label)} className="rounded-lg bg-muted/50 p-3"><p className="text-xs text-muted-foreground">{label}</p><p className="mt-1 text-lg font-bold">{Number(value).toLocaleString('ar-SA-u-nu-latn')}</p></div>)}</div></Card>;}
-export function UserReportsCard({details}:{details:UserDetails}){const s=details.user.statistics;return <Card><SectionHeader title="بلاغات المستخدم" actions={<Link to={`/reports?userId=${details.user.id}`}><Button size="sm" variant="secondary"><FileText className="size-4"/>عرض جميع البلاغات</Button></Link>}/><div className="mt-4 grid gap-3 sm:grid-cols-4"><Fact label="الإجمالي" value={s?.reportsCount??0}/><Fact label="موثقة" value={s?.verifiedReportsCount??0}/><Fact label="نشطة" value={s?.activeReportsCount??0}/><Fact label="منتهية" value={s?.resolvedReportsCount??0}/></div><div className="mt-5 space-y-2">{details.reports.length?details.reports.slice(0,5).map(r=><Link key={r.id} to={`/reports/${r.id}`} className="flex items-center justify-between gap-3 rounded-lg border p-3 text-sm hover:bg-muted/40"><div><p className="font-semibold">{r.id}</p><p className="text-xs text-muted-foreground">{r.title}</p></div><Badge tone={r.status==='REJECTED'?'critical':r.status==='CLOSED'||r.status==='RESCUED'?'success':'info'}>{r.status}</Badge></Link>):<p className="text-sm text-muted-foreground">لا توجد بلاغات مرتبطة بهذا الحساب.</p>}</div></Card>;}
-export function UserAdoptionsCard({details}:{details:UserDetails}){const s=details.user.statistics;return <Card><SectionHeader title="نشاط التبني" actions={<Link to={`/adoption-requests?userId=${details.user.id}`}><Button size="sm" variant="secondary"><HeartHandshake className="size-4"/>عرض عروض التبني</Button></Link>}/><div className="mt-4 grid gap-3 sm:grid-cols-4"><Fact label="الإجمالي" value={s?.adoptionRequestsCount??0}/><Fact label="بانتظار النشر" value={s?.pendingAdoptionRequestsCount??0}/><Fact label="منشورة" value={s?.underReviewAdoptionRequestsCount??0}/><Fact label="تبنيات مكتملة" value={s?.completedAdoptionsCount??0}/></div><div className="mt-5 space-y-2">{details.adoptions.length?details.adoptions.slice(0,5).map(a=><div key={a.id} className="rounded-lg border p-3"><div className="flex flex-wrap items-center justify-between gap-2"><Link className="font-semibold hover:underline" to={`/adoption-requests/${a.id}`}>{a.id}</Link><Badge tone={a.status==='ADOPTED'?'success':a.status==='REJECTED'?'critical':a.status==='PUBLISHED'?'info':'pending'}>{a.status}</Badge></div><div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground"><span>{a.animalName??a.animalId}</span></div>{a.completedAt&&<p className="mt-2 text-xs text-success">تم التبني بتاريخ {formatUserDate(a.completedAt)}</p>}</div>):<p className="text-sm text-muted-foreground">لا توجد عروض تبني منشورة بواسطة هذا الحساب.</p>}</div></Card>;}
-export function SupportCard({details}:{details:UserDetails}){const q=useUserSupportSummary(details.user.id);return <Card><SectionHeader title="سجل الدعم" actions={<Link to={`/support?userId=${details.user.id}`}><Button size="sm" variant="secondary"><TicketCheck className="size-4"/>عرض تذاكر الدعم</Button></Link>}/><div className="mt-4 grid grid-cols-2 gap-3"><div className="rounded-lg bg-muted/50 p-3"><p className="text-xs text-muted-foreground">إجمالي التذاكر</p><p className="mt-1 text-lg font-bold">{(q.data?.total??0).toLocaleString('ar-SA-u-nu-latn')}</p></div><div className="rounded-lg bg-muted/50 p-3"><p className="text-xs text-muted-foreground">مفتوحة حاليًا</p><p className="mt-1 text-lg font-bold">{(q.data?.open??0).toLocaleString('ar-SA-u-nu-latn')}</p></div></div><div className="mt-4 space-y-2">{q.data?.recent.length?q.data.recent.map(t=><Link key={t.id} to={`/support/${t.id}`} className="block rounded-lg border p-3 text-sm hover:bg-muted/40"><div className="flex justify-between gap-3"><span className="font-semibold">{t.subject}</span><span className="text-xs text-muted-foreground">{supportStatusLabels[t.status]}</span></div><p className="mt-1 text-xs text-muted-foreground" dir="ltr">{t.id}</p></Link>):<p className="text-sm text-muted-foreground">لا توجد تذاكر دعم مرتبطة بهذا المستخدم.</p>}</div></Card>;}
-export function ActivityCard({details}:{details:UserDetails}){return <Card><SectionHeader title="نشاط الحساب"/><div className="mt-5"><OperationalTimeline items={details.activity.map(e=>({id:e.id,title:e.title,actor:e.actor,timestampLabel:formatUserDate(e.timestamp),details:e.details,tone:e.tone}))}/></div></Card>;}
-export function ModerationHistoryCard({details}:{details:UserDetails}){return <Card><SectionHeader title="سجل الإشراف" description="سجل دائم لإجراءات الإشراف على الحساب."/><div className="mt-4 space-y-3">{details.moderation.length?details.moderation.map(m=><div key={m.id} className="rounded-lg border p-3"><div className="flex flex-wrap items-center justify-between gap-2"><Badge tone={m.action==='BLOCK'||m.action==='SUSPEND'?'critical':m.action==='REACTIVATE'||m.action==='UNBLOCK'?'success':'pending'}>{moderationLabels[m.action]}</Badge><span className="text-xs text-muted-foreground">{formatUserDate(m.createdAt)}</span></div><p className="mt-2 text-sm font-semibold">{m.reason??'بدون سبب مسجل'}</p><p className="mt-1 text-xs text-muted-foreground">بواسطة {m.actorName}</p>{m.note&&<p className="mt-2 text-sm">{m.note}</p>}</div>):<p className="text-sm text-muted-foreground">لا توجد إجراءات إشرافية سابقة.</p>}</div></Card>;}
-export function UserNotesCard({details}:{details:UserDetails}){const mutation=useAddUserNote(details.user.id);const{register,handleSubmit,reset,formState:{errors}}=useForm<UserNoteValues>({resolver:zodResolver(userNoteSchema),defaultValues:{note:''}});const submit=handleSubmit(v=>mutation.mutate(v.note,{onSuccess:()=>{toast.success('تمت إضافة الملاحظة الداخلية');reset();},onError:()=>toast.error('تعذر إضافة الملاحظة')}));return <Card><SectionHeader title="ملاحظات داخلية" description="مرئية لفريق الإدارة فقط."/><PermissionGuard permission="users.notes.create"><form className="mt-4" onSubmit={e=>{e.preventDefault();void submit();}}><label htmlFor="user-note" className="sr-only">ملاحظة داخلية</label><Textarea id="user-note" {...register('note')} placeholder="أضف ملاحظة إدارية…"/>{errors.note&&<p className="mt-1 text-xs text-critical">{errors.note.message}</p>}<Button size="sm" className="mt-2" type="submit" disabled={mutation.isPending}>إضافة الملاحظة</Button></form></PermissionGuard><div className="mt-4 space-y-3">{details.notes.length?details.notes.map(n=><div key={n.id} className="rounded-lg border p-3"><div className="flex justify-between gap-3"><div><p className="text-sm font-semibold">{n.adminName}</p><p className="text-xs text-muted-foreground">{n.adminRole}</p></div><span className="text-xs text-muted-foreground">{formatUserRelative(n.createdAt)}</span></div><p className="mt-2 text-sm">{n.note}</p></div>):<p className="text-sm text-muted-foreground">لا توجد ملاحظات داخلية بعد.</p>}</div></Card>;}
-export function AccountContextCard({details}:{details:UserDetails}){return <Card><SectionHeader title="حالة الحساب"/><div className="mt-4 flex items-center gap-3"><span className="rounded-full bg-muted p-3"><UserRound className="size-5"/></span><div><p className="font-bold">{details.user.fullName}</p><p className="text-xs text-muted-foreground" dir="ltr">{details.user.id}</p></div></div><div className="mt-4 flex flex-wrap gap-2"><UserAccountStatusBadge status={details.user.accountStatus}/><UserVerificationBadge status={details.user.verificationStatus}/></div><div className="mt-4 rounded-lg bg-muted/50 p-3 text-sm"><ShieldCheck className="me-2 inline size-4 text-info"/>الحظر والتعليق لا يحذفان البلاغات أو سجلات التبني التاريخية.</div></Card>;}
+import { formatUserDate, formatUserRelative } from '../utils';
+import { UserAccountStatusBadge, UserVerificationBadge } from './user-badges';
+
+function Fact({ label, value }: { label: string; value: ReactNode }) {
+  return (
+    <div>
+      <dt className="text-xs text-muted-foreground">{label}</dt>
+      <dd className="mt-1 text-sm font-semibold">{value}</dd>
+    </div>
+  );
+}
+
+export function AccountOverviewCard({ details }: { details: UserDetails }) {
+  const u = details.user;
+
+  return (
+    <Card>
+      <SectionHeader title="نظرة عامة على الحساب" />
+
+      <dl className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <Fact label="الاسم" value={u.fullName} />
+        <Fact label="الموقع" value={[u.governorate, u.city].filter(Boolean).join(' — ') || 'غير محدد'} />
+        <Fact label="تاريخ إنشاء الحساب" value={formatUserDate(u.createdAt)} />
+        <Fact label="الحالة" value={<UserAccountStatusBadge status={u.accountStatus} />} />
+        <Fact label="التوثيق" value={<UserVerificationBadge status={u.verificationStatus} />} />
+        <Fact label="آخر نشاط" value={u.lastActiveAt ? formatUserRelative(u.lastActiveAt) : 'غير متاح'} />
+      </dl>
+
+      {u.profileBio && (
+        <div className="mt-5 rounded-lg bg-muted/50 p-4">
+          <p className="text-xs text-muted-foreground">نبذة الملف</p>
+          <p className="mt-2 text-sm leading-7">{u.profileBio}</p>
+        </div>
+      )}
+    </Card>
+  );
+}
+
+export function SensitiveContactCard({ details }: { details: UserDetails }) {
+  const allowed = usePermission('users.sensitive.read');
+  const u = details.user;
+
+  return (
+    <Card>
+      <SectionHeader
+        title="معلومات الاتصال"
+        description="بيانات حساسة تُعرض فقط للصلاحيات المصرح بها."
+      />
+
+      {allowed ? (
+        <div className="mt-4 space-y-3 text-sm">
+          {u.phone ? (
+            <div className="flex items-center justify-between gap-3">
+              <span className="flex items-center gap-2 text-muted-foreground">
+                <Phone className="size-4" />
+                رقم الهاتف
+              </span>
+              <span dir="ltr" className="font-medium">{u.phone}</span>
+            </div>
+          ) : null}
+
+          {u.email ? (
+            <div className="flex items-center justify-between gap-3">
+              <span className="flex items-center gap-2 text-muted-foreground">
+                <Mail className="size-4" />
+                البريد الإلكتروني
+              </span>
+              <span dir="ltr" className="font-medium">{u.email}</span>
+            </div>
+          ) : null}
+
+          {!u.phone && !u.email ? (
+            <p className="text-muted-foreground">لا توجد بيانات اتصال مسجلة.</p>
+          ) : null}
+        </div>
+      ) : (
+        <div className="mt-4 flex items-start gap-3 rounded-lg border bg-muted/40 p-4 text-sm text-muted-foreground">
+          <LockKeyhole className="mt-0.5 size-4 shrink-0" />
+          <p>غير متاح حسب صلاحياتك. لا يتم تضمين الهاتف أو البريد في هذا العرض.</p>
+        </div>
+      )}
+    </Card>
+  );
+}
+
+export function StatisticsCard({ details }: { details: UserDetails }) {
+  const s = details.user.statistics;
+
+  const stats = [
+    ['البلاغات', s?.reportsCount ?? 0],
+    ['بلاغات موثقة', s?.verifiedReportsCount ?? 0],
+    ['طلبات التبني', s?.adoptionRequestsCount ?? 0],
+    ['تبنيات مكتملة', s?.completedAdoptionsCount ?? 0],
+    ['عمر الحساب بالأيام', s?.accountAgeDays ?? 0],
+  ];
+
+  return (
+    <Card>
+      <SectionHeader
+        title="مؤشرات الحساب"
+        description="أرقام واقعية من السجلات المرتبطة، دون درجات سمعة آلية."
+      />
+
+      <div className="mt-4 grid grid-cols-2 gap-3">
+        {stats.map(([label, value]) => (
+          <div key={String(label)} className="rounded-lg bg-muted/50 p-3">
+            <p className="text-xs text-muted-foreground">{label}</p>
+            <p className="mt-1 text-lg font-bold">{Number(value).toLocaleString('ar-SA-u-nu-latn')}</p>
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+}
+
+export function UserReportsCard({ details }: { details: UserDetails }) {
+  const s = details.user.statistics;
+
+  return (
+    <Card>
+      <SectionHeader
+        title="بلاغات المستخدم"
+        actions={
+          <Link to={`/reports?userId=${details.user.id}`}>
+            <Button size="sm" variant="secondary">
+              <FileText className="size-4" />
+              عرض جميع البلاغات
+            </Button>
+          </Link>
+        }
+      />
+
+      <div className="mt-4 grid gap-3 sm:grid-cols-4">
+        <Fact label="الإجمالي" value={s?.reportsCount ?? 0} />
+        <Fact label="موثقة" value={s?.verifiedReportsCount ?? 0} />
+        <Fact label="نشطة" value={s?.activeReportsCount ?? 0} />
+        <Fact label="منتهية" value={s?.resolvedReportsCount ?? 0} />
+      </div>
+
+      <div className="mt-5 space-y-2">
+        {details.reports.length ? (
+          details.reports.slice(0, 5).map((r) => (
+            <Link
+              key={r.id}
+              to={`/reports/${r.id}`}
+              className="flex items-center justify-between gap-3 rounded-lg border p-3 text-sm hover:bg-muted/40"
+            >
+              <div>
+                <p className="font-semibold">{r.id}</p>
+                <p className="text-xs text-muted-foreground">{r.title}</p>
+              </div>
+
+              <Badge tone={r.status === 'REJECTED' ? 'critical' : r.status === 'CLOSED' || r.status === 'RESCUED' ? 'success' : 'info'}>
+                {r.status}
+              </Badge>
+            </Link>
+          ))
+        ) : (
+          <p className="text-sm text-muted-foreground">لا توجد بلاغات مرتبطة بهذا الحساب.</p>
+        )}
+      </div>
+    </Card>
+  );
+}
+
+export function UserAdoptionsCard({ details }: { details: UserDetails }) {
+  const s = details.user.statistics;
+
+  return (
+    <Card>
+      <SectionHeader
+        title="نشاط التبني"
+        actions={
+          <Link to={`/adoption-requests?userId=${details.user.id}`}>
+            <Button size="sm" variant="secondary">
+              <HeartHandshake className="size-4" />
+              عرض عروض التبني
+            </Button>
+          </Link>
+        }
+      />
+
+      <div className="mt-4 grid gap-3 sm:grid-cols-4">
+        <Fact label="الإجمالي" value={s?.adoptionRequestsCount ?? 0} />
+        <Fact label="بانتظار النشر" value={s?.pendingAdoptionRequestsCount ?? 0} />
+        <Fact label="منشورة" value={s?.underReviewAdoptionRequestsCount ?? 0} />
+        <Fact label="تبنيات مكتملة" value={s?.completedAdoptionsCount ?? 0} />
+      </div>
+
+      <div className="mt-5 space-y-2">
+        {details.adoptions.length ? (
+          details.adoptions.slice(0, 5).map((a) => (
+            <div key={a.id} className="rounded-lg border p-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <Link className="font-semibold hover:underline" to={`/adoption-requests/${a.id}`}>
+                  {a.id}
+                </Link>
+
+                <Badge tone={a.status === 'ADOPTED' ? 'success' : a.status === 'REJECTED' ? 'critical' : a.status === 'PUBLISHED' ? 'info' : 'pending'}>
+                  {a.status}
+                </Badge>
+              </div>
+
+              <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+                <span>{a.animalName ?? a.animalId}</span>
+              </div>
+
+              {a.completedAt && (
+                <p className="mt-2 text-xs text-success">
+                  تم التبني بتاريخ {formatUserDate(a.completedAt)}
+                </p>
+              )}
+            </div>
+          ))
+        ) : (
+          <p className="text-sm text-muted-foreground">لا توجد عروض تبني منشورة بواسطة هذا الحساب.</p>
+        )}
+      </div>
+    </Card>
+  );
+}
+
+export function SupportCard({ details }: { details: UserDetails }) {
+  const q = useUserSupportSummary(details.user.id);
+
+  return (
+    <Card>
+      <SectionHeader
+        title="سجل الدعم"
+        actions={
+          <Link to={`/support?userId=${details.user.id}`}>
+            <Button size="sm" variant="secondary">
+              <TicketCheck className="size-4" />
+              عرض تذاكر الدعم
+            </Button>
+          </Link>
+        }
+      />
+
+      <div className="mt-4 grid grid-cols-2 gap-3">
+        <div className="rounded-lg bg-muted/50 p-3">
+          <p className="text-xs text-muted-foreground">إجمالي التذاكر</p>
+          <p className="mt-1 text-lg font-bold">{(q.data?.total ?? 0).toLocaleString('ar-SA-u-nu-latn')}</p>
+        </div>
+
+        <div className="rounded-lg bg-muted/50 p-3">
+          <p className="text-xs text-muted-foreground">مفتوحة حاليًا</p>
+          <p className="mt-1 text-lg font-bold">{(q.data?.open ?? 0).toLocaleString('ar-SA-u-nu-latn')}</p>
+        </div>
+      </div>
+
+      <div className="mt-4 space-y-2">
+        {q.data?.recent.length ? (
+          q.data.recent.map((t) => (
+            <Link
+              key={t.id}
+              to={`/support/${t.id}`}
+              className="block rounded-lg border p-3 text-sm hover:bg-muted/40"
+            >
+              <div className="flex justify-between gap-3">
+                <span className="font-semibold">{t.subject}</span>
+                <span className="text-xs text-muted-foreground">{supportStatusLabels[t.status]}</span>
+              </div>
+
+              <p className="mt-1 text-xs text-muted-foreground" dir="ltr">{t.id}</p>
+            </Link>
+          ))
+        ) : (
+          <p className="text-sm text-muted-foreground">لا توجد تذاكر دعم مرتبطة بهذا المستخدم.</p>
+        )}
+      </div>
+    </Card>
+  );
+}
+
+export function ActivityCard({ details }: { details: UserDetails }) {
+  return (
+    <Card>
+      <SectionHeader title="نشاط الحساب" />
+
+      <div className="mt-5">
+        <OperationalTimeline
+          items={details.activity.map((e) => ({
+            id: e.id,
+            title: e.title,
+            actor: e.actor,
+            timestampLabel: formatUserDate(e.timestamp),
+            details: e.details,
+            tone: e.tone,
+          }))}
+        />
+      </div>
+    </Card>
+  );
+}
+
+export function ModerationHistoryCard({ details }: { details: UserDetails }) {
+  return (
+    <Card>
+      <SectionHeader
+        title="سجل الإشراف"
+        description="سجل دائم لإجراءات الإشراف على الحساب."
+      />
+
+      <div className="mt-4 space-y-3">
+        {details.moderation.length ? (
+          details.moderation.map((m) => (
+            <div key={m.id} className="rounded-lg border p-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <Badge tone={m.action === 'BLOCK' || m.action === 'SUSPEND' ? 'critical' : m.action === 'REACTIVATE' || m.action === 'UNBLOCK' ? 'success' : 'pending'}>
+                  {moderationLabels[m.action]}
+                </Badge>
+
+                <span className="text-xs text-muted-foreground">{formatUserDate(m.createdAt)}</span>
+              </div>
+
+              <p className="mt-2 text-sm font-semibold">{m.reason ?? 'بدون سبب مسجل'}</p>
+              <p className="mt-1 text-xs text-muted-foreground">بواسطة {m.actorName}</p>
+
+              {m.note && <p className="mt-2 text-sm">{m.note}</p>}
+            </div>
+          ))
+        ) : (
+          <p className="text-sm text-muted-foreground">لا توجد إجراءات إشرافية سابقة.</p>
+        )}
+      </div>
+    </Card>
+  );
+}
+
+export function UserNotesCard({ details }: { details: UserDetails }) {
+  const mutation = useAddUserNote(details.user.id);
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<UserNoteValues>({
+    resolver: zodResolver(userNoteSchema),
+    defaultValues: { note: '' },
+  });
+
+  // Internal notes stay separate from user-visible activity.
+  const submit = handleSubmit((v) =>
+    mutation.mutate(v.note, {
+      onSuccess: () => {
+        toast.success('تمت إضافة الملاحظة الداخلية');
+        reset();
+      },
+      onError: () => toast.error('تعذر إضافة الملاحظة'),
+    }),
+  );
+
+  return (
+    <Card>
+      <SectionHeader
+        title="ملاحظات داخلية"
+        description="مرئية لفريق الإدارة فقط."
+      />
+
+      <PermissionGuard permission="users.notes.create">
+        <form
+          className="mt-4"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void submit();
+          }}
+        >
+          <label htmlFor="user-note" className="sr-only">ملاحظة داخلية</label>
+          <Textarea id="user-note" {...register('note')} placeholder="أضف ملاحظة إدارية…" />
+
+          {errors.note && <p className="mt-1 text-xs text-critical">{errors.note.message}</p>}
+
+          <Button size="sm" className="mt-2" type="submit" disabled={mutation.isPending}>
+            إضافة الملاحظة
+          </Button>
+        </form>
+      </PermissionGuard>
+
+      <div className="mt-4 space-y-3">
+        {details.notes.length ? (
+          details.notes.map((n) => (
+            <div key={n.id} className="rounded-lg border p-3">
+              <div className="flex justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold">{n.adminName}</p>
+                  <p className="text-xs text-muted-foreground">{n.adminRole}</p>
+                </div>
+
+                <span className="text-xs text-muted-foreground">{formatUserRelative(n.createdAt)}</span>
+              </div>
+
+              <p className="mt-2 text-sm">{n.note}</p>
+            </div>
+          ))
+        ) : (
+          <p className="text-sm text-muted-foreground">لا توجد ملاحظات داخلية بعد.</p>
+        )}
+      </div>
+    </Card>
+  );
+}
+
+export function AccountContextCard({ details }: { details: UserDetails }) {
+  return (
+    <Card>
+      <SectionHeader title="حالة الحساب" />
+
+      <div className="mt-4 flex items-center gap-3">
+        <span className="rounded-full bg-muted p-3">
+          <UserRound className="size-5" />
+        </span>
+
+        <div>
+          <p className="font-bold">{details.user.fullName}</p>
+          <p className="text-xs text-muted-foreground" dir="ltr">{details.user.id}</p>
+        </div>
+      </div>
+
+      <div className="mt-4 flex flex-wrap gap-2">
+        <UserAccountStatusBadge status={details.user.accountStatus} />
+        <UserVerificationBadge status={details.user.verificationStatus} />
+      </div>
+
+      <div className="mt-4 rounded-lg bg-muted/50 p-3 text-sm">
+        <ShieldCheck className="me-2 inline size-4 text-info" />
+        الحظر والتعليق لا يحذفان البلاغات أو سجلات التبني التاريخية.
+      </div>
+    </Card>
+  );
+}

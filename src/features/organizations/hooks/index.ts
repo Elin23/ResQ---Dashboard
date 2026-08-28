@@ -1,360 +1,162 @@
-import {
-  keepPreviousData,
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from '@tanstack/react-query';
-
-import {
-  useSession,
-} from '@/features/auth/session';
-
-import {
-  dashboardKeys,
-} from '@/features/dashboard/hooks';
-
-import {
-  reportKeys,
-} from '@/features/reports/hooks';
-
-import {
-  adoptionKeys,
-} from '@/features/adoption-requests/hooks';
-
-import type {
-  OrganizationFilters,
-  RejectOrganizationInput,
-  RequestInfoInput,
-  ReviewDocumentInput,
-  SuspendOrganizationInput,
-} from '../types';
-
-import {
-  addOrganizationNote,
-  approveOrganization,
-  getAssignableOrganizations,
-  getOrganizationById,
-  getOrganizations,
-  getOrganizationSummary,
-  reactivateOrganization,
-  rejectOrganization,
-  requestOrganizationInfo,
-  reviewOrganizationDocument,
-  startOrganizationReview,
-  suspendOrganization,
-} from '../services/organizations.mock';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useSession } from '@/features/auth/session';
+import { adoptionKeys } from '@/features/adoption-requests/hooks';
+import { dashboardKeys } from '@/features/dashboard/hooks';
+import { reportKeys } from '@/features/reports/hooks';
+import { addOrganizationNote, approveOrganization, getAssignableOrganizations, getOrganizationById, getOrganizations, getOrganizationSummary, reactivateOrganization, rejectOrganization, requestOrganizationInfo, reviewOrganizationDocument, startOrganizationReview, suspendOrganization } from '../services/organizations.mock';
+import type { OrganizationFilters, RejectOrganizationInput, RequestInfoInput, ReviewDocumentInput, SuspendOrganizationInput } from '../types';
 
 export const organizationKeys = {
-  all: [
-    'organizations',
-  ] as const,
+  all: ['organizations'] as const,
 
-  lists: () =>
-    [
-      'organizations',
-      'list',
-    ] as const,
+  lists: () => ['organizations', 'list'] as const,
 
-  list: (
-    filters: OrganizationFilters,
-  ) =>
-    [
-      'organizations',
-      'list',
-      filters,
-    ] as const,
+  list: (filters: OrganizationFilters) =>
+    ['organizations', 'list', filters] as const,
 
-  summary: () =>
-    [
-      'organizations',
-      'summary',
-    ] as const,
+  summary: () => ['organizations', 'summary'] as const,
 
-  detail: (
-    id: string,
-  ) =>
-    [
-      'organizations',
-      'detail',
-      id,
-    ] as const,
+  detail: (id: string) =>
+    ['organizations', 'detail', id] as const,
 
-  assignable: (
-    search: string,
-  ) =>
-    [
-      'organizations',
-      'assignable',
-      search,
-    ] as const,
+  assignable: (search: string) =>
+    ['organizations', 'assignable', search] as const,
 };
 
-export const useOrganizations = (
-  filters: OrganizationFilters,
-) =>
+export const useOrganizations = (filters: OrganizationFilters) =>
   useQuery({
-    queryKey:
-      organizationKeys.list(
-        filters,
-      ),
-
-    queryFn: () =>
-      getOrganizations(
-        filters,
-      ),
-
-    placeholderData:
-      keepPreviousData,
+    queryKey: organizationKeys.list(filters),
+    queryFn: () => getOrganizations(filters),
+    placeholderData: keepPreviousData,
   });
 
-export const useOrganizationSummary =
-  () =>
-    useQuery({
-      queryKey:
-        organizationKeys.summary(),
-
-      queryFn:
-        getOrganizationSummary,
-    });
-
-export const useOrganization = (
-  id: string,
-) =>
+export const useOrganizationSummary = () =>
   useQuery({
-    queryKey:
-      organizationKeys.detail(
-        id,
-      ),
-
-    queryFn: () =>
-      getOrganizationById(
-        id,
-      ),
-
-    enabled:
-      Boolean(id),
+    queryKey: organizationKeys.summary(),
+    queryFn: getOrganizationSummary,
   });
 
-export const useAssignableOrganizations =
-  (
-    search = '',
-  ) =>
-    useQuery({
-      queryKey:
-        organizationKeys.assignable(
-          search,
-        ),
+export const useOrganization = (id: string) =>
+  useQuery({
+    queryKey: organizationKeys.detail(id),
+    queryFn: () => getOrganizationById(id),
+    enabled: Boolean(id),
+  });
 
-      queryFn: () =>
-        getAssignableOrganizations(
-          search,
-        ),
-    });
+export const useAssignableOrganizations = (search = '') =>
+  useQuery({
+    queryKey: organizationKeys.assignable(search),
+    queryFn: () => getAssignableOrganizations(search),
+  });
 
 function useActor() {
-  const {
-    session,
-  } = useSession();
+  const { session } = useSession();
 
   if (!session) {
-    throw new Error(
-      'SESSION_REQUIRED',
-    );
+    throw new Error('SESSION_REQUIRED');
   }
 
   return session;
 }
 
-function useInvalidate(
-  id?: string,
-) {
-  const client =
-    useQueryClient();
+function useInvalidate(id?: string) {
+  const client = useQueryClient();
 
+  // Organization changes can affect multiple operational views.
   return async () => {
     await Promise.all([
       client.invalidateQueries({
-        queryKey:
-          organizationKeys.all,
+        queryKey: organizationKeys.all,
       }),
-
       client.invalidateQueries({
-        queryKey:
-          dashboardKeys.all,
+        queryKey: dashboardKeys.all,
       }),
-
       client.invalidateQueries({
-        queryKey:
-          reportKeys.all,
+        queryKey: reportKeys.all,
       }),
-
       client.invalidateQueries({
-        queryKey:
-          adoptionKeys.all,
+        queryKey: adoptionKeys.all,
       }),
-
       ...(id
         ? [
-            client.invalidateQueries(
-              {
-                queryKey:
-                  organizationKeys.detail(
-                    id,
-                  ),
-              },
-            ),
+            client.invalidateQueries({
+              queryKey: organizationKeys.detail(id),
+            }),
           ]
         : []),
     ]);
   };
 }
 
-export function useStartOrganizationReview(
-  id: string,
-) {
-  const actor =
-    useActor();
-
-  const invalidate =
-    useInvalidate(id);
+export function useStartOrganizationReview(id: string) {
+  const actor = useActor();
+  const invalidate = useInvalidate(id);
 
   return useMutation({
     mutationFn: () =>
-      startOrganizationReview(
-        id,
-        actor,
-      ),
-
-    onSuccess:
-      invalidate,
+      startOrganizationReview(id, actor),
+    onSuccess: invalidate,
   });
 }
 
-export function useApproveOrganization(
-  id: string,
-) {
-  const actor =
-    useActor();
-
-  const invalidate =
-    useInvalidate(id);
+export function useApproveOrganization(id: string) {
+  const actor = useActor();
+  const invalidate = useInvalidate(id);
 
   return useMutation({
     mutationFn: () =>
-      approveOrganization(
-        id,
-        actor,
-      ),
-
-    onSuccess:
-      invalidate,
+      approveOrganization(id, actor),
+    onSuccess: invalidate,
   });
 }
 
-export function useRejectOrganization(
-  id: string,
-) {
-  const actor =
-    useActor();
-
-  const invalidate =
-    useInvalidate(id);
+export function useRejectOrganization(id: string) {
+  const actor = useActor();
+  const invalidate = useInvalidate(id);
 
   return useMutation({
-    mutationFn: (
-      input: RejectOrganizationInput,
-    ) =>
-      rejectOrganization(
-        id,
-        input,
-        actor,
-      ),
-
-    onSuccess:
-      invalidate,
+    mutationFn: (input: RejectOrganizationInput) =>
+      rejectOrganization(id, input, actor),
+    onSuccess: invalidate,
   });
 }
 
-export function useRequestOrganizationInfo(
-  id: string,
-) {
-  const actor =
-    useActor();
-
-  const invalidate =
-    useInvalidate(id);
+export function useRequestOrganizationInfo(id: string) {
+  const actor = useActor();
+  const invalidate = useInvalidate(id);
 
   return useMutation({
-    mutationFn: (
-      input: RequestInfoInput,
-    ) =>
-      requestOrganizationInfo(
-        id,
-        input,
-        actor,
-      ),
-
-    onSuccess:
-      invalidate,
+    mutationFn: (input: RequestInfoInput) =>
+      requestOrganizationInfo(id, input, actor),
+    onSuccess: invalidate,
   });
 }
 
-export function useSuspendOrganization(
-  id: string,
-) {
-  const actor =
-    useActor();
-
-  const invalidate =
-    useInvalidate(id);
+export function useSuspendOrganization(id: string) {
+  const actor = useActor();
+  const invalidate = useInvalidate(id);
 
   return useMutation({
-    mutationFn: (
-      input: SuspendOrganizationInput,
-    ) =>
-      suspendOrganization(
-        id,
-        input,
-        actor,
-      ),
-
-    onSuccess:
-      invalidate,
+    mutationFn: (input: SuspendOrganizationInput) =>
+      suspendOrganization(id, input, actor),
+    onSuccess: invalidate,
   });
 }
 
-export function useReactivateOrganization(
-  id: string,
-) {
-  const actor =
-    useActor();
-
-  const invalidate =
-    useInvalidate(id);
+export function useReactivateOrganization(id: string) {
+  const actor = useActor();
+  const invalidate = useInvalidate(id);
 
   return useMutation({
-    mutationFn: (
-      note?: string,
-    ) =>
-      reactivateOrganization(
-        id,
-        note,
-        actor,
-      ),
-
-    onSuccess:
-      invalidate,
+    mutationFn: (note?: string) =>
+      reactivateOrganization(id, note, actor),
+    onSuccess: invalidate,
   });
 }
 
-export function useReviewOrganizationDocument(
-  id: string,
-) {
-  const actor =
-    useActor();
-
-  const invalidate =
-    useInvalidate(id);
+export function useReviewOrganizationDocument(id: string) {
+  const actor = useActor();
+  const invalidate = useInvalidate(id);
 
   return useMutation({
     mutationFn: ({
@@ -370,32 +172,17 @@ export function useReviewOrganizationDocument(
         input,
         actor,
       ),
-
-    onSuccess:
-      invalidate,
+    onSuccess: invalidate,
   });
 }
 
-export function useAddOrganizationNote(
-  id: string,
-) {
-  const actor =
-    useActor();
-
-  const invalidate =
-    useInvalidate(id);
+export function useAddOrganizationNote(id: string) {
+  const actor = useActor();
+  const invalidate = useInvalidate(id);
 
   return useMutation({
-    mutationFn: (
-      note: string,
-    ) =>
-      addOrganizationNote(
-        id,
-        note,
-        actor,
-      ),
-
-    onSuccess:
-      invalidate,
+    mutationFn: (note: string) =>
+      addOrganizationNote(id, note, actor),
+    onSuccess: invalidate,
   });
 }

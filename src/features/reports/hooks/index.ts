@@ -1,26 +1,31 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { dashboardKeys } from '@/features/dashboard/hooks';
+
 import { useSession } from '@/features/auth/session';
+import { dashboardKeys } from '@/features/dashboard/hooks';
+
+import { addReportNote, adminOverrideReportStatus, assignReport, deleteReport, getEligibleOrganizations, getReportById, getReportSummary, getReports } from '../services/reports.mock';
 import type { AdminStatusOverrideInput, DeleteReportInput, ReportFilters } from '../types';
-import {
-  addReportNote,
-  adminOverrideReportStatus,
-  assignReport,
-  deleteReport,
-  getEligibleOrganizations,
-  getReportById,
-  getReportSummary,
-  getReports,
-} from '../services/reports.mock';
 
 export const reportKeys = {
   all: ['reports'] as const,
-  lists: () => [...reportKeys.all, 'list'] as const,
-  list: (filters: ReportFilters) => [...reportKeys.lists(), filters] as const,
-  summary: () => [...reportKeys.all, 'summary'] as const,
-  details: () => [...reportKeys.all, 'detail'] as const,
-  detail: (reportId: string) => [...reportKeys.details(), reportId] as const,
-  organizations: (search: string) => [...reportKeys.all, 'eligible-organizations', search] as const,
+
+  lists: () =>
+    [...reportKeys.all, 'list'] as const,
+
+  list: (filters: ReportFilters) =>
+    [...reportKeys.lists(), filters] as const,
+
+  summary: () =>
+    [...reportKeys.all, 'summary'] as const,
+
+  details: () =>
+    [...reportKeys.all, 'detail'] as const,
+
+  detail: (reportId: string) =>
+    [...reportKeys.details(), reportId] as const,
+
+  organizations: (search: string) =>
+    [...reportKeys.all, 'eligible-organizations', search] as const,
 };
 
 export function useReports(filters: ReportFilters) {
@@ -32,7 +37,10 @@ export function useReports(filters: ReportFilters) {
 }
 
 export function useReportsSummary() {
-  return useQuery({ queryKey: reportKeys.summary(), queryFn: getReportSummary });
+  return useQuery({
+    queryKey: reportKeys.summary(),
+    queryFn: getReportSummary,
+  });
 }
 
 export function useReport(reportId: string) {
@@ -53,13 +61,24 @@ export function useEligibleOrganizations(search: string) {
 function useReportMutationInvalidation(reportId?: string) {
   const queryClient = useQueryClient();
 
+  // Report changes affect the list, summary, dashboard, and sometimes the active detail view.
   return async () => {
     await Promise.all([
-      queryClient.invalidateQueries({ queryKey: reportKeys.lists() }),
-      queryClient.invalidateQueries({ queryKey: reportKeys.summary() }),
-      queryClient.invalidateQueries({ queryKey: dashboardKeys.all }),
+      queryClient.invalidateQueries({
+        queryKey: reportKeys.lists(),
+      }),
+      queryClient.invalidateQueries({
+        queryKey: reportKeys.summary(),
+      }),
+      queryClient.invalidateQueries({
+        queryKey: dashboardKeys.all,
+      }),
       ...(reportId
-        ? [queryClient.invalidateQueries({ queryKey: reportKeys.detail(reportId) })]
+        ? [
+            queryClient.invalidateQueries({
+              queryKey: reportKeys.detail(reportId),
+            }),
+          ]
         : []),
     ]);
   };
@@ -71,8 +90,15 @@ export function useAssignReport(reportId: string) {
 
   return useMutation({
     mutationFn: (organizationId: string) => {
-      if (!session) throw new Error('SESSION_REQUIRED');
-      return assignReport(reportId, organizationId, session);
+      if (!session) {
+        throw new Error('SESSION_REQUIRED');
+      }
+
+      return assignReport(
+        reportId,
+        organizationId,
+        session,
+      );
     },
     onSuccess: invalidate,
   });
@@ -88,8 +114,15 @@ export function useAdminOverrideReportStatus(reportId: string) {
 
   return useMutation({
     mutationFn: (input: AdminStatusOverrideInput) => {
-      if (!session) throw new Error('SESSION_REQUIRED');
-      return adminOverrideReportStatus(reportId, input, session);
+      if (!session) {
+        throw new Error('SESSION_REQUIRED');
+      }
+
+      return adminOverrideReportStatus(
+        reportId,
+        input,
+        session,
+      );
     },
     onSuccess: invalidate,
   });
@@ -101,8 +134,15 @@ export function useDeleteReport(reportId: string) {
 
   return useMutation({
     mutationFn: (input: DeleteReportInput) => {
-      if (!session) throw new Error('SESSION_REQUIRED');
-      return deleteReport(reportId, input, session);
+      if (!session) {
+        throw new Error('SESSION_REQUIRED');
+      }
+
+      return deleteReport(
+        reportId,
+        input,
+        session,
+      );
     },
     onSuccess: invalidate,
   });
@@ -114,8 +154,15 @@ export function useAddReportNote(reportId: string) {
 
   return useMutation({
     mutationFn: (note: string) => {
-      if (!session) throw new Error('SESSION_REQUIRED');
-      return addReportNote(reportId, note, session);
+      if (!session) {
+        throw new Error('SESSION_REQUIRED');
+      }
+
+      return addReportNote(
+        reportId,
+        note,
+        session,
+      );
     },
     onSuccess: invalidate,
   });

@@ -1,8 +1,86 @@
-import { Link } from 'react-router';
 import { MapPin } from 'lucide-react';
+import { Link } from 'react-router';
 import { Badge, Card, EmptyState, SectionHeader } from '@/components/ui';
 import { LocationPreview } from '@/components/ui/location-preview';
-import type { FeedingPointListRow } from '../types';
 import { FeedingPointStatusBadge } from './feeding-point-badges';
+import type { FeedingPointListRow } from '../types';
 import { formatFeedingPointRelative } from '../utils';
-export function FeedingPointsMapView({items}:{items:FeedingPointListRow[]}){if(!items.length)return <EmptyState title="لا توجد نقاط لعرضها على الخريطة" description="غيّر عوامل التصفية لإظهار نقاط أخرى."/>;const primary=items[0];if(!primary)return null;return <Card className="rounded-xl border-border/45 bg-white shadow-none"><SectionHeader title="عرض الخريطة" description="اختر نقطة من القائمة لمراجعة تفاصيلها وموقعها."/><div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]"><LocationPreview title={primary.name??primary.id} address={`${primary.location.governorate} — ${primary.location.city??''} · ${primary.location.address}`} latitude={primary.location.latitude} longitude={primary.location.longitude}/><div className="max-h-[30rem] space-y-2 overflow-y-auto pe-1">{items.map(point=><Link key={point.id} to={`/feeding-points/${point.id}`} className="block rounded-lg border border-border/40 p-3 transition-colors hover:bg-primary/[0.025]"><div className="flex items-start justify-between gap-3"><div className="flex min-w-0 gap-2"><MapPin className="mt-0.5 size-4 shrink-0 text-primary"/><div className="min-w-0"><p className="truncate text-[12px] font-semibold">{point.name??point.id}</p><p className="mt-0.5 text-[11px] text-muted-foreground">{point.location.governorate} — {point.location.city??'—'}</p></div></div><FeedingPointStatusBadge status={point.status}/></div><div className="mt-2 flex flex-wrap gap-2">{point.pendingRefillsCount>0&&<Badge tone="pending">{point.pendingRefillsCount} تعبئة تنتظر التحقق</Badge>}{point.lastVerifiedRefillAt&&<span className="text-[11px] text-muted-foreground">آخر تعبئة مؤكدة {formatFeedingPointRelative(point.lastVerifiedRefillAt)}</span>}</div></Link>)}</div></div></Card>}
+
+export function FeedingPointsMapView({ items }: { items: FeedingPointListRow[] }) {
+  if (!items.length) {
+    return (
+      <EmptyState
+        title="لا توجد نقاط لعرضها على الخريطة"
+        description="غيّر عوامل التصفية لإظهار نقاط أخرى."
+      />
+    );
+  }
+
+  // Use the first visible point as the initial map preview.
+  const primary = items[0];
+
+  if (!primary) {
+    return null;
+  }
+
+  return (
+    <Card className="rounded-xl border-border/45 bg-white shadow-none">
+      <SectionHeader
+        title="عرض الخريطة"
+        description="اختر نقطة من القائمة لمراجعة تفاصيلها وموقعها."
+      />
+
+      <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
+        <LocationPreview
+          title={primary.name ?? primary.id}
+          address={`${primary.location.governorate} — ${primary.location.city ?? ''} · ${primary.location.address}`}
+          latitude={primary.location.latitude}
+          longitude={primary.location.longitude}
+        />
+
+        <div className="max-h-[30rem] space-y-2 overflow-y-auto pe-1">
+          {items.map((point) => (
+            <Link
+              key={point.id}
+              to={`/feeding-points/${point.id}`}
+              className="block rounded-lg border border-border/40 p-3 transition-colors hover:bg-primary/[0.025]"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex min-w-0 gap-2">
+                  <MapPin className="mt-0.5 size-4 shrink-0 text-primary" />
+
+                  <div className="min-w-0">
+                    <p className="truncate text-[12px] font-semibold">
+                      {point.name ?? point.id}
+                    </p>
+
+                    <p className="mt-0.5 text-[11px] text-muted-foreground">
+                      {point.location.governorate} — {point.location.city ?? '—'}
+                    </p>
+                  </div>
+                </div>
+
+                <FeedingPointStatusBadge status={point.status} />
+              </div>
+
+              <div className="mt-2 flex flex-wrap gap-2">
+                {point.pendingRefillsCount > 0 && (
+                  <Badge tone="pending">
+                    {point.pendingRefillsCount} تعبئة تنتظر التحقق
+                  </Badge>
+                )}
+
+                {point.lastVerifiedRefillAt && (
+                  <span className="text-[11px] text-muted-foreground">
+                    آخر تعبئة مؤكدة{' '}
+                    {formatFeedingPointRelative(point.lastVerifiedRefillAt)}
+                  </span>
+                )}
+              </div>
+            </Link>
+          ))}
+        </div>
+      </div>
+    </Card>
+  );
+}

@@ -4,24 +4,41 @@
   <head>
     <meta charset="UTF-8" />
 
+    <!-- Responsive viewport with support for safe areas on modern devices. -->
     <meta
       name="viewport"
       content="width=device-width, initial-scale=1.0, viewport-fit=cover"
     />
 
+    <!-- Basic application metadata. -->
+    <title>ResQ Admin | لوحة إدارة ResQ</title>
     <meta
-      name="theme-color"
-      content="#fffaf5"
+      name="description"
+      content="لوحة إدارة ResQ لمتابعة البلاغات والجمعيات والمستخدمين والتبني والتبرعات والمحتوى والعمليات الإدارية."
     />
+    <meta name="application-name" content="ResQ Admin" />
+    <meta name="author" content="ResQ" />
 
+    <!-- Prevent the private admin dashboard from being indexed by search engines. -->
+    <meta name="robots" content="noindex, nofollow, noarchive, nosnippet" />
+    <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet" />
+
+    <!-- Browser and mobile UI integration. -->
+    <meta name="theme-color" content="#fffaf5" />
+    <meta name="color-scheme" content="light" />
+    <meta name="format-detection" content="telephone=no" />
+
+    <!-- Avoid leaking full dashboard URLs through referrer headers. -->
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+
+    <!-- Font connections are established early to reduce loading latency. -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
     <link
       href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
-
-    <title>ResQ Admin</title>
 
     <style>
       html,
@@ -29,12 +46,9 @@
       #root {
         margin: 0;
         padding: 0;
-
         width: 100%;
         min-width: 100%;
-
         min-height: 100%;
-
         background: #fffaf5;
       }
 
@@ -54,9 +68,7 @@
   <body>
     <div id="root"></div>
 
-    <script
-      type="module"
-      src="/src/main.tsx"
-    ></script>
+    <!-- Vite application entry point. -->
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

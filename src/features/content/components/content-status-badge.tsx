@@ -1,1 +1,19 @@
-import{StatusBadge}from'@/components/ui';import type{ContentStatus}from'../types';const statuses:Record<ContentStatus,'content:DRAFT'|'content:IN_REVIEW'|'content:SCHEDULED'|'content:PUBLISHED'|'content:ARCHIVED'>={DRAFT:'content:DRAFT',IN_REVIEW:'content:IN_REVIEW',SCHEDULED:'content:SCHEDULED',PUBLISHED:'content:PUBLISHED',ARCHIVED:'content:ARCHIVED'};export function ContentStatusBadge({status}:{status:ContentStatus}){return<StatusBadge status={statuses[status]}/>}
+import { StatusBadge } from '@/components/ui';
+
+import type { ContentStatus } from '../types';
+
+const statuses: Record<
+  ContentStatus,
+  'content:DRAFT' | 'content:IN_REVIEW' | 'content:SCHEDULED' | 'content:PUBLISHED' | 'content:ARCHIVED'
+> = {
+  DRAFT: 'content:DRAFT',
+  IN_REVIEW: 'content:IN_REVIEW',
+  SCHEDULED: 'content:SCHEDULED',
+  PUBLISHED: 'content:PUBLISHED',
+  ARCHIVED: 'content:ARCHIVED',
+};
+
+export function ContentStatusBadge({ status }: { status: ContentStatus }) {
+  // Map content states to the shared status badge keys.
+  return <StatusBadge status={statuses[status]} />;
+}

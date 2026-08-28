@@ -1,16 +1,170 @@
-export type ContentStatus='DRAFT'|'IN_REVIEW'|'SCHEDULED'|'PUBLISHED'|'ARCHIVED';
-export type ArticleCategory='ANIMAL_CARE'|'HEALTH'|'NUTRITION'|'BEHAVIOR'|'SAFETY'|'ADOPTION'|'OTHER';
-export type ContentKind='ARTICLE'|'SUCCESS_STORY'|'AWARENESS';
-export interface ContentAuthor{id:string;name:string}
-export interface ContentMedia{id:string;type:'IMAGE';url:string;altText:string;caption?:string}
-export interface ContentRevision{id:string;contentId:string;createdAt:string;author:ContentAuthor;summary?:string}
-export interface EditorialEvent{id:string;title:string;actor?:string;timestamp:string;details?:string;tone?:'neutral'|'success'|'pending'|'critical'|'info'}
-export interface EditorialNote{id:string;adminName:string;createdAt:string;note:string}
-export interface Article{id:string;title:string;slug:string;excerpt:string;content:string;coverImageUrl?:string;coverAltText?:string;category:ArticleCategory;tags:string[];status:ContentStatus;author:ContentAuthor;seo?:{metaTitle?:string;metaDescription?:string};publishedAt?:string;scheduledAt?:string;createdAt:string;updatedAt:string}
-export interface SuccessStory{id:string;title:string;slug:string;summary:string;content:string;coverImageUrl?:string;coverAltText?:string;gallery?:ContentMedia[];reportId?:string;organizationId?:string;status:ContentStatus;author:ContentAuthor;publishedAt?:string;scheduledAt?:string;createdAt:string;updatedAt:string}
-export interface AwarenessContent{id:string;title:string;slug:string;summary?:string;content:string;coverImageUrl?:string;coverAltText?:string;audience?:Array<'ALL'|'USERS'|'ORGANIZATIONS'>;status:ContentStatus;author:ContentAuthor;publishedAt?:string;scheduledAt?:string;createdAt:string;updatedAt:string}
-export interface FaqItem{id:string;question:string;answer:string;category:string;order:number;active:boolean;createdAt:string;updatedAt:string}
-export interface EditorialRecord<T>{item:T;timeline:EditorialEvent[];notes:EditorialNote[];revisions:ContentRevision[]}
-export interface ContentListFilters{search:string;status?:ContentStatus;category?:string;author?:string;tag?:string;dateFrom?:string;dateTo?:string;page:number;pageSize:number}
-export interface ContentListResult<T>{items:T[];total:number;page:number;pageSize:number;pageCount:number}
-export interface EditorialInput{title:string;slug:string;summary:string;content:string;coverImageUrl?:string;coverAltText?:string;category?:ArticleCategory;tags:string[];scheduledAt?:string;metaTitle?:string;metaDescription?:string;reportId?:string;organizationId?:string;audience?:Array<'ALL'|'USERS'|'ORGANIZATIONS'>}
+export type ContentStatus =
+  | 'DRAFT'
+  | 'IN_REVIEW'
+  | 'SCHEDULED'
+  | 'PUBLISHED'
+  | 'ARCHIVED';
+
+export type ArticleCategory =
+  | 'ANIMAL_CARE'
+  | 'HEALTH'
+  | 'NUTRITION'
+  | 'BEHAVIOR'
+  | 'SAFETY'
+  | 'ADOPTION'
+  | 'OTHER';
+
+export type ContentKind =
+  | 'ARTICLE'
+  | 'SUCCESS_STORY'
+  | 'AWARENESS';
+
+export interface ContentAuthor {
+  id: string;
+  name: string;
+}
+
+export interface ContentMedia {
+  id: string;
+  type: 'IMAGE';
+  url: string;
+  altText: string;
+  caption?: string;
+}
+
+export interface ContentRevision {
+  id: string;
+  contentId: string;
+  createdAt: string;
+  author: ContentAuthor;
+  summary?: string;
+}
+
+export interface EditorialEvent {
+  id: string;
+  title: string;
+  actor?: string;
+  timestamp: string;
+  details?: string;
+  tone?: 'neutral' | 'success' | 'pending' | 'critical' | 'info';
+}
+
+export interface EditorialNote {
+  id: string;
+  adminName: string;
+  createdAt: string;
+  note: string;
+}
+
+// Shared fields differ slightly between each editorial content type.
+export interface Article {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt: string;
+  content: string;
+  coverImageUrl?: string;
+  coverAltText?: string;
+  category: ArticleCategory;
+  tags: string[];
+  status: ContentStatus;
+  author: ContentAuthor;
+  seo?: { metaTitle?: string; metaDescription?: string };
+  publishedAt?: string;
+  scheduledAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SuccessStory {
+  id: string;
+  title: string;
+  slug: string;
+  summary: string;
+  content: string;
+  coverImageUrl?: string;
+  coverAltText?: string;
+  gallery?: ContentMedia[];
+  reportId?: string;
+  organizationId?: string;
+  status: ContentStatus;
+  author: ContentAuthor;
+  publishedAt?: string;
+  scheduledAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AwarenessContent {
+  id: string;
+  title: string;
+  slug: string;
+  summary?: string;
+  content: string;
+  coverImageUrl?: string;
+  coverAltText?: string;
+  audience?: Array<'ALL' | 'USERS' | 'ORGANIZATIONS'>;
+  status: ContentStatus;
+  author: ContentAuthor;
+  publishedAt?: string;
+  scheduledAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface FaqItem {
+  id: string;
+  question: string;
+  answer: string;
+  category: string;
+  order: number;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Keeps the main record together with its internal editorial history.
+export interface EditorialRecord<T> {
+  item: T;
+  timeline: EditorialEvent[];
+  notes: EditorialNote[];
+  revisions: ContentRevision[];
+}
+
+export interface ContentListFilters {
+  search: string;
+  status?: ContentStatus;
+  category?: string;
+  author?: string;
+  tag?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  page: number;
+  pageSize: number;
+}
+
+export interface ContentListResult<T> {
+  items: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+  pageCount: number;
+}
+
+// Shared form shape used by the article, story, and awareness editors.
+export interface EditorialInput {
+  title: string;
+  slug: string;
+  summary: string;
+  content: string;
+  coverImageUrl?: string;
+  coverAltText?: string;
+  category?: ArticleCategory;
+  tags: string[];
+  scheduledAt?: string;
+  metaTitle?: string;
+  metaDescription?: string;
+  reportId?: string;
+  organizationId?: string;
+  audience?: Array<'ALL' | 'USERS' | 'ORGANIZATIONS'>;
+}

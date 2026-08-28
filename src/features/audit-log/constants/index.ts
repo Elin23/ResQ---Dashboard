@@ -1,5 +1,94 @@
-import type{AuditAction,AuditResourceType}from'../types';
-export const auditActionLabels:Record<AuditAction,string>={REPORT_VERIFIED:'تحقق من البلاغ',REPORT_REJECTED:'رفض البلاغ',REPORT_SEVERITY_CHANGED:'غيّر درجة خطورة البلاغ',REPORT_ASSIGNED:'أسند البلاغ إلى جمعية',REPORT_CLOSED:'أغلق البلاغ',REPORT_ORGANIZATION_ASSIGNED:'أسند البلاغ إلى جمعية',REPORT_ORGANIZATION_CHANGED:'غيّر الجمعية المسؤولة عن البلاغ',REPORT_STATUS_ADMIN_OVERRIDE:'غيّر حالة البلاغ كتجاوز إداري',REPORT_DELETED:'حذف البلاغ',ADOPTION_REVIEW_STARTED:'بدأ مراجعة طلب التبني',ADOPTION_APPROVED:'وافق على طلب التبني',ADOPTION_REJECTED:'رفض طلب التبني',ADOPTION_COMPLETED:'أكمل عملية التبني',ORGANIZATION_REVIEW_STARTED:'بدأ مراجعة الجمعية',ORGANIZATION_APPROVED:'اعتمد الجمعية',ORGANIZATION_REJECTED:'رفض الجمعية',ORGANIZATION_SUSPENDED:'علّق حساب الجمعية',ORGANIZATION_REACTIVATED:'أعاد تفعيل الجمعية',USER_SUSPENDED:'علّق حساب المستخدم',USER_REACTIVATED:'أعاد تفعيل المستخدم',USER_BLOCKED:'حظر حساب المستخدم',USER_UNBLOCKED:'رفع الحظر عن المستخدم',FEEDING_POINT_APPROVED:'اعتمد نقطة الإطعام',FEEDING_POINT_REJECTED:'رفض نقطة الإطعام',FEEDING_POINT_DEACTIVATED:'عطّل نقطة الإطعام',FEEDING_POINT_REFILL_VERIFIED:'أكد إعادة تعبئة نقطة الإطعام',FEEDING_POINT_REFILL_REJECTED:'رفض إثبات إعادة تعبئة نقطة الإطعام',DONATION_REFUND_RECORDED:'سجّل استرداد تبرع',ADVERTISEMENT_APPROVED:'اعتمد الإعلان',ADVERTISEMENT_REJECTED:'رفض الإعلان',ADVERTISEMENT_PAUSED:'أوقف الإعلان مؤقتًا',ADVERTISEMENT_RESUMED:'استأنف الإعلان',CONTENT_PUBLISHED:'نشر المحتوى',CONTENT_ARCHIVED:'أرشف المحتوى',NOTIFICATION_SENT:'أرسل إشعارًا جماعيًا',NOTIFICATION_SCHEDULED:'جدول إشعارًا جماعيًا',NOTIFICATION_CANCELLED:'ألغى إشعارًا مجدولًا',SUPPORT_TICKET_ASSIGNED:'أسند تذكرة دعم',SUPPORT_TICKET_RESOLVED:'حل تذكرة دعم',SUPPORT_TICKET_REOPENED:'أعاد فتح تذكرة دعم',ADMIN_INVITED:'دعا مستخدمًا إداريًا',ADMIN_SUSPENDED:'علّق حساب مسؤول',ADMIN_REACTIVATED:'أعاد تفعيل مسؤول',ADMIN_ROLES_UPDATED:'حدّث أدوار مسؤول',ROLE_CREATED:'أنشأ دورًا إداريًا',ROLE_UPDATED:'حدّث صلاحيات دور إداري',ROLE_DELETED:'حذف دورًا مخصصًا',SYSTEM_SETTING_CHANGED:'غيّر إعدادًا في النظام',LOOKUP_VALUE_CREATED:'أضاف قيمة مرجعية',LOOKUP_VALUE_UPDATED:'حدّث قيمة مرجعية',ADVERTISEMENT_EXPIRED:'أنهى إعلانًا تلقائيًا'};
-export const auditResourceLabels:Record<AuditResourceType,string>={REPORT:'بلاغ',ADOPTION_REQUEST:'طلب تبني',ORGANIZATION:'جمعية',USER:'مستخدم',FEEDING_POINT:'نقطة إطعام',DONATION:'تبرع',ADVERTISEMENT:'إعلان',CONTENT:'محتوى',NOTIFICATION:'إشعار',SUPPORT_TICKET:'تذكرة دعم',ADMIN:'مسؤول إداري',ROLE:'دور إداري',SYSTEM_SETTING:'إعداد نظام'};
-export const sensitiveAuditActions=new Set<AuditAction>(['USER_BLOCKED','ADMIN_SUSPENDED','ADMIN_ROLES_UPDATED','ROLE_CREATED','ROLE_DELETED','ORGANIZATION_SUSPENDED','DONATION_REFUND_RECORDED','ROLE_UPDATED','SYSTEM_SETTING_CHANGED']);
-export const sensitiveFields=new Set(['phone','email','donorEmail','donorPhone','رقم الهاتف','البريد الإلكتروني']);
+import type { AuditAction, AuditResourceType } from '../types';
+
+export const auditActionLabels: Record<AuditAction, string> = {
+  REPORT_VERIFIED: 'تحقق من البلاغ',
+  REPORT_REJECTED: 'رفض البلاغ',
+  REPORT_SEVERITY_CHANGED: 'غيّر درجة خطورة البلاغ',
+  REPORT_ASSIGNED: 'أسند البلاغ إلى جمعية',
+  REPORT_CLOSED: 'أغلق البلاغ',
+  REPORT_ORGANIZATION_ASSIGNED: 'أسند البلاغ إلى جمعية',
+  REPORT_ORGANIZATION_CHANGED: 'غيّر الجمعية المسؤولة عن البلاغ',
+  REPORT_STATUS_ADMIN_OVERRIDE: 'غيّر حالة البلاغ كتجاوز إداري',
+  REPORT_DELETED: 'حذف البلاغ',
+  ADOPTION_REVIEW_STARTED: 'بدأ مراجعة طلب التبني',
+  ADOPTION_APPROVED: 'وافق على طلب التبني',
+  ADOPTION_REJECTED: 'رفض طلب التبني',
+  ADOPTION_COMPLETED: 'أكمل عملية التبني',
+  ORGANIZATION_REVIEW_STARTED: 'بدأ مراجعة الجمعية',
+  ORGANIZATION_APPROVED: 'اعتمد الجمعية',
+  ORGANIZATION_REJECTED: 'رفض الجمعية',
+  ORGANIZATION_SUSPENDED: 'علّق حساب الجمعية',
+  ORGANIZATION_REACTIVATED: 'أعاد تفعيل الجمعية',
+  USER_SUSPENDED: 'علّق حساب المستخدم',
+  USER_REACTIVATED: 'أعاد تفعيل المستخدم',
+  USER_BLOCKED: 'حظر حساب المستخدم',
+  USER_UNBLOCKED: 'رفع الحظر عن المستخدم',
+  FEEDING_POINT_APPROVED: 'اعتمد نقطة الإطعام',
+  FEEDING_POINT_REJECTED: 'رفض نقطة الإطعام',
+  FEEDING_POINT_DEACTIVATED: 'عطّل نقطة الإطعام',
+  FEEDING_POINT_REFILL_VERIFIED: 'أكد إعادة تعبئة نقطة الإطعام',
+  FEEDING_POINT_REFILL_REJECTED: 'رفض إثبات إعادة تعبئة نقطة الإطعام',
+  DONATION_REFUND_RECORDED: 'سجّل استرداد تبرع',
+  ADVERTISEMENT_APPROVED: 'اعتمد الإعلان',
+  ADVERTISEMENT_REJECTED: 'رفض الإعلان',
+  ADVERTISEMENT_PAUSED: 'أوقف الإعلان مؤقتًا',
+  ADVERTISEMENT_RESUMED: 'استأنف الإعلان',
+  CONTENT_PUBLISHED: 'نشر المحتوى',
+  CONTENT_ARCHIVED: 'أرشف المحتوى',
+  NOTIFICATION_SENT: 'أرسل إشعارًا جماعيًا',
+  NOTIFICATION_SCHEDULED: 'جدول إشعارًا جماعيًا',
+  NOTIFICATION_CANCELLED: 'ألغى إشعارًا مجدولًا',
+  SUPPORT_TICKET_ASSIGNED: 'أسند تذكرة دعم',
+  SUPPORT_TICKET_RESOLVED: 'حل تذكرة دعم',
+  SUPPORT_TICKET_REOPENED: 'أعاد فتح تذكرة دعم',
+  ADMIN_INVITED: 'دعا مستخدمًا إداريًا',
+  ADMIN_SUSPENDED: 'علّق حساب مسؤول',
+  ADMIN_REACTIVATED: 'أعاد تفعيل مسؤول',
+  ADMIN_ROLES_UPDATED: 'حدّث أدوار مسؤول',
+  ROLE_CREATED: 'أنشأ دورًا إداريًا',
+  ROLE_UPDATED: 'حدّث صلاحيات دور إداري',
+  ROLE_DELETED: 'حذف دورًا مخصصًا',
+  SYSTEM_SETTING_CHANGED: 'غيّر إعدادًا في النظام',
+  LOOKUP_VALUE_CREATED: 'أضاف قيمة مرجعية',
+  LOOKUP_VALUE_UPDATED: 'حدّث قيمة مرجعية',
+  ADVERTISEMENT_EXPIRED: 'أنهى إعلانًا تلقائيًا',
+};
+
+export const auditResourceLabels: Record<AuditResourceType, string> = {
+  REPORT: 'بلاغ',
+  ADOPTION_REQUEST: 'طلب تبني',
+  ORGANIZATION: 'جمعية',
+  USER: 'مستخدم',
+  FEEDING_POINT: 'نقطة إطعام',
+  DONATION: 'تبرع',
+  ADVERTISEMENT: 'إعلان',
+  CONTENT: 'محتوى',
+  NOTIFICATION: 'إشعار',
+  SUPPORT_TICKET: 'تذكرة دعم',
+  ADMIN: 'مسؤول إداري',
+  ROLE: 'دور إداري',
+  SYSTEM_SETTING: 'إعداد نظام',
+};
+
+// These actions are highlighted because they affect permissions, money, or account access.
+export const sensitiveAuditActions = new Set<AuditAction>([
+  'USER_BLOCKED',
+  'ADMIN_SUSPENDED',
+  'ADMIN_ROLES_UPDATED',
+  'ROLE_CREATED',
+  'ROLE_DELETED',
+  'ORGANIZATION_SUSPENDED',
+  'DONATION_REFUND_RECORDED',
+  'ROLE_UPDATED',
+  'SYSTEM_SETTING_CHANGED',
+]);
+
+// Hide these fields when the admin does not have permission to view sensitive data.
+export const sensitiveFields = new Set([
+  'phone',
+  'email',
+  'donorEmail',
+  'donorPhone',
+  'رقم الهاتف',
+  'البريد الإلكتروني',
+]);

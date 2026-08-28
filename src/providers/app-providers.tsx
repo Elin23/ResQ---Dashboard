@@ -1,72 +1,35 @@
-import {
-  QueryClient,
-  QueryClientProvider,
-} from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { useState, type ReactNode } from 'react';
+import { HashRouter } from 'react-router';
+import { Toaster } from 'sonner';
 
-import {
-  useState,
-  type ReactNode,
-} from 'react';
+import { env } from '@/config/env';
+import { SessionProvider } from '@/features/auth/session';
 
-import {
-  HashRouter,
-} from 'react-router';
-
-import {
-  Toaster,
-} from 'sonner';
-
-import {
-  SessionProvider,
-} from '@/features/auth/session';
-
-import {
-  env,
-} from '@/config/env';
-
-export function AppProviders({
-  children,
-}: {
-  children: ReactNode;
-}) {
-  const [queryClient] =
-    useState(
-      () =>
-        new QueryClient({
-          defaultOptions: {
-            queries: {
-              staleTime:
-                env.dataSource ===
-                'mock'
-                  ? Infinity
-                  : 30_000,
-
-              gcTime:
-                30 *
-                60_000,
-
-              retry:
-                1,
-
-              refetchOnWindowFocus:
-                false,
-            },
-
-            mutations: {
-              retry:
-                0,
-            },
+export function AppProviders({ children }: { children: ReactNode }) {
+  // Keep one QueryClient instance for the whole app to avoid resetting cached server state on re-renders.
+  const [queryClient] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            // Mock data does not change externally, so it can stay fresh indefinitely.
+            staleTime: env.dataSource === 'mock' ? Infinity : 30_000,
+            gcTime: 30 * 60_000,
+            retry: 1,
+            refetchOnWindowFocus: false,
           },
-        }),
-    );
+          mutations: {
+            // Mutations should surface failures immediately instead of retrying destructive actions.
+            retry: 0,
+          },
+        },
+      }),
+  );
 
   return (
     <HashRouter>
-      <QueryClientProvider
-        client={
-          queryClient
-        }
-      >
+      <QueryClientProvider client={queryClient}>
         <SessionProvider>
           {children}
 

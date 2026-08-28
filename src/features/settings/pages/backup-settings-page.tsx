@@ -21,7 +21,9 @@ export function BackupSettingsPage() {
     );
   }
 
-  if (!query.data) return null;
+  if (!query.data) {
+    return null;
+  }
 
   return (
     <div className="space-y-6 pb-6">
@@ -39,9 +41,15 @@ export function BackupSettingsPage() {
         }
       />
 
+      {/* Users without update permission can still review the current backup settings. */}
       <PermissionGuard
         permission="settings.update"
-        fallback={<BackupSettingsManager settings={query.data} readOnly />}
+        fallback={
+          <BackupSettingsManager
+            settings={query.data}
+            readOnly
+          />
+        }
       >
         <BackupSettingsManager settings={query.data} />
       </PermissionGuard>

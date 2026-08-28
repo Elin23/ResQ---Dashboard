@@ -1,1 +1,36 @@
-import{Card,Badge}from'@/components/ui';export function ContentPreview({title,summary,content,coverImageUrl,coverAltText,mode='article'}:{title:string;summary?:string;content:string;coverImageUrl?:string;coverAltText?:string;mode?:'article'|'phone'}){return<Card className={mode==='phone'?'mx-auto max-w-sm overflow-hidden p-0':'overflow-hidden p-0'}><div className="border-b bg-muted px-4 py-2 text-xs text-muted-foreground"><Badge tone="info">معاينة تقريبية</Badge></div>{coverImageUrl&&<img src={coverImageUrl} alt={coverAltText||title} className="aspect-[16/8] w-full object-cover"/>}<article className="space-y-4 p-5"><h2 className="text-xl font-bold leading-8">{title||'عنوان المحتوى'}</h2>{summary&&<p className="font-medium text-muted-foreground">{summary}</p>}<div className="whitespace-pre-wrap text-sm leading-7 text-foreground">{content||'ستظهر معاينة النص هنا.'}</div></article></Card>}
+import { Badge, Card } from '@/components/ui';
+
+export function ContentPreview({ title, summary, content, coverImageUrl, coverAltText, mode = 'article' }: { title: string; summary?: string; content: string; coverImageUrl?: string; coverAltText?: string; mode?: 'article' | 'phone' }) {
+  return (
+    <Card className={mode === 'phone' ? 'mx-auto max-w-sm overflow-hidden p-0' : 'overflow-hidden p-0'}>
+      <div className="border-b bg-muted px-4 py-2 text-xs text-muted-foreground">
+        <Badge tone="info">معاينة تقريبية</Badge>
+      </div>
+
+      {coverImageUrl && (
+        <img
+          src={coverImageUrl}
+          alt={coverAltText || title}
+          className="aspect-[16/8] w-full object-cover"
+        />
+      )}
+
+      <article className="space-y-4 p-5">
+        <h2 className="text-xl font-bold leading-8">
+          {title || 'عنوان المحتوى'}
+        </h2>
+
+        {summary && (
+          <p className="font-medium text-muted-foreground">
+            {summary}
+          </p>
+        )}
+
+        {/* Keep line breaks so the preview stays close to the written content. */}
+        <div className="whitespace-pre-wrap text-sm leading-7 text-foreground">
+          {content || 'ستظهر معاينة النص هنا.'}
+        </div>
+      </article>
+    </Card>
+  );
+}

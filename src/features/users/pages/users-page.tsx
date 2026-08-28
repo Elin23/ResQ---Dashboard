@@ -1,25 +1,17 @@
-import { commitSearchParams } from '@/lib/search-params';
 import { useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router';
 import { Button, EmptyState, ErrorState, ExportMenuButton, PageHeader } from '@/components/ui';
 import type { DataTableQueryState } from '@/components/ui/data-table';
+import { commitSearchParams } from '@/lib/search-params';
 import { UserFilterBar } from '../components/user-filter-bar';
 import { UserSummaryCards } from '../components/user-summary';
 import { UsersTable } from '../components/users-table';
-import { useUsers, useUserSummary } from '../hooks';
-import {
-  userAccountStatuses,
-  userVerificationStatuses,
-  type User,
-  type UserFilters,
-} from '../types';
 import { accountStatusLabels, userGovernorates, verificationLabels } from '../constants';
+import { useUsers, useUserSummary } from '../hooks';
+import { userAccountStatuses, userVerificationStatuses, type User, type UserFilters } from '../types';
 import { hasUserFilters } from '../utils';
 
-const valid = <T extends string>(
-  value: string | null,
-  options: readonly T[],
-): T | undefined =>
+const valid = <T extends string>(value: string | null, options: readonly T[]): T | undefined =>
   value && options.includes(value as T) ? (value as T) : undefined;
 
 function fromParams(params: URLSearchParams): UserFilters {
@@ -35,9 +27,7 @@ function fromParams(params: URLSearchParams): UserFilters {
     hasAdoptions: valid(params.get('hasAdoptions'), ['YES', 'NO'] as const),
     hasActiveAdoptions: params.get('activeAdoptions') === 'YES' ? 'YES' : undefined,
     page: Math.max(1, Number(params.get('page') ?? 1) || 1),
-    pageSize: [10, 20, 50].includes(Number(params.get('pageSize')))
-      ? Number(params.get('pageSize'))
-      : 10,
+    pageSize: [10, 20, 50].includes(Number(params.get('pageSize'))) ? Number(params.get('pageSize')) : 10,
     sortBy: valid(params.get('sort'), ['createdAt', 'lastActiveAt', 'fullName', 'accountStatus'] as const),
     sortDirection: params.get('direction') === 'asc' ? 'asc' : 'desc',
   };
@@ -45,6 +35,7 @@ function fromParams(params: URLSearchParams): UserFilters {
 
 function toParams(filters: UserFilters) {
   const params = new URLSearchParams();
+
   const entries: Array<[string, string | number | undefined]> = [
     ['q', filters.search || undefined],
     ['status', filters.accountStatus],
@@ -63,7 +54,9 @@ function toParams(filters: UserFilters) {
   ];
 
   for (const [key, value] of entries) {
-    if (value !== undefined) params.set(key, String(value));
+    if (value !== undefined) {
+      params.set(key, String(value));
+    }
   }
 
   return params;
@@ -75,11 +68,15 @@ export function UsersPage() {
   const query = useUsers(filters);
   const summary = useUserSummary();
 
+  // Keep the users view shareable by reflecting filters in the URL.
   const update = useCallback(
     (patch: Partial<UserFilters>) =>
       commitSearchParams(
         params,
-        toParams({ ...filters, ...patch }),
+        toParams({
+          ...filters,
+          ...patch,
+        }),
         setParams,
       ),
     [filters, params, setParams],
@@ -92,6 +89,7 @@ export function UsersPage() {
   const onState = useCallback(
     (state: DataTableQueryState) => {
       const sort = state.sorting[0];
+
       const next =
         sort && ['createdAt', 'lastActiveAt', 'fullName', 'accountStatus'].includes(sort.id)
           ? (sort.id as UserFilters['sortBy'])
@@ -140,7 +138,42 @@ export function UsersPage() {
           { label: 'الرئيسية', href: '/dashboard' },
           { label: 'المستخدمون' },
         ]}
-        actions={<ExportMenuButton title="المستخدمون" fileName="resq-users" rows={query.data?.items ?? []} disabled={query.isLoading} subtitle="تصدير بيانات إدارية أساسية للنتائج الظاهرة حاليًا." columns={[{ label:'الاسم', value:(item:User)=>item.fullName },{ label:'المحافظة', value:(item:User)=>item.governorate ?? '' },{ label:'المدينة', value:(item:User)=>item.city ?? '' },{ label:'حالة الحساب', value:(item:User)=>accountStatusLabels[item.accountStatus] },{ label:'التوثيق', value:(item:User)=>verificationLabels[item.verificationStatus] },{ label:'تاريخ التسجيل', value:(item:User)=>new Date(item.createdAt).toLocaleDateString('ar-SY-u-nu-latn') }]} />}
+        actions={
+          <ExportMenuButton
+            title="المستخدمون"
+            fileName="resq-users"
+            rows={query.data?.items ?? []}
+            disabled={query.isLoading}
+            subtitle="تصدير بيانات إدارية أساسية للنتائج الظاهرة حاليًا."
+            columns={[
+              {
+                label: 'الاسم',
+                value: (item: User) => item.fullName,
+              },
+              {
+                label: 'المحافظة',
+                value: (item: User) => item.governorate ?? '',
+              },
+              {
+                label: 'المدينة',
+                value: (item: User) => item.city ?? '',
+              },
+              {
+                label: 'حالة الحساب',
+                value: (item: User) => accountStatusLabels[item.accountStatus],
+              },
+              {
+                label: 'التوثيق',
+                value: (item: User) => verificationLabels[item.verificationStatus],
+              },
+              {
+                label: 'تاريخ التسجيل',
+                value: (item: User) =>
+                  new Date(item.createdAt).toLocaleDateString('ar-SY-u-nu-latn'),
+              },
+            ]}
+          />
+        }
       />
 
       <UserSummaryCards
@@ -169,11 +202,7 @@ export function UsersPage() {
         emptyState={
           <EmptyState
             title={emptyTitle}
-            description={
-              active
-                ? 'عدّل عوامل التصفية أو امسحها.'
-                : 'ستظهر الحسابات المسجلة هنا.'
-            }
+            description={active ? 'عدّل عوامل التصفية أو امسحها.' : 'ستظهر الحسابات المسجلة هنا.'}
             action={
               active ? (
                 <Button variant="secondary" onClick={clear}>

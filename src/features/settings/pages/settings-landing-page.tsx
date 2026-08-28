@@ -40,9 +40,13 @@ export function SettingsLandingPage() {
       <PageHeader
         title="الإعدادات"
         description="إدارة الوصول الإداري، جهات اتصال الطوارئ والنسخ الاحتياطي."
-        breadcrumbs={[{ label: 'الرئيسية', href: '/dashboard' }, { label: 'الإعدادات' }]}
+        breadcrumbs={[
+          { label: 'الرئيسية', href: '/dashboard' },
+          { label: 'الإعدادات' },
+        ]}
       />
 
+      {/* Show only the settings sections allowed by the current admin permissions. */}
       <div className="grid gap-3 md:grid-cols-2">
         {cards.map(({ title, description, href, icon: Icon, permission }) => (
           <PermissionGuard key={href} permission={permission}>
@@ -55,6 +59,7 @@ export function SettingsLandingPage() {
                   <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/[0.07] text-primary transition-colors duration-200 group-hover:bg-primary group-hover:text-primary-foreground">
                     <Icon className="size-4" strokeWidth={1.7} />
                   </span>
+
                   <div className="min-w-0">
                     <h2 className="text-[14px] font-semibold text-foreground">{title}</h2>
                     <p className="mt-1.5 text-[12px] leading-5 text-muted-foreground">{description}</p>

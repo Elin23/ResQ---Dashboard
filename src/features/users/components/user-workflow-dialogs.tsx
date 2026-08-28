@@ -1,12 +1,135 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
-import { Button,ConfirmDialog,Modal,Select,Textarea } from '@/components/ui';
-import { blockReasons,suspensionReasons } from '../constants';
-import { moderationSchema,type ModerationValues } from '../schemas';
-import { useBlockUser,useReactivateUser,useSuspendUser,useUnblockUser } from '../hooks';
-function ModerationDialog({id,open,onOpenChange,mode}:{id:string;open:boolean;onOpenChange:(v:boolean)=>void;mode:'suspend'|'block'}){const mutation=mode==='suspend'?useSuspendUser(id):useBlockUser(id);const reasons=mode==='suspend'?suspensionReasons:blockReasons;const{register,handleSubmit,watch,setValue,formState:{errors}}=useForm<ModerationValues>({resolver:zodResolver(moderationSchema),defaultValues:{reason:reasons[0],otherReason:'',note:''}});const reason=watch('reason');const submit=handleSubmit(v=>mutation.mutate(v,{onSuccess:()=>{toast.success(mode==='suspend'?'تم تعليق الحساب':'تم حظر الحساب');onOpenChange(false);},onError:()=>toast.error('تعذر تنفيذ الإجراء')}));return <Modal open={open} onOpenChange={onOpenChange} title={mode==='suspend'?'تعليق الحساب':'حظر الحساب'} description={mode==='block'?'سيمنع الحظر المستخدم من الوصول إلى حسابه والخدمات التي تتطلب تسجيل الدخول.':'التعليق إجراء مؤقت ولا يحذف تاريخ الحساب.'} footer={<><Button variant="secondary" onClick={()=>onOpenChange(false)}>إلغاء</Button><Button variant="danger" disabled={mutation.isPending} onClick={()=>void submit()}>{mode==='suspend'?'تأكيد التعليق':'تأكيد الحظر'}</Button></>}><div className="space-y-4"><label className="block text-sm font-semibold">السبب<Select value={reason} onValueChange={v=>setValue('reason',v,{shouldValidate:true})} options={reasons.map(v=>({value:v,label:v}))}/></label>{reason==='سبب آخر'&&<label className="block text-sm font-semibold">سبب آخر<Textarea className="mt-1" {...register('otherReason')}/>{errors.otherReason&&<p className="mt-1 text-xs text-critical">{errors.otherReason.message}</p>}</label>}<label className="block text-sm font-semibold">ملاحظة داخلية اختيارية<Textarea className="mt-1" {...register('note')}/></label></div></Modal>;}
-export const SuspendUserDialog=(p:{id:string;open:boolean;onOpenChange:(v:boolean)=>void})=><ModerationDialog {...p} mode="suspend"/>;
-export const BlockUserDialog=(p:{id:string;open:boolean;onOpenChange:(v:boolean)=>void})=><ModerationDialog {...p} mode="block"/>;
-export function ReactivateUserDialog({id,open,onOpenChange}:{id:string;open:boolean;onOpenChange:(v:boolean)=>void}){const mutation=useReactivateUser(id);return <ConfirmDialog open={open} onOpenChange={onOpenChange} title="إعادة تفعيل الحساب" description="سيعود المستخدم إلى حالة الحساب النشطة مع الاحتفاظ بكامل السجل السابق." confirmLabel="إعادة التفعيل" onConfirm={()=>mutation.mutate(undefined,{onSuccess:()=>toast.success('تمت إعادة تفعيل الحساب'),onError:()=>toast.error('تعذر إعادة التفعيل')})}/>;}
-export function UnblockUserDialog({id,open,onOpenChange}:{id:string;open:boolean;onOpenChange:(v:boolean)=>void}){const mutation=useUnblockUser(id);return <ConfirmDialog open={open} onOpenChange={onOpenChange} title="رفع حظر الحساب" description="سيتمكن المستخدم من الوصول إلى حسابه مجددًا. سيبقى سجل الحظر محفوظًا." confirmLabel="رفع الحظر" onConfirm={()=>mutation.mutate(undefined,{onSuccess:()=>toast.success('تم رفع الحظر'),onError:()=>toast.error('تعذر رفع الحظر')})}/>;}
+import { Button, ConfirmDialog, Modal, Select, Textarea } from '@/components/ui';
+import { blockReasons, suspensionReasons } from '../constants';
+import { useBlockUser, useReactivateUser, useSuspendUser, useUnblockUser } from '../hooks';
+import { moderationSchema, type ModerationValues } from '../schemas';
+
+function ModerationDialog({ id, open, onOpenChange, mode }: { id: string; open: boolean; onOpenChange: (v: boolean) => void; mode: 'suspend' | 'block' }) {
+  const mutation = mode === 'suspend' ? useSuspendUser(id) : useBlockUser(id);
+  const reasons = mode === 'suspend' ? suspensionReasons : blockReasons;
+
+  const {
+    register,
+    handleSubmit,
+    watch,
+    setValue,
+    formState: { errors },
+  } = useForm<ModerationValues>({
+    resolver: zodResolver(moderationSchema),
+    defaultValues: {
+      reason: reasons[0],
+      otherReason: '',
+      note: '',
+    },
+  });
+
+  const reason = watch('reason');
+
+  // Both moderation modes share the same validation and submission flow.
+  const submit = handleSubmit((v) =>
+    mutation.mutate(v, {
+      onSuccess: () => {
+        toast.success(mode === 'suspend' ? 'تم تعليق الحساب' : 'تم حظر الحساب');
+        onOpenChange(false);
+      },
+      onError: () => toast.error('تعذر تنفيذ الإجراء'),
+    }),
+  );
+
+  return (
+    <Modal
+      open={open}
+      onOpenChange={onOpenChange}
+      title={mode === 'suspend' ? 'تعليق الحساب' : 'حظر الحساب'}
+      description={
+        mode === 'block'
+          ? 'سيمنع الحظر المستخدم من الوصول إلى حسابه والخدمات التي تتطلب تسجيل الدخول.'
+          : 'التعليق إجراء مؤقت ولا يحذف تاريخ الحساب.'
+      }
+      footer={
+        <>
+          <Button variant="secondary" onClick={() => onOpenChange(false)}>
+            إلغاء
+          </Button>
+          <Button variant="danger" disabled={mutation.isPending} onClick={() => void submit()}>
+            {mode === 'suspend' ? 'تأكيد التعليق' : 'تأكيد الحظر'}
+          </Button>
+        </>
+      }
+    >
+      <div className="space-y-4">
+        <label className="block text-sm font-semibold">
+          السبب
+          <Select
+            value={reason}
+            onValueChange={(v) => setValue('reason', v, { shouldValidate: true })}
+            options={reasons.map((v) => ({ value: v, label: v }))}
+          />
+        </label>
+
+        {reason === 'سبب آخر' && (
+          <label className="block text-sm font-semibold">
+            سبب آخر
+            <Textarea className="mt-1" {...register('otherReason')} />
+            {errors.otherReason && <p className="mt-1 text-xs text-critical">{errors.otherReason.message}</p>}
+          </label>
+        )}
+
+        <label className="block text-sm font-semibold">
+          ملاحظة داخلية اختيارية
+          <Textarea className="mt-1" {...register('note')} />
+        </label>
+      </div>
+    </Modal>
+  );
+}
+
+export const SuspendUserDialog = (p: { id: string; open: boolean; onOpenChange: (v: boolean) => void }) => (
+  <ModerationDialog {...p} mode="suspend" />
+);
+
+export const BlockUserDialog = (p: { id: string; open: boolean; onOpenChange: (v: boolean) => void }) => (
+  <ModerationDialog {...p} mode="block" />
+);
+
+export function ReactivateUserDialog({ id, open, onOpenChange }: { id: string; open: boolean; onOpenChange: (v: boolean) => void }) {
+  const mutation = useReactivateUser(id);
+
+  return (
+    <ConfirmDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title="إعادة تفعيل الحساب"
+      description="سيعود المستخدم إلى حالة الحساب النشطة مع الاحتفاظ بكامل السجل السابق."
+      confirmLabel="إعادة التفعيل"
+      onConfirm={() =>
+        mutation.mutate(undefined, {
+          onSuccess: () => toast.success('تمت إعادة تفعيل الحساب'),
+          onError: () => toast.error('تعذر إعادة التفعيل'),
+        })
+      }
+    />
+  );
+}
+
+export function UnblockUserDialog({ id, open, onOpenChange }: { id: string; open: boolean; onOpenChange: (v: boolean) => void }) {
+  const mutation = useUnblockUser(id);
+
+  return (
+    <ConfirmDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title="رفع حظر الحساب"
+      description="سيتمكن المستخدم من الوصول إلى حسابه مجددًا. سيبقى سجل الحظر محفوظًا."
+      confirmLabel="رفع الحظر"
+      onConfirm={() =>
+        mutation.mutate(undefined, {
+          onSuccess: () => toast.success('تم رفع الحظر'),
+          onError: () => toast.error('تعذر رفع الحظر'),
+        })
+      }
+    />
+  );
+}

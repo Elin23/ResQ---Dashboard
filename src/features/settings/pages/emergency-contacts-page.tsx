@@ -1,6 +1,8 @@
 import { PhoneCall } from 'lucide-react';
+
 import { ErrorState, PageHeader, Skeleton } from '@/components/ui';
 import { PermissionGuard } from '@/features/auth/rbac';
+
 import { EmergencyContactsManager } from '../components/settings-components';
 import { useSystemSettings } from '../hooks';
 
@@ -21,7 +23,9 @@ export function EmergencyContactsPage() {
     );
   }
 
-  if (!query.data) return null;
+  if (!query.data) {
+    return null;
+  }
 
   return (
     <div className="space-y-6 pb-6">
@@ -39,9 +43,15 @@ export function EmergencyContactsPage() {
         }
       />
 
+      {/* Keep emergency contacts visible even when the user has read-only access. */}
       <PermissionGuard
         permission="settings.update"
-        fallback={<EmergencyContactsManager settings={query.data} readOnly />}
+        fallback={
+          <EmergencyContactsManager
+            settings={query.data}
+            readOnly
+          />
+        }
       >
         <EmergencyContactsManager settings={query.data} />
       </PermissionGuard>
