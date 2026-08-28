@@ -1,4 +1,5 @@
 import { Checkbox, Select } from '@/components/ui';
+
 import { governorates } from '../constants';
 import { useNotificationTargets } from '../hooks';
 import type { NotificationAudience, NotificationAudienceUserType } from '../types';
@@ -46,7 +47,7 @@ export function AudienceSelector({ value, onChange }: { value: NotificationAudie
   const targets = useNotificationTargets();
   const mode = modeOf(value);
 
-  // Reset audience fields when switching between targeting modes.
+  // Reset audience-specific fields when switching between targeting modes.
   const setMode = (next: string) => {
     const m = next as Mode;
 
@@ -81,9 +82,7 @@ export function AudienceSelector({ value, onChange }: { value: NotificationAudie
   return (
     <div className="space-y-4">
       <div>
-        <label className="mb-1.5 block text-sm font-semibold">
-          نمط الجمهور
-        </label>
+        <label className="mb-1.5 block text-sm font-semibold">نمط الجمهور</label>
 
         <Select
           value={mode}
@@ -100,9 +99,7 @@ export function AudienceSelector({ value, onChange }: { value: NotificationAudie
 
       {mode === 'TYPE' && (
         <fieldset className="space-y-2">
-          <legend className="mb-2 text-sm font-semibold">
-            نوع الحساب
-          </legend>
+          <legend className="mb-2 text-sm font-semibold">نوع الحساب</legend>
 
           <div className="flex flex-wrap gap-4">
             {userTypes.map((item) => (
@@ -113,11 +110,7 @@ export function AudienceSelector({ value, onChange }: { value: NotificationAudie
                 onCheckedChange={(checked) =>
                   onChange({
                     ...value,
-                    userTypes: toggle(
-                      value.userTypes,
-                      item.value,
-                      checked === true,
-                    ),
+                    userTypes: toggle(value.userTypes, item.value, checked === true),
                   })
                 }
               />
@@ -129,16 +122,14 @@ export function AudienceSelector({ value, onChange }: { value: NotificationAudie
       {mode === 'GOVERNORATE' && (
         <>
           <div>
-            <label className="mb-1.5 block text-sm font-semibold">
-              نوع الحساب
-            </label>
+            <label className="mb-1.5 block text-sm font-semibold">نوع الحساب</label>
 
             <Select
               value={value.userTypes?.[0] ?? 'USER'}
-              onValueChange={(value) =>
+              onValueChange={(nextValue) =>
                 onChange({
                   ...value,
-                  userTypes: [value as NotificationAudienceUserType],
+                  userTypes: [nextValue as NotificationAudienceUserType],
                 })
               }
               options={userTypes}
@@ -146,16 +137,14 @@ export function AudienceSelector({ value, onChange }: { value: NotificationAudie
           </div>
 
           <div>
-            <label className="mb-1.5 block text-sm font-semibold">
-              المحافظة
-            </label>
+            <label className="mb-1.5 block text-sm font-semibold">المحافظة</label>
 
             <Select
               value={value.governorates?.[0] ?? 'دمشق'}
-              onValueChange={(value) =>
+              onValueChange={(nextValue) =>
                 onChange({
                   ...value,
-                  governorates: [value],
+                  governorates: [nextValue],
                 })
               }
               options={governorates.map((governorate) => ({
@@ -169,16 +158,14 @@ export function AudienceSelector({ value, onChange }: { value: NotificationAudie
 
       {mode === 'ORGANIZATION' && (
         <div>
-          <label className="mb-1.5 block text-sm font-semibold">
-            الجمعية
-          </label>
+          <label className="mb-1.5 block text-sm font-semibold">الجمعية</label>
 
           <Select
             value={value.organizationIds?.[0]}
-            onValueChange={(value) =>
+            onValueChange={(nextValue) =>
               onChange({
                 ...value,
-                organizationIds: [value],
+                organizationIds: [nextValue],
               })
             }
             options={(targets.data?.organizations ?? []).map((organization) => ({
@@ -192,16 +179,14 @@ export function AudienceSelector({ value, onChange }: { value: NotificationAudie
 
       {mode === 'USER' && (
         <div>
-          <label className="mb-1.5 block text-sm font-semibold">
-            المستخدم
-          </label>
+          <label className="mb-1.5 block text-sm font-semibold">المستخدم</label>
 
           <Select
             value={value.userIds?.[0]}
-            onValueChange={(value) =>
+            onValueChange={(nextValue) =>
               onChange({
                 ...value,
-                userIds: [value],
+                userIds: [nextValue],
               })
             }
             options={(targets.data?.users ?? []).map((user) => ({
