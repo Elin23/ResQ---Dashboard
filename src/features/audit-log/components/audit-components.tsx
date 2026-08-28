@@ -3,7 +3,8 @@ import type { ColumnDef } from '@tanstack/react-table';
 import { Activity, CalendarClock, Download, Eye, MoreHorizontal, RotateCcw, ShieldAlert } from 'lucide-react';
 import { Link } from 'react-router';
 
-import { Badge, Button, Checkbox, DebouncedSearchInput, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, EmptyState, IconButton, Input, Modal, Select, Skeleton } from '@/components/ui';
+import { Badge, Button, Checkbox, DebouncedSearchInput, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, EmptyState, IconButton, Input, Modal, Select } from '@/components/ui';
+import { SummaryCard, SummaryCardSkeleton } from '@/components/ui/summary-card';
 import { DataTable, type DataTableQueryState } from '@/components/ui/data-table';
 import { rolePermissions } from '@/features/auth/permissions';
 import { useSession } from '@/features/auth/session';
@@ -14,56 +15,55 @@ import { formatAuditRelative, formatAuditTimestamp, resourcePath, resourcePermis
 
 export function AuditSummaryStrip({ summary, loading, onSensitive }: { summary?: AuditSummary; loading: boolean; onSensitive: () => void }) {
   const items = [
-    { label: 'إجمالي الأحداث', value: summary?.total ?? 0, icon: Activity },
-    { label: 'إجراءات اليوم', value: summary?.today ?? 0, icon: CalendarClock },
-    { label: 'إجراءات حساسة', value: summary?.sensitive ?? 0, icon: ShieldAlert, click: onSensitive },
+    {
+      key: 'total',
+      label: 'إجمالي الأحداث',
+      value: summary?.total ?? 0,
+      icon: Activity,
+      tone: 'primary' as const,
+      onClick: undefined,
+    },
+    {
+      key: 'today',
+      label: 'إجراءات اليوم',
+      value: summary?.today ?? 0,
+      icon: CalendarClock,
+      tone: 'info' as const,
+      onClick: undefined,
+    },
+    {
+      key: 'sensitive',
+      label: 'إجراءات حساسة',
+      value: summary?.sensitive ?? 0,
+      icon: ShieldAlert,
+      tone: 'critical' as const,
+      onClick: onSensitive,
+    },
   ];
 
   if (loading) {
     return (
       <div className="grid gap-2.5 sm:grid-cols-3">
         {items.map((item) => (
-          <Skeleton
-            key={item.label}
-            className="h-[90px] rounded-xl"
-          />
+          <SummaryCardSkeleton key={item.key} />
         ))}
       </div>
     );
   }
 
+  // Only the sensitive metric acts as a filter; the others stay informational.
   return (
     <div className="grid gap-2.5 sm:grid-cols-3">
-      {items.map((item) => {
-        const Icon = item.icon;
-
-        return (
-          <button
-            key={item.label}
-            type="button"
-            onClick={item.click}
-            disabled={!item.click}
-            className="flex min-h-[90px] items-center justify-between rounded-xl border border-border/45 bg-white p-3.5 text-start transition-colors duration-200 enabled:hover:border-primary/20 enabled:hover:bg-primary/[0.025]"
-          >
-            <div>
-              <p className="text-[12px] font-normal text-muted-foreground">
-                {item.label}
-              </p>
-
-              <p className="mt-2 text-[22px] font-semibold leading-none text-foreground">
-                {item.value.toLocaleString('ar-SA-u-nu-latn')}
-              </p>
-            </div>
-
-            <span className="flex size-9 items-center justify-center rounded-lg bg-primary/[0.06] text-primary">
-              <Icon
-                className="size-4"
-                strokeWidth={1.7}
-              />
-            </span>
-          </button>
-        );
-      })}
+      {items.map((item) => (
+        <SummaryCard
+          key={item.key}
+          label={item.label}
+          value={item.value.toLocaleString('ar-SA-u-nu-latn')}
+          icon={item.icon}
+          tone={item.tone}
+          onClick={item.onClick}
+        />
+      ))}
     </div>
   );
 }

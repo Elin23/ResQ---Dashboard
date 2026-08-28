@@ -2,23 +2,21 @@ import { useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router';
 import { Button, EmptyState, ErrorState, PageHeader } from '@/components/ui';
 import type { DataTableQueryState } from '@/components/ui/data-table';
-import { commitSearchParams } from '@/lib/search-params';
+import { commitSearchParams, readEnumParam } from '@/lib/search-params';
 import { SupportFilterBar } from '../components/support-filter-bar';
 import { SupportSummaryCards } from '../components/support-summary';
 import { SupportTable } from '../components/support-table';
 import { useSupportSummary, useSupportTickets } from '../hooks';
 import { supportRequesterTypes, supportTicketCategories, supportTicketPriorities, supportTicketStatuses, type SupportFilters } from '../types';
 
-const valid = <T extends string>(v: string | null, opts: readonly T[]): T | undefined =>
-  v && opts.includes(v as T) ? (v as T) : undefined;
 
 function read(p: URLSearchParams): SupportFilters {
   return {
     search: p.get('q') ?? '',
-    status: valid(p.get('status'), supportTicketStatuses),
-    priority: valid(p.get('priority'), supportTicketPriorities),
-    category: valid(p.get('category'), supportTicketCategories),
-    requesterType: valid(p.get('requesterType'), supportRequesterTypes),
+    status: readEnumParam(p.get('status'), supportTicketStatuses),
+    priority: readEnumParam(p.get('priority'), supportTicketPriorities),
+    category: readEnumParam(p.get('category'), supportTicketCategories),
+    requesterType: readEnumParam(p.get('requesterType'), supportRequesterTypes),
     assignee: p.get('assignee') ?? undefined,
     unassigned: p.get('unassigned') === 'true' ? true : undefined,
     userId: p.get('userId') ?? undefined,

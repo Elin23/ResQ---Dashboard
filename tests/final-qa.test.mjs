@@ -51,15 +51,15 @@ test('audit log no longer exposes removed rescue-mission resources or permission
   const constants = read('src/features/audit-log/constants/index.ts');
   const utils = read('src/features/audit-log/utils/index.ts');
   assert.doesNotMatch(types + constants + utils, /RESCUE_MISSION|MISSION_REASSIGNED|MISSION_CANCELLED|missions:view/u);
-  assert.match(utils, /SYSTEM_SETTING'\)return'\/settings'/u);
+  assert.match(utils, /if\s*\(type\s*===\s*'SYSTEM_SETTING'\)\s*\{[\s\S]*?return\s+'\/settings';?[\s\S]*?\}/u);
 });
 
 test('content success stories reference reports and organizations without obsolete mission ids', () => {
   const contentFiles = sourceFiles.filter((path) => path.includes('features/content/'));
   const source = contentFiles.map(read).join('\n');
   assert.doesNotMatch(source, /missionId|مهمة الإنقاذ|MS-2026-/u);
-  assert.match(read('src/features/content/types/index.ts'), /reportId\?:string/u);
-  assert.match(read('src/features/content/types/index.ts'), /organizationId\?:string/u);
+  assert.match(read('src/features/content/types/index.ts'), /reportId\?\s*:\s*string/u);
+  assert.match(read('src/features/content/types/index.ts'), /organizationId\?\s*:\s*string/u);
 });
 
 test('permission registry contains no removed mission permissions', () => {
@@ -70,7 +70,7 @@ test('settings expose only the current landing destinations and keep the legacy 
   const router = read('src/routes/app-router.tsx');
   assert.match(router, /settings\/emergency-contacts/u);
   assert.match(router, /settings\/backups/u);
-  assert.match(router, /path="settings\/system" element=\{<Navigate to="\/settings" replace\/>\}/u);
+  assert.match(router, /path="settings\/system"[\s\S]*?<Navigate\s+to="\/settings"\s+replace\s*\/>/u);
 });
 
 test('page navigation resets the content scroller only when the pathname changes', () => {
@@ -116,4 +116,23 @@ test('latest simplification removes adoption internal notes and uses clear adver
   assert.doesNotMatch(adCreate + adDetails + adTypes, /رقم الدفعة|paymentReference|targetUrl|رابط الوجهة/u);
   assert.match(adCreate + adDetails, /الموقع الإلكتروني/u);
   assert.match(adTypes, /paymentMethod: AdvertisementPaymentMethod/u);
+});
+
+test('final polish keeps motion preferences, accessible recovery and bounded PDF pages', () => {
+  const splash = read('src/components/feedback/app-splash.tsx');
+  const css = read('src/index.css');
+  const appBoundary = read('src/app/error-boundary.tsx');
+  const routeBoundary = read('src/routes/route-boundary.tsx');
+  const dataExport = read('src/lib/data-export.ts');
+  const auditUtils = read('src/features/audit-log/utils/index.ts');
+
+  assert.match(splash, /resq-logo-letter/u);
+  assert.match(css, /@media\s*\(prefers-reduced-motion:\s*reduce\)/u);
+  assert.match(appBoundary, /role="alert"/u);
+  assert.match(appBoundary, /aria-live="assertive"/u);
+  assert.match(routeBoundary, /role="alert"/u);
+  assert.match(dataExport, /PDF_ROWS_PER_PAGE/u);
+  assert.match(dataExport, /pageNumber/u);
+  assert.match(dataExport, /pageCount/u);
+  assert.match(auditUtils, /future\s*\?\s*`بعد/u);
 });

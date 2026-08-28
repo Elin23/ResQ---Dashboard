@@ -3,6 +3,7 @@ import { Activity, AlertTriangle, ArrowLeft, Building2, CircleAlert, CircleDolla
 import { Link } from 'react-router';
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip as RechartsTooltip, XAxis, YAxis } from 'recharts';
 import { Badge, Card, EmptyState, Skeleton, StatusBadge } from '@/components/ui';
+import { SummaryCard } from '@/components/ui/summary-card';
 import { cn } from '@/lib/cn';
 import type { ActiveMission, AttentionItem, CriticalReport, DashboardMetric, WeeklyReportPoint } from '../types';
 
@@ -65,7 +66,6 @@ export function DashboardMetrics({ metrics }: { metrics: DashboardMetric[] }) {
     <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
       {selectedMetrics.map((metric) => {
         const Icon = metricIcons[metric.iconKey] ?? Activity;
-
         const value =
           typeof metric.value === 'number'
             ? metric.value.toLocaleString('ar-SA-u-nu-latn')
@@ -75,36 +75,15 @@ export function DashboardMetrics({ metrics }: { metrics: DashboardMetric[] }) {
           <Link
             key={metric.id}
             to={metric.target}
-            className="group min-w-0 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
+            className="block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           >
-            <Card className="h-[94px] overflow-hidden rounded-xl border border-border/45 bg-white p-3.5 shadow-none transition-[border-color,background-color] duration-200 group-hover:border-primary/25 group-hover:bg-primary/[0.025]">
-              <div className="flex h-full items-center gap-3">
-                <span
-                  className={cn(
-                    'flex size-8 shrink-0 items-center justify-center rounded-lg transition-[background-color,color] duration-200 group-hover:bg-primary group-hover:text-primary-foreground',
-                    toneClasses[metric.tone],
-                  )}
-                >
-                  <Icon className="size-4" strokeWidth={1.65} />
-                </span>
-
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-[12px] font-normal text-muted-foreground transition-colors duration-200 group-hover:text-foreground">
-                    {metric.label}
-                  </p>
-
-                  <div className="mt-1.5 flex min-w-0 items-end gap-2">
-                    <p className="shrink-0 text-[1.55rem] font-semibold leading-none tracking-tight text-foreground transition-colors duration-200 group-hover:text-primary">
-                      {value}
-                    </p>
-
-                    <p className="min-w-0 truncate pb-0.5 text-[11px] leading-4 text-muted-foreground/65 transition-colors duration-200 group-hover:text-muted-foreground">
-                      {metric.context}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </Card>
+            <SummaryCard
+              label={metric.label}
+              value={value}
+              helper={metric.context}
+              icon={Icon}
+              tone={metric.tone}
+            />
           </Link>
         );
       })}

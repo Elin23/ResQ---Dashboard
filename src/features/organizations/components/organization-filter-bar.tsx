@@ -1,6 +1,8 @@
-import { Button, DebouncedSearchInput, FilterBar, Input, Select } from '@/components/ui';
-import { organizationServiceLabels } from '../constants';
-import { organizationServiceKeys, organizationStatuses, organizationVerificationStatuses, type OrganizationFilters } from '../types';
+import { RotateCcw } from 'lucide-react';
+
+import { Button, DebouncedSearchInput, FilterBar, Select } from '@/components/ui';
+
+import { organizationStatuses, organizationVerificationStatuses, type OrganizationFilters } from '../types';
 
 const statusLabels = {
   PENDING_VERIFICATION: 'تنتظر التحقق',
@@ -17,137 +19,60 @@ const verificationLabels = {
   MORE_INFO_REQUIRED: 'معلومات إضافية',
 };
 
-export function OrganizationFilterBar({ filters, governorates, onChange, onClear, active }: { filters: OrganizationFilters; governorates: string[]; onChange: (patch: Partial<OrganizationFilters>) => void; onClear: () => void; active: boolean }) {
+export function OrganizationFilterBar({ filters, onChange, onClear, active }: { filters: OrganizationFilters; onChange: (patch: Partial<OrganizationFilters>) => void; onClear: () => void; active: boolean }) {
   return (
     <FilterBar>
       <DebouncedSearchInput
         aria-label="البحث في الجمعيات"
         value={filters.search}
-        onValueChange={(value) =>
-          onChange({
-            search: value,
-            page: 1,
-          })
-        }
-        placeholder="رقم الجمعية، الاسم، الترخيص، الممثل…"
-        className="min-w-64 flex-1"
+        onValueChange={(value) => onChange({ search: value, page: 1 })}
+        placeholder="رقم الجمعية، الاسم، الترخيص أو الممثل…"
+        className="min-w-0 flex-1 sm:min-w-72"
       />
 
-      <Select
-        value={filters.status ?? 'ALL'}
-        onValueChange={(value) =>
-          onChange({
-            status: value === 'ALL' ? undefined : (value as OrganizationFilters['status']),
-            page: 1,
-          })
-        }
-        options={[
-          { value: 'ALL', label: 'كل الحالات' },
-          ...organizationStatuses.map((value) => ({
-            value,
-            label: statusLabels[value],
-          })),
-        ]}
-      />
-
-      <Select
-        value={filters.verificationStatus ?? 'ALL'}
-        onValueChange={(value) =>
-          onChange({
-            verificationStatus: value === 'ALL' ? undefined : (value as OrganizationFilters['verificationStatus']),
-            page: 1,
-          })
-        }
-        options={[
-          { value: 'ALL', label: 'كل حالات التحقق' },
-          ...organizationVerificationStatuses.map((value) => ({
-            value,
-            label: verificationLabels[value],
-          })),
-        ]}
-      />
-
-      <Select
-        value={filters.governorate ?? 'ALL'}
-        onValueChange={(value) =>
-          onChange({
-            governorate: value === 'ALL' ? undefined : value,
-            page: 1,
-          })
-        }
-        options={[
-          { value: 'ALL', label: 'كل المحافظات' },
-          ...governorates.map((value) => ({
-            value,
-            label: value,
-          })),
-        ]}
-      />
-
-      <Select
-        value={filters.service ?? 'ALL'}
-        onValueChange={(value) =>
-          onChange({
-            service: value === 'ALL' ? undefined : (value as OrganizationFilters['service']),
-            page: 1,
-          })
-        }
-        options={[
-          { value: 'ALL', label: 'كل الخدمات' },
-          ...organizationServiceKeys.map((value) => ({
-            value,
-            label: organizationServiceLabels[value],
-          })),
-        ]}
-      />
-
-      <Select
-        value={filters.activeReports ?? 'ALL'}
-        onValueChange={(value) =>
-          onChange({
-            activeReports: value === 'ALL' ? undefined : (value as OrganizationFilters['activeReports']),
-            page: 1,
-          })
-        }
-        options={[
-          { value: 'ALL', label: 'كل حالات البلاغات' },
-          { value: 'YES', label: 'لديها بلاغات نشطة' },
-          { value: 'NO', label: 'دون بلاغات نشطة' },
-        ]}
-      />
-
-      {/* Date filters always reset the list to the first page. */}
-      <label className="text-xs text-muted-foreground">
-        من
-        <Input
-          type="date"
-          value={filters.dateFrom ?? ''}
-          onChange={(event) =>
+      <div className="w-full sm:w-auto sm:min-w-[170px]">
+        <Select
+          value={filters.status ?? 'ALL'}
+          onValueChange={(value) =>
             onChange({
-              dateFrom: event.target.value || undefined,
+              status: value === 'ALL' ? undefined : (value as OrganizationFilters['status']),
               page: 1,
             })
           }
+          options={[
+            { value: 'ALL', label: 'كل الحالات' },
+            ...organizationStatuses.map((value) => ({ value, label: statusLabels[value] })),
+          ]}
         />
-      </label>
+      </div>
 
-      <label className="text-xs text-muted-foreground">
-        إلى
-        <Input
-          type="date"
-          value={filters.dateTo ?? ''}
-          onChange={(event) =>
+      <div className="w-full sm:w-auto sm:min-w-[180px]">
+        <Select
+          value={filters.verificationStatus ?? 'ALL'}
+          onValueChange={(value) =>
             onChange({
-              dateTo: event.target.value || undefined,
+              verificationStatus: value === 'ALL' ? undefined : (value as OrganizationFilters['verificationStatus']),
               page: 1,
             })
           }
+          options={[
+            { value: 'ALL', label: 'كل حالات التحقق' },
+            ...organizationVerificationStatuses.map((value) => ({ value, label: verificationLabels[value] })),
+          ]}
         />
-      </label>
+      </div>
 
+      {/* Secondary organization filters remain supported by URLs without crowding the primary toolbar. */}
       {active && (
-        <Button variant="ghost" onClick={onClear}>
-          مسح الفلاتر
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-9 shrink-0 rounded-xl px-3 text-[12px] font-medium text-muted-foreground hover:bg-primary/[0.04] hover:text-primary"
+          onClick={onClear}
+        >
+          <RotateCcw className="size-4" strokeWidth={1.7} />
+          مسح
         </Button>
       )}
     </FilterBar>

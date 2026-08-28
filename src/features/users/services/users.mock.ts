@@ -5,9 +5,9 @@ import { getReports } from '@/features/reports/services/reports.mock';
 import { mockDelay } from '@/services/mock/delay';
 import type { ModerateUserInput, User, UserAccountStatus, UserActivityEvent, UserDetails, UserFilters, UserInternalNote, UserListResult, UserModerationAction, UserModerationRecord, UserSummary, UserVerificationStatus } from '../types';
 
-const now = Date.now();
-const daysAgo = (n: number) => new Date(now - n * 86400000).toISOString();
-const hoursAgo = (n: number) => new Date(now - n * 3600000).toISOString();
+const seedNow = Date.now();
+const daysAgo = (n: number) => new Date(seedNow - n * 86400000).toISOString();
+const hoursAgo = (n: number) => new Date(seedNow - n * 3600000).toISOString();
 const clone = <T>(value: T): T => structuredClone(value);
 
 interface Supplemental {
@@ -16,6 +16,7 @@ interface Supplemental {
   governorate?: string;
   createdAt: string;
   lastActiveAt?: string;
+  updatedAt?: string;
   profileBio?: string;
   birthDate?: string;
   supportTickets: number;
@@ -251,6 +252,26 @@ function fallback(id: string): Supplemental {
   );
 }
 
+function applySupplemental(user: User): User {
+  const s = supplemental.get(user.id);
+
+  if (!s) {
+    return user;
+  }
+
+  return {
+    ...user,
+    accountStatus: s.accountStatus,
+    verificationStatus: s.verificationStatus,
+    governorate: s.governorate ?? user.governorate,
+    createdAt: s.createdAt ?? user.createdAt,
+    updatedAt: s.updatedAt ?? user.updatedAt,
+    lastActiveAt: s.lastActiveAt ?? user.lastActiveAt,
+    profileBio: s.profileBio ?? user.profileBio,
+    birthDate: s.birthDate ?? user.birthDate,
+  };
+}
+
 async function relationshipData() {
   const [reports, adoptions] = await Promise.all([
     getReports({ search: '', page: 1, pageSize: 500 }),
@@ -263,9 +284,10 @@ async function relationshipData() {
   };
 }
 
-async function allUsers(): Promise<User[]> {
-  const { reports, adoptions } = await relationshipData();
-  const map = new Map<string, User>(standalone.map((u) => [u.id, u]));
+type RelationshipData = Awaited<ReturnType<typeof relationshipData>>;
+
+function allUsers({ reports, adoptions }: RelationshipData): User[] {
+  const map = new Map<string, User>(standalone.map((u) => [u.id, applySupplemental(u)]));
 
   for (const r of reports) {
     if (r.reporter.isGuest) {
@@ -285,7 +307,7 @@ async function allUsers(): Promise<User[]> {
       accountStatus: s.accountStatus,
       verificationStatus: s.verificationStatus,
       createdAt: s.createdAt,
-      updatedAt: r.updatedAt,
+      updatedAt: s.updatedAt ?? r.updatedAt,
       lastActiveAt: s.lastActiveAt ?? r.updatedAt,
       profileBio: s.profileBio,
     });
@@ -309,7 +331,7 @@ async function allUsers(): Promise<User[]> {
       accountStatus: s.accountStatus,
       verificationStatus: s.verificationStatus,
       createdAt: a.publisher.memberSince ?? s.createdAt,
-      updatedAt: a.updatedAt,
+      updatedAt: s.updatedAt ?? a.updatedAt,
       lastActiveAt: s.lastActiveAt ?? a.updatedAt,
       profileBio: s.profileBio,
     });
@@ -326,16 +348,9 @@ function isActiveReport(status: string) {
   return !isResolved(status);
 }
 
-async function enrich(user: User): Promise<User> {
-  const { reports, adoptions } = await relationshipData();
-
-  const ur = reports.filter(
-    (r) => !r.reporter.isGuest && r.reporter.id === user.id,
-  );
-
-  const ua = adoptions.filter(
-    (a) => a.publisher.type === 'USER' && a.publisher.id === user.id,
-  );
+function enrich(user: User, { reports, adoptions }: RelationshipData): User {
+  const ur = reports.filter((r) => !r.reporter.isGuest && r.reporter.id === user.id);
+  const ua = adoptions.filter((a) => a.publisher.type === 'USER' && a.publisher.id === user.id);
 
   return {
     ...user,
@@ -350,10 +365,7 @@ async function enrich(user: User): Promise<User> {
       activeAdoptionRequestsCount: ua.filter((a) => a.status === 'PUBLISHED').length,
       completedAdoptionsCount: ua.filter((a) => a.status === 'ADOPTED').length,
       supportTicketsCount: fallback(user.id).supportTickets,
-      accountAgeDays: Math.max(
-        0,
-        Math.floor((now - new Date(user.createdAt).getTime()) / 86400000),
-      ),
+      accountAgeDays: Math.max(0, Math.floor((Date.now() - new Date(user.createdAt).getTime()) / 86400000)),
     },
   };
 }
@@ -361,7 +373,8 @@ async function enrich(user: User): Promise<User> {
 export async function getUsers(filters: UserFilters): Promise<UserListResult> {
   await mockDelay(90);
 
-  let users = await Promise.all((await allUsers()).map(enrich));
+  const relationships = await relationshipData();
+  let users = allUsers(relationships).map((user) => enrich(user, relationships));
   const needle = filters.search.trim().toLocaleLowerCase('ar');
 
   users = users.filter((u) => {
@@ -378,66 +391,6 @@ export async function getUsers(filters: UserFilters): Promise<UserListResult> {
     if (
       filters.verificationStatus &&
       u.verificationStatus !== filters.verificationStatus
-    ) {
-      return false;
-    }
-
-    if (filters.governorate && u.governorate !== filters.governorate) {
-      return false;
-    }
-
-    if (
-      filters.dateFrom &&
-      new Date(u.createdAt) < new Date(`${filters.dateFrom}T00:00:00`)
-    ) {
-      return false;
-    }
-
-    if (
-      filters.dateTo &&
-      new Date(u.createdAt) > new Date(`${filters.dateTo}T23:59:59`)
-    ) {
-      return false;
-    }
-
-    const last = u.lastActiveAt ? new Date(u.lastActiveAt).getTime() : 0;
-
-    if (
-      filters.recentActivity === 'ACTIVE_7_DAYS' &&
-      last < now - 7 * 86400000
-    ) {
-      return false;
-    }
-
-    if (
-      filters.recentActivity === 'INACTIVE_30_DAYS' &&
-      last >= now - 30 * 86400000
-    ) {
-      return false;
-    }
-
-    if (filters.hasReports === 'YES' && !u.statistics?.reportsCount) {
-      return false;
-    }
-
-    if (filters.hasReports === 'NO' && Boolean(u.statistics?.reportsCount)) {
-      return false;
-    }
-
-    if (filters.hasAdoptions === 'YES' && !u.statistics?.adoptionRequestsCount) {
-      return false;
-    }
-
-    if (
-      filters.hasAdoptions === 'NO' &&
-      Boolean(u.statistics?.adoptionRequestsCount)
-    ) {
-      return false;
-    }
-
-    if (
-      filters.hasActiveAdoptions === 'YES' &&
-      !u.statistics?.activeAdoptionRequestsCount
     ) {
       return false;
     }
@@ -484,7 +437,8 @@ export async function getUsers(filters: UserFilters): Promise<UserListResult> {
 }
 
 export async function getUserSummary(): Promise<UserSummary> {
-  const users = await Promise.all((await allUsers()).map(enrich));
+  const relationships = await relationshipData();
+  const users = allUsers(relationships).map((user) => enrich(user, relationships));
   const start = new Date();
 
   start.setDate(1);
@@ -502,17 +456,15 @@ export async function getUserSummary(): Promise<UserSummary> {
   };
 }
 
-export async function getUserById(id: string): Promise<UserDetails | null> {
-  await mockDelay(70);
-
-  const base = (await allUsers()).find((u) => u.id === id);
+function buildUserDetails(id: string, relationships: RelationshipData): UserDetails | null {
+  const base = allUsers(relationships).find((u) => u.id === id);
 
   if (!base) {
     return null;
   }
 
-  const user = await enrich(base);
-  const { reports, adoptions } = await relationshipData();
+  const user = enrich(base, relationships);
+  const { reports, adoptions } = relationships;
 
   const relatedReports = reports
     .filter((r) => !r.reporter.isGuest && r.reporter.id === id)
@@ -632,39 +584,62 @@ export async function getUserById(id: string): Promise<UserDetails | null> {
   };
 }
 
+export async function getUserById(id: string): Promise<UserDetails | null> {
+  await mockDelay(70);
+
+  return buildUserDetails(id, await relationshipData());
+}
+
+function resolveModerationReason(input: ModerateUserInput | undefined) {
+  if (!input) {
+    return undefined;
+  }
+
+  return input.reason === 'سبب آخر' ? input.otherReason ?? input.reason : input.reason;
+}
+
 // Keep moderation state and history synchronized in one place.
 function updateStatus(
-  id: string,
+  user: User,
   status: UserAccountStatus,
   action: UserModerationAction,
   input: ModerateUserInput | undefined,
   actor: AdminSession,
 ) {
-  const s = fallback(id);
+  const s = supplemental.get(user.id) ?? {
+    accountStatus: user.accountStatus,
+    verificationStatus: user.verificationStatus,
+    governorate: user.governorate,
+    createdAt: user.createdAt,
+    lastActiveAt: user.lastActiveAt,
+    updatedAt: user.updatedAt,
+    profileBio: user.profileBio,
+    birthDate: user.birthDate,
+    supportTickets: user.statistics?.supportTicketsCount ?? 0,
+  };
 
-  supplemental.set(id, {
+  const changedAt = new Date().toISOString();
+
+  supplemental.set(user.id, {
     ...s,
     accountStatus: status,
-    lastActiveAt: new Date().toISOString(),
+    updatedAt: changedAt,
   });
 
   const record: UserModerationRecord = {
-    id: `MOD-${id}-${Date.now()}`,
-    userId: id,
+    id: `MOD-${user.id}-${Date.now()}`,
+    userId: user.id,
     action,
-    reason:
-      input?.reason === 'سبب آخر'
-        ? input.otherReason ?? input.reason
-        : input?.reason,
+    reason: resolveModerationReason(input),
     note: input?.note,
     actorId: actor.id,
     actorName: actor.name,
-    createdAt: new Date().toISOString(),
+    createdAt: changedAt,
   };
 
-  moderationById.set(id, [
+  moderationById.set(user.id, [
     record,
-    ...(moderationById.get(id) ?? []),
+    ...(moderationById.get(user.id) ?? []),
   ]);
 
   return record;
@@ -673,7 +648,8 @@ function updateStatus(
 export async function suspendUser(id: string, input: ModerateUserInput, actor: AdminSession) {
   await mockDelay(80);
 
-  const d = await getUserById(id);
+  const relationships = await relationshipData();
+  const d = buildUserDetails(id, relationships);
 
   if (!d) {
     throw new Error('USER_NOT_FOUND');
@@ -683,7 +659,7 @@ export async function suspendUser(id: string, input: ModerateUserInput, actor: A
     throw new Error('INVALID_USER_TRANSITION');
   }
 
-  updateStatus(id, 'SUSPENDED', 'SUSPEND', input, actor);
+  updateStatus(d.user, 'SUSPENDED', 'SUSPEND', input, actor);
 
   recordAdminAuditEvent(actor, {
     action: 'USER_SUSPENDED',
@@ -692,10 +668,7 @@ export async function suspendUser(id: string, input: ModerateUserInput, actor: A
       id,
       label: d.user.fullName,
     },
-    reason:
-      input.reason === 'سبب آخر'
-        ? input.otherReason ?? input.reason
-        : input.reason,
+    reason: resolveModerationReason(input),
     previousValue: {
       status: d.user.accountStatus,
     },
@@ -707,13 +680,14 @@ export async function suspendUser(id: string, input: ModerateUserInput, actor: A
     },
   });
 
-  return getUserById(id);
+  return buildUserDetails(id, relationships);
 }
 
 export async function reactivateUser(id: string, note: string | undefined, actor: AdminSession) {
   await mockDelay(70);
 
-  const d = await getUserById(id);
+  const relationships = await relationshipData();
+  const d = buildUserDetails(id, relationships);
 
   if (!d) {
     throw new Error('USER_NOT_FOUND');
@@ -724,7 +698,7 @@ export async function reactivateUser(id: string, note: string | undefined, actor
   }
 
   updateStatus(
-    id,
+    d.user,
     'ACTIVE',
     'REACTIVATE',
     {
@@ -753,13 +727,14 @@ export async function reactivateUser(id: string, note: string | undefined, actor
     },
   });
 
-  return getUserById(id);
+  return buildUserDetails(id, relationships);
 }
 
 export async function blockUser(id: string, input: ModerateUserInput, actor: AdminSession) {
   await mockDelay(80);
 
-  const d = await getUserById(id);
+  const relationships = await relationshipData();
+  const d = buildUserDetails(id, relationships);
 
   if (!d) {
     throw new Error('USER_NOT_FOUND');
@@ -769,7 +744,7 @@ export async function blockUser(id: string, input: ModerateUserInput, actor: Adm
     throw new Error('INVALID_USER_TRANSITION');
   }
 
-  updateStatus(id, 'BLOCKED', 'BLOCK', input, actor);
+  updateStatus(d.user, 'BLOCKED', 'BLOCK', input, actor);
 
   recordAdminAuditEvent(actor, {
     action: 'USER_BLOCKED',
@@ -778,10 +753,7 @@ export async function blockUser(id: string, input: ModerateUserInput, actor: Adm
       id,
       label: d.user.fullName,
     },
-    reason:
-      input.reason === 'سبب آخر'
-        ? input.otherReason ?? input.reason
-        : input.reason,
+    reason: resolveModerationReason(input),
     previousValue: {
       status: d.user.accountStatus,
     },
@@ -793,13 +765,14 @@ export async function blockUser(id: string, input: ModerateUserInput, actor: Adm
     },
   });
 
-  return getUserById(id);
+  return buildUserDetails(id, relationships);
 }
 
 export async function unblockUser(id: string, note: string | undefined, actor: AdminSession) {
   await mockDelay(70);
 
-  const d = await getUserById(id);
+  const relationships = await relationshipData();
+  const d = buildUserDetails(id, relationships);
 
   if (!d) {
     throw new Error('USER_NOT_FOUND');
@@ -810,7 +783,7 @@ export async function unblockUser(id: string, note: string | undefined, actor: A
   }
 
   updateStatus(
-    id,
+    d.user,
     'ACTIVE',
     'UNBLOCK',
     {
@@ -839,13 +812,15 @@ export async function unblockUser(id: string, note: string | undefined, actor: A
     },
   });
 
-  return getUserById(id);
+  return buildUserDetails(id, relationships);
 }
 
 export async function addUserNote(id: string, note: string, actor: AdminSession) {
   await mockDelay(60);
 
-  if (!(await getUserById(id))) {
+  const relationships = await relationshipData();
+
+  if (!buildUserDetails(id, relationships)) {
     throw new Error('USER_NOT_FOUND');
   }
 

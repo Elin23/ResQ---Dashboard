@@ -21,17 +21,6 @@ export const formatUserRelative = (value: string) => {
     : '—';
 };
 
-// Detect whether the users list has any active filtering criteria.
+// Keep the active-filter state aligned with the filters that are actually visible in the users UI.
 export const hasUserFilters = (f: UserFilters) =>
-  Boolean(
-    f.search ||
-      f.accountStatus ||
-      f.verificationStatus ||
-      f.governorate ||
-      f.dateFrom ||
-      f.dateTo ||
-      f.recentActivity ||
-      f.hasReports ||
-      f.hasAdoptions ||
-      f.hasActiveAdoptions,
-  );
+  Boolean(f.search || f.accountStatus || f.verificationStatus);

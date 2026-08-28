@@ -1,7 +1,8 @@
+import { RotateCcw, TriangleAlert } from 'lucide-react';
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { useLocation, useNavigate } from 'react-router';
+
 import { Button, Card } from '@/components/ui';
-import { RotateCcw, TriangleAlert } from 'lucide-react';
 
 interface BoundaryProps {
   children: ReactNode;
@@ -21,6 +22,7 @@ class RouteBoundaryImpl extends Component<BoundaryProps, BoundaryState> {
   }
 
   override componentDidCatch(error: Error, info: ErrorInfo): void {
+    // Route failures stay visible to developers while the authenticated shell remains usable.
     if (import.meta.env.DEV) {
       console.error('[route-render-error]', error, info.componentStack);
     }
@@ -33,22 +35,27 @@ class RouteBoundaryImpl extends Component<BoundaryProps, BoundaryState> {
   }
 
   override render(): ReactNode {
-    if (!this.state.error) return this.props.children;
+    if (!this.state.error) {
+      return this.props.children;
+    }
 
     return (
-      <Card className="mx-auto flex min-h-72 max-w-2xl flex-col items-center justify-center text-center" role="alert">
-        <span className="rounded-full bg-critical/10 p-3 text-critical">
+      <Card className="mx-auto flex min-h-72 max-w-2xl flex-col items-center justify-center text-center" role="alert" aria-live="assertive">
+        <span className="rounded-full bg-critical/10 p-3 text-critical" aria-hidden="true">
           <TriangleAlert className="size-6" />
         </span>
+
         <h1 className="mt-4 text-lg font-bold">تعذر عرض هذه الصفحة</h1>
         <p className="mt-2 max-w-lg text-sm leading-7 text-muted-foreground">
-          حدث خطأ أثناء عرض محتوى الصفحة. بقيت واجهة الإدارة فعّالة ويمكن إعادة محاولة تحميل الصفحة دون شاشة فارغة.
+          حدث خطأ أثناء عرض محتوى الصفحة. بقيت لوحة الإدارة فعّالة ويمكن إعادة تحميل هذه الصفحة دون فقدان التنقل الرئيسي.
         </p>
+
         {import.meta.env.DEV ? (
-          <p dir="ltr" className="mt-3 max-w-full overflow-auto rounded-md bg-muted p-3 text-start font-mono text-xs text-muted-foreground">
+          <p dir="ltr" className="mt-3 max-h-36 max-w-full overflow-auto rounded-md bg-muted p-3 text-start font-mono text-xs text-muted-foreground">
             {this.state.error.message}
           </p>
         ) : null}
+
         <Button className="mt-5" variant="secondary" onClick={this.props.onRetry}>
           <RotateCcw className="size-4" />
           إعادة تحميل الصفحة
@@ -64,10 +71,7 @@ export function RouteRenderBoundary({ children }: { children: ReactNode }) {
   const resetKey = `${location.pathname}${location.search}`;
 
   return (
-    <RouteBoundaryImpl
-      resetKey={resetKey}
-      onRetry={() => navigate(0)}
-    >
+    <RouteBoundaryImpl resetKey={resetKey} onRetry={() => navigate(0)}>
       {children}
     </RouteBoundaryImpl>
   );

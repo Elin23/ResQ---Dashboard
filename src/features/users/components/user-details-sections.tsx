@@ -363,7 +363,12 @@ export function UserNotesCard({ details }: { details: UserDetails }) {
         toast.success('تمت إضافة الملاحظة الداخلية');
         reset();
       },
-      onError: () => toast.error('تعذر إضافة الملاحظة'),
+      onError: (error) =>
+        toast.error(
+          error instanceof Error && error.message === 'USER_NOT_FOUND'
+            ? 'تعذر العثور على حساب المستخدم'
+            : 'تعذر إضافة الملاحظة',
+        ),
     }),
   );
 
@@ -383,12 +388,12 @@ export function UserNotesCard({ details }: { details: UserDetails }) {
           }}
         >
           <label htmlFor="user-note" className="sr-only">ملاحظة داخلية</label>
-          <Textarea id="user-note" {...register('note')} placeholder="أضف ملاحظة إدارية…" />
+          <Textarea id="user-note" disabled={mutation.isPending} {...register('note')} placeholder="أضف ملاحظة إدارية…" />
 
           {errors.note && <p className="mt-1 text-xs text-critical">{errors.note.message}</p>}
 
           <Button size="sm" className="mt-2" type="submit" disabled={mutation.isPending}>
-            إضافة الملاحظة
+            {mutation.isPending ? 'جارٍ الإضافة…' : 'إضافة الملاحظة'}
           </Button>
         </form>
       </PermissionGuard>

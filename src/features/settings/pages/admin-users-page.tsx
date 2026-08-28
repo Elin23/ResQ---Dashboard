@@ -1,22 +1,22 @@
-import { UserPlus, UsersRound } from 'lucide-react';
+import { Clock3, PauseCircle, ShieldCheck, UserCheck, UserPlus, UsersRound } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { useSearchParams } from 'react-router';
-import { Button, EmptyState, ErrorState, Input, MetricCard, PageHeader, Select } from '@/components/ui';
+import { Button, EmptyState, ErrorState, Input, PageHeader, Select } from '@/components/ui';
+import { SummaryCard } from '@/components/ui/summary-card';
 import { PermissionGuard } from '@/features/auth/rbac';
+import { readEnumParam } from '@/lib/search-params';
 import { AdminUsersTable, InviteAdminDialog } from '../components/settings-components';
 import { adminStatusLabels } from '../constants';
 import { useAdminUsers, useRoles } from '../hooks';
 import { adminAccountStatuses, type AdminFilters } from '../types';
 
-const valid = <T extends string>(v: string | null, o: readonly T[]): T | undefined =>
-  v && o.includes(v as T) ? (v as T) : undefined;
 
 function parse(p: URLSearchParams): AdminFilters {
   return {
     search: p.get('q') ?? '',
-    status: valid(p.get('status'), adminAccountStatuses),
+    status: readEnumParam(p.get('status'), adminAccountStatuses),
     roleId: p.get('role') ?? undefined,
-    lastLogin: valid(p.get('login'), ['RECENT_30_DAYS', 'NEVER'] as const),
+    lastLogin: readEnumParam(p.get('login'), ['RECENT_30_DAYS', 'NEVER'] as const),
     page: Math.max(1, Number(p.get('page') ?? 1) || 1),
     pageSize: [10, 20, 50].includes(Number(p.get('pageSize')))
       ? Number(p.get('pageSize'))
@@ -88,35 +88,37 @@ export function AdminUsersPage() {
         }
       />
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-        <MetricCard
+      {/* Admin account metrics follow the same summary hierarchy used across the dashboard. */}
+      <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-5">
+        <SummaryCard
           label="إجمالي المسؤولين"
-          value={all}
+          value={all.toLocaleString('ar-SA-u-nu-latn')}
           icon={UsersRound}
+          tone="primary"
         />
-
-        <MetricCard
+        <SummaryCard
           label="نشطون"
-          value={items.filter((a) => a.status === 'ACTIVE').length}
+          value={items.filter((a) => a.status === 'ACTIVE').length.toLocaleString('ar-SA-u-nu-latn')}
+          icon={UserCheck}
+          tone="success"
         />
-
-        <MetricCard
+        <SummaryCard
           label="دعوات معلقة"
-          value={items.filter((a) => a.status === 'INVITED').length}
+          value={items.filter((a) => a.status === 'INVITED').length.toLocaleString('ar-SA-u-nu-latn')}
+          icon={Clock3}
+          tone="pending"
         />
-
-        <MetricCard
+        <SummaryCard
           label="حسابات معلقة"
-          value={items.filter((a) => a.status === 'SUSPENDED').length}
+          value={items.filter((a) => a.status === 'SUSPENDED').length.toLocaleString('ar-SA-u-nu-latn')}
+          icon={PauseCircle}
+          tone="critical"
         />
-
-        <MetricCard
+        <SummaryCard
           label="مديرو النظام"
-          value={
-            items.filter((a) =>
-              a.roles.some((r) => r.key === 'SUPER_ADMIN'),
-            ).length
-          }
+          value={items.filter((a) => a.roles.some((r) => r.key === 'SUPER_ADMIN')).length.toLocaleString('ar-SA-u-nu-latn')}
+          icon={ShieldCheck}
+          tone="info"
         />
       </div>
 

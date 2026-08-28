@@ -29,10 +29,11 @@ export const useBroadcastNotification = (id: string) =>
     enabled: Boolean(id),
   });
 
-export const useNotificationSummary = () =>
+export const useNotificationSummary = (enabled = true) =>
   useQuery({
     queryKey: notificationKeys.summary,
     queryFn: getNotificationSummary,
+    enabled,
   });
 
 export const useNotificationTemplates = () =>

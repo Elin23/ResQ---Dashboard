@@ -21,3 +21,8 @@ export function commitSearchParams(
   setSearchParams(next, { replace });
   return true;
 }
+
+// Read only values explicitly allowed by the target filter enum.
+export function readEnumParam<T extends string>(value: string | null, options: readonly T[]): T | undefined {
+  return value && options.includes(value as T) ? (value as T) : undefined;
+}

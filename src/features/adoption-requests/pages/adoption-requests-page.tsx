@@ -3,31 +3,23 @@ import { useSearchParams } from 'react-router';
 
 import { Button, EmptyState, ErrorState, ExportMenuButton, PageHeader } from '@/components/ui';
 import type { DataTableQueryState } from '@/components/ui/data-table';
-import { commitSearchParams } from '@/lib/search-params';
+import { commitSearchParams, readEnumParam } from '@/lib/search-params';
 
 import { AdoptionFilterBar } from '../components/adoption-filter-bar';
 import { AdoptionSummaryCards } from '../components/adoption-summary';
 import { AdoptionRequestsTable } from '../components/adoption-table';
 import { adoptionAnimalSpeciesLabels, adoptionPublisherTypeLabels, adoptionStatusLabels } from '../constants';
 import { useAdoptionRequests, useAdoptionRequestSummary } from '../hooks';
-import { adoptionOrganizationOptions } from '../services/adoption-requests.mock';
 import { adoptionAnimalSpecies, adoptionPublisherTypes, adoptionRequestStatuses, type AdoptionRequest, type AdoptionRequestFilters } from '../types';
 import { hasAdoptionFilters } from '../utils';
 
-const valid = <T extends string>(
-  value: string | null,
-  options: readonly T[],
-): T | undefined =>
-  value && options.includes(value as T)
-    ? (value as T)
-    : undefined;
 
 function fromParams(params: URLSearchParams): AdoptionRequestFilters {
   return {
     search: params.get('q') ?? '',
-    status: valid(params.get('status'), adoptionRequestStatuses),
-    species: valid(params.get('species'), adoptionAnimalSpecies),
-    publisherType: valid(params.get('publisherType'), adoptionPublisherTypes),
+    status: readEnumParam(params.get('status'), adoptionRequestStatuses),
+    species: readEnumParam(params.get('species'), adoptionAnimalSpecies),
+    publisherType: readEnumParam(params.get('publisherType'), adoptionPublisherTypes),
     organizationId: params.get('organization') ?? undefined,
     city: params.get('city') ?? undefined,
     userId: params.get('userId') ?? undefined,
@@ -35,7 +27,7 @@ function fromParams(params: URLSearchParams): AdoptionRequestFilters {
     pageSize: [10, 20, 50].includes(Number(params.get('pageSize')))
       ? Number(params.get('pageSize'))
       : 10,
-    sortBy: valid(params.get('sort'), ['submittedAt', 'updatedAt', 'status'] as const),
+    sortBy: readEnumParam(params.get('sort'), ['submittedAt', 'updatedAt', 'status'] as const),
     sortDirection: params.get('direction') === 'asc' ? 'asc' : 'desc',
   };
 }
@@ -73,7 +65,6 @@ export function AdoptionRequestsPage() {
   const filters = useMemo(() => fromParams(params), [params]);
   const query = useAdoptionRequests(filters);
   const summary = useAdoptionRequestSummary();
-  const organizations = useMemo(() => adoptionOrganizationOptions, []);
 
   const update = useCallback(
     (patch: Partial<AdoptionRequestFilters>) =>
@@ -241,7 +232,6 @@ export function AdoptionRequestsPage() {
 
       <AdoptionFilterBar
         filters={filters}
-        organizations={organizations}
         onChange={update}
         onClear={clear}
         active={active}

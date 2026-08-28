@@ -1,50 +1,70 @@
 import { Building2, CheckCircle2, Clock3, HeartHandshake, PauseCircle } from 'lucide-react';
-import { Card, Skeleton } from '@/components/ui';
+
+import { SummaryCard, SummaryCardSkeleton } from '@/components/ui/summary-card';
+
 import type { OrganizationFilters, OrganizationSummary } from '../types';
 
 export function OrganizationSummaryCards({ summary, loading, onFilter }: { summary?: OrganizationSummary; loading: boolean; onFilter: (patch: Partial<OrganizationFilters>) => void }) {
   const items = [
-    ['إجمالي الجمعيات', summary?.total, Building2, {}],
-    ['تنتظر التحقق', summary?.pendingVerification, Clock3, { status: 'PENDING_VERIFICATION' }],
-    ['فعالة', summary?.active, CheckCircle2, { status: 'ACTIVE' }],
-    ['معلقة', summary?.suspended, PauseCircle, { status: 'SUSPENDED' }],
-    ['لديها بلاغات نشطة', summary?.withActiveReports, HeartHandshake, { activeReports: 'YES' }],
-  ] as const;
+    {
+      key: 'total',
+      label: 'إجمالي الجمعيات',
+      value: summary?.total ?? 0,
+      icon: Building2,
+      tone: 'primary' as const,
+      filter: {} satisfies Partial<OrganizationFilters>,
+    },
+    {
+      key: 'pendingVerification',
+      label: 'تنتظر التحقق',
+      value: summary?.pendingVerification ?? 0,
+      icon: Clock3,
+      tone: 'pending' as const,
+      filter: { status: 'PENDING_VERIFICATION' as const },
+    },
+    {
+      key: 'active',
+      label: 'فعالة',
+      value: summary?.active ?? 0,
+      icon: CheckCircle2,
+      tone: 'success' as const,
+      filter: { status: 'ACTIVE' as const },
+    },
+    {
+      key: 'suspended',
+      label: 'معلقة',
+      value: summary?.suspended ?? 0,
+      icon: PauseCircle,
+      tone: 'critical' as const,
+      filter: { status: 'SUSPENDED' as const },
+    },
+    {
+      key: 'withActiveReports',
+      label: 'لديها بلاغات نشطة',
+      value: summary?.withActiveReports ?? 0,
+      icon: HeartHandshake,
+      tone: 'info' as const,
+      filter: { activeReports: 'YES' as const },
+    },
+  ];
 
+  // Organization metrics share the same interaction and hierarchy as other page summaries.
   return (
-    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-      {items.map(([label, value, Icon, filter]) => (
-        <button
-          key={label}
-          type="button"
-          onClick={() =>
-            onFilter({
-              ...filter,
-              page: 1,
-            })
-          }
-          className="text-start"
-        >
-          <Card className="h-full transition hover:border-primary/30">
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-xs text-muted-foreground">
-                {label}
-              </span>
-
-              <Icon className="size-4 text-primary" />
-            </div>
-
-            {/* Keep summary counts lightweight while their query is loading. */}
-            {loading ? (
-              <Skeleton className="mt-3 h-7 w-12" />
-            ) : (
-              <p className="mt-2 text-2xl font-bold">
-                {value ?? 0}
-              </p>
-            )}
-          </Card>
-        </button>
-      ))}
+    <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-5">
+      {items.map((item) =>
+        loading ? (
+          <SummaryCardSkeleton key={item.key} />
+        ) : (
+          <SummaryCard
+            key={item.key}
+            label={item.label}
+            value={item.value.toLocaleString('ar-SA-u-nu-latn')}
+            icon={item.icon}
+            tone={item.tone}
+            onClick={() => onFilter({ ...item.filter, page: 1 })}
+          />
+        ),
+      )}
     </div>
   );
 }

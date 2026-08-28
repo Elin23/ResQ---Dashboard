@@ -1,8 +1,9 @@
 import { useCallback, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
-import { ExternalLink, MoreHorizontal, Plus, RotateCcw, Search } from 'lucide-react';
+import { CircleCheck, CircleDollarSign, ExternalLink, FilePenLine, MoreHorizontal, PauseCircle, Plus, RotateCcw, Search } from 'lucide-react';
 import type { ColumnDef } from '@tanstack/react-table';
-import { Button, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, EmptyState, ErrorState, ExportMenuButton, IconButton, Input, Select, Skeleton } from '@/components/ui';
+import { Button, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, EmptyState, ErrorState, ExportMenuButton, IconButton, Input, Select } from '@/components/ui';
+import { SummaryCard, SummaryCardSkeleton } from '@/components/ui/summary-card';
 import { DataTable, type DataTableQueryState } from '@/components/ui/data-table';
 import { commitSearchParams } from '@/lib/search-params';
 import { advertisementStatuses, type Advertisement, type AdvertisementFilters, type AdvertisementStatus } from '../types';
@@ -44,33 +45,26 @@ function write(filters: AdvertisementFilters) {
 
 function Summary({ loading, active, paused, draft, unpaid }: { loading: boolean; active: number; paused: number; draft: number; unpaid: number }) {
   const items = [
-    ['منشورة', active],
-    ['متوقفة', paused],
-    ['مسودات', draft],
-    ['غير مسددة', unpaid],
+    { key: 'active', label: 'منشورة', value: active, icon: CircleCheck, tone: 'success' as const },
+    { key: 'paused', label: 'متوقفة', value: paused, icon: PauseCircle, tone: 'pending' as const },
+    { key: 'draft', label: 'مسودات', value: draft, icon: FilePenLine, tone: 'neutral' as const },
+    { key: 'unpaid', label: 'غير مسددة', value: unpaid, icon: CircleDollarSign, tone: 'critical' as const },
   ];
 
+  // Advertisement totals use the same KPI presentation as the rest of the dashboard.
   return (
     <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
-      {items.map(([label, value]) =>
+      {items.map((item) =>
         loading ? (
-          <Skeleton
-            key={label}
-            className="h-[86px] rounded-xl"
-          />
+          <SummaryCardSkeleton key={item.key} />
         ) : (
-          <div
-            key={label}
-            className="h-[86px] rounded-xl border border-border/45 bg-white p-3.5"
-          >
-            <p className="text-[12px] text-muted-foreground">
-              {label}
-            </p>
-
-            <p className="mt-2 text-[22px] font-medium leading-none">
-              {value}
-            </p>
-          </div>
+          <SummaryCard
+            key={item.key}
+            label={item.label}
+            value={item.value.toLocaleString('ar-SA-u-nu-latn')}
+            icon={item.icon}
+            tone={item.tone}
+          />
         ),
       )}
     </div>

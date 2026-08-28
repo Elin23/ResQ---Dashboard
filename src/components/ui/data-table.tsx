@@ -1,82 +1,42 @@
-import { flexRender, getCoreRowModel, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, useReactTable, type ColumnDef,
-  type PaginationState, type RowSelectionState, type SortingState,
-} from '@tanstack/react-table';
-
+import { flexRender, getCoreRowModel, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, useReactTable, type ColumnDef, type PaginationState, type RowSelectionState, type SortingState } from '@tanstack/react-table';
 import { ArrowDown, ArrowUp, ChevronsUpDown } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, type MouseEvent, type ReactNode,} from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, type MouseEvent } from 'react';
 
-import { Button, Checkbox, DebouncedSearchInput, EmptyState, ErrorState, Pagination, Skeleton,} from './index';
+import { Button, Checkbox, DebouncedSearchInput, EmptyState, ErrorState, Pagination, Skeleton } from './index';
 
 import { cn } from '@/lib/cn';
 
-export interface DataTableQueryState {
-  pageIndex: number;
-  pageSize: number;
-  search: string;
-  sorting: SortingState;
-}
+import type { DataTableProps, DataTableQueryState } from './data-table-types';
+import { formatArabicCount, isInteractiveTarget, sameSorting } from './data-table-utils';
 
-export interface DataTableProps<TData> {
-  data: TData[];
-  columns: Array<ColumnDef<TData, unknown>>;
-  getRowId?: (row: TData, index: number) => string;
-  loading?: boolean;
-  error?: string | null;
-  onRetry?: () => void;
-  searchPlaceholder?: string;
-  searchDebounceMs?: number;
-  enableSearch?: boolean;
-  enableRowSelection?: boolean;
-  rowActions?: (row: TData) => ReactNode;
-  onRowClick?: (row: TData) => void;
-  rowAriaLabel?: (row: TData) => string;
-  onSelectionChange?: (rows: TData[]) => void;
-  selectionActions?: (rows: TData[]) => ReactNode;
-  emptyState?: ReactNode;
-  pageCount?: number;
-  totalCount?: number;
-  manualPagination?: boolean;
-  manualFiltering?: boolean;
-  manualSorting?: boolean;
-  state?: Partial<DataTableQueryState>;
-  onStateChange?: (state: DataTableQueryState) => void;
-  pageSizeOptions?: number[];
-}
+export type { DataTableProps, DataTableQueryState } from './data-table-types';
 
-function isInteractiveTarget(target: EventTarget | null): boolean {
-  return (
-    target instanceof Element &&
-    Boolean(
-      target.closest(
-        'button, a, input, select, textarea, [role="menuitem"], [role="checkbox"]',
-      ),
-    )
-  );
-}
-
-function sameSorting(
-  left: SortingState,
-  right: SortingState,
-): boolean {
-  return (
-    left.length === right.length &&
-    left.every(
-      (item, index) =>
-        item.id === right[index]?.id &&
-        item.desc === right[index]?.desc,
-    )
-  );
-}
-
-function formatArabicCount(count: number): string {
-  return count.toLocaleString('ar-SA-u-nu-latn');
-}
-
-export function DataTable<TData>({ data, columns, getRowId, loading = false,
-  error,  onRetry, searchPlaceholder = 'البحث في الجدول…', searchDebounceMs = 250, enableSearch = true,
-  enableRowSelection = false, rowActions, onRowClick, rowAriaLabel, onSelectionChange,
-  selectionActions, emptyState, pageCount, totalCount, manualPagination = false,
-  manualFiltering = false, manualSorting = false, state, onStateChange, pageSizeOptions = [10, 20, 50], }: DataTableProps<TData>) {
+export function DataTable<TData>({
+  data,
+  columns,
+  getRowId,
+  loading = false,
+  error,
+  onRetry,
+  searchPlaceholder = 'البحث في الجدول…',
+  searchDebounceMs = 250,
+  enableSearch = true,
+  enableRowSelection = false,
+  rowActions,
+  onRowClick,
+  rowAriaLabel,
+  onSelectionChange,
+  selectionActions,
+  emptyState,
+  pageCount,
+  totalCount,
+  manualPagination = false,
+  manualFiltering = false,
+  manualSorting = false,
+  state,
+  onStateChange,
+  pageSizeOptions = [10, 20, 50],
+}: DataTableProps<TData>) {
   const safeData = Array.isArray(data) ? data : [];
 
   const safePageSizeOptions = pageSizeOptions.filter(
@@ -575,10 +535,19 @@ export function DataTable<TData>({ data, columns, getRowId, loading = false,
       )}
 
       <div className="overflow-hidden rounded-xl border border-border/45 bg-white shadow-none">
-        <div className="resq-scroll-region overflow-x-auto">
+        <div className="border-b border-border/35 bg-muted/20 px-3 py-2 text-[11px] text-muted-foreground sm:hidden">
+          مرّر الجدول أفقيًا لعرض جميع الأعمدة.
+        </div>
+
+        <div
+          className="resq-scroll-region overflow-x-auto overscroll-x-contain"
+          tabIndex={0}
+          role="region"
+          aria-label="جدول بيانات قابل للتمرير أفقيًا"
+        >
           <table
             dir="rtl"
-            className="w-full min-w-[38rem] border-separate border-spacing-0 text-start text-[13px] sm:min-w-[44rem]"
+            className="w-full min-w-[36rem] border-separate border-spacing-0 text-start text-[13px] sm:min-w-[44rem]"
           >
             <thead className="sticky top-0 z-10 bg-muted/35 text-muted-foreground">
               {table.getHeaderGroups().map((headerGroup) => (

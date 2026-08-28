@@ -1,93 +1,73 @@
-import { Button, Card, DebouncedSearchInput, Select } from '@/components/ui';
-import { supportCategoryLabels, supportPriorityLabels, supportStatusLabels } from '../constants';
-import { supportTicketCategories, supportTicketPriorities, supportTicketStatuses, type SupportFilters } from '../types';
+import { RotateCcw } from 'lucide-react';
 
-const requester = [
-  { value: 'USER', label: 'مستخدم' },
-  { value: 'ORGANIZATION', label: 'جمعية' },
-];
+import { Button, DebouncedSearchInput, FilterBar, Select } from '@/components/ui';
 
-export function SupportFilterBar({ filters, onChange, onClear, active }: { filters: SupportFilters; onChange: (p: Partial<SupportFilters>) => void; onClear: () => void; active: boolean }) {
+import { supportPriorityLabels, supportStatusLabels } from '../constants';
+import { supportTicketPriorities, supportTicketStatuses, type SupportFilters } from '../types';
+
+export function SupportFilterBar({ filters, onChange, onClear, active }: { filters: SupportFilters; onChange: (patch: Partial<SupportFilters>) => void; onClear: () => void; active: boolean }) {
   return (
-    <Card>
-      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+    <div className="space-y-2">
+      <FilterBar>
         <DebouncedSearchInput
           value={filters.search}
           onValueChange={(value) => onChange({ search: value, page: 1 })}
-          placeholder="بحث بالرقم أو الموضوع أو مقدم الطلب…"
+          placeholder="رقم الطلب، الموضوع أو مقدم الطلب…"
+          className="min-w-0 flex-1 sm:min-w-72"
         />
 
-        <Select
-          value={filters.status ?? ''}
-          onValueChange={(v) =>
-            onChange({
-              status: (v || undefined) as SupportFilters['status'],
-              page: 1,
-            })
-          }
-          options={[
-            { value: '', label: 'كل الحالات' },
-            ...supportTicketStatuses.map((v) => ({
-              value: v,
-              label: supportStatusLabels[v],
-            })),
-          ]}
-        />
+        <div className="w-full sm:w-auto sm:min-w-[170px]">
+          <Select
+            value={filters.status ?? 'ALL'}
+            onValueChange={(value) =>
+              onChange({
+                status: value === 'ALL' ? undefined : (value as SupportFilters['status']),
+                page: 1,
+              })
+            }
+            options={[
+              { value: 'ALL', label: 'كل الحالات' },
+              ...supportTicketStatuses.map((value) => ({ value, label: supportStatusLabels[value] })),
+            ]}
+          />
+        </div>
 
-        <Select
-          value={filters.priority ?? ''}
-          onValueChange={(v) =>
-            onChange({
-              priority: (v || undefined) as SupportFilters['priority'],
-              page: 1,
-            })
-          }
-          options={[
-            { value: '', label: 'كل الأولويات' },
-            ...supportTicketPriorities.map((v) => ({
-              value: v,
-              label: supportPriorityLabels[v],
-            })),
-          ]}
-        />
+        <div className="w-full sm:w-auto sm:min-w-[165px]">
+          <Select
+            value={filters.priority ?? 'ALL'}
+            onValueChange={(value) =>
+              onChange({
+                priority: value === 'ALL' ? undefined : (value as SupportFilters['priority']),
+                page: 1,
+              })
+            }
+            options={[
+              { value: 'ALL', label: 'كل الأولويات' },
+              ...supportTicketPriorities.map((value) => ({ value, label: supportPriorityLabels[value] })),
+            ]}
+          />
+        </div>
 
-        <Select
-          value={filters.category ?? ''}
-          onValueChange={(v) =>
-            onChange({
-              category: (v || undefined) as SupportFilters['category'],
-              page: 1,
-            })
-          }
-          options={[
-            { value: '', label: 'كل التصنيفات' },
-            ...supportTicketCategories.map((v) => ({
-              value: v,
-              label: supportCategoryLabels[v],
-            })),
-          ]}
-        />
+        {active && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="h-9 shrink-0 rounded-xl px-3 text-[12px] font-medium text-muted-foreground hover:bg-primary/[0.04] hover:text-primary"
+            onClick={onClear}
+          >
+            <RotateCcw className="size-4" strokeWidth={1.7} />
+            مسح
+          </Button>
+        )}
+      </FilterBar>
 
-        <Select
-          value={filters.requesterType ?? ''}
-          onValueChange={(v) =>
-            onChange({
-              requesterType: (v || undefined) as SupportFilters['requesterType'],
-              page: 1,
-            })
-          }
-          options={[
-            { value: '', label: 'كل مقدمي الطلب' },
-            ...requester,
-          ]}
-        />
-      </div>
-
-      {/* Quick filters cover the most common support queue views. */}
-      <div className="mt-3 flex flex-wrap gap-2">
+      {/* Quick queue shortcuts stay separate from the primary filters. */}
+      <div className="flex flex-wrap gap-2 px-0.5">
         <Button
           size="sm"
           variant={filters.unassigned ? 'primary' : 'secondary'}
+          className="h-8 rounded-lg px-3 text-[12px]"
           onClick={() =>
             onChange({
               unassigned: filters.unassigned ? undefined : true,
@@ -102,6 +82,7 @@ export function SupportFilterBar({ filters, onChange, onClear, active }: { filte
         <Button
           size="sm"
           variant={filters.assignee === 'me' ? 'primary' : 'secondary'}
+          className="h-8 rounded-lg px-3 text-[12px]"
           onClick={() =>
             onChange({
               assignee: filters.assignee === 'me' ? undefined : 'me',
@@ -116,6 +97,7 @@ export function SupportFilterBar({ filters, onChange, onClear, active }: { filte
         <Button
           size="sm"
           variant={filters.waiting === 'INTERNAL' ? 'primary' : 'secondary'}
+          className="h-8 rounded-lg px-3 text-[12px]"
           onClick={() =>
             onChange({
               waiting: filters.waiting === 'INTERNAL' ? undefined : 'INTERNAL',
@@ -125,17 +107,7 @@ export function SupportFilterBar({ filters, onChange, onClear, active }: { filte
         >
           بانتظار إجراء داخلي
         </Button>
-
-        {active && (
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={onClear}
-          >
-            مسح التصفية
-          </Button>
-        )}
       </div>
-    </Card>
+    </div>
   );
 }

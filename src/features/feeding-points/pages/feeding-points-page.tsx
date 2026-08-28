@@ -3,7 +3,7 @@ import { List, Map } from 'lucide-react';
 import { useSearchParams } from 'react-router';
 import { Button, EmptyState, ErrorState, ExportMenuButton, PageHeader } from '@/components/ui';
 import type { DataTableQueryState } from '@/components/ui/data-table';
-import { commitSearchParams } from '@/lib/search-params';
+import { commitSearchParams, readEnumParam } from '@/lib/search-params';
 import { FeedingPointFilterBar } from '../components/feeding-point-filter-bar';
 import { FeedingPointSummaryCards } from '../components/feeding-point-summary';
 import { FeedingPointsMapView } from '../components/feeding-points-map-view';
@@ -13,14 +13,12 @@ import { useFeedingPoints, useFeedingPointSummary } from '../hooks';
 import { feedingPointCreatorTypes, feedingPointStatuses, type FeedingPointFilters, type FeedingPointListRow } from '../types';
 import { hasFeedingPointFilters } from '../utils';
 
-const valid = <T extends string>(value: string | null, options: readonly T[]): T | undefined =>
-  value && options.includes(value as T) ? (value as T) : undefined;
 
 function fromParams(params: URLSearchParams): FeedingPointFilters {
   return {
     search: params.get('q') ?? '',
-    status: valid(params.get('status'), feedingPointStatuses),
-    creatorType: valid(params.get('creatorType'), feedingPointCreatorTypes),
+    status: readEnumParam(params.get('status'), feedingPointStatuses),
+    creatorType: readEnumParam(params.get('creatorType'), feedingPointCreatorTypes),
     governorate: params.get('governorate') ?? undefined,
     pendingRefills: params.has('pendingRefills')
       ? params.get('pendingRefills') === 'true'
@@ -98,19 +96,6 @@ export function FeedingPointsPage() {
 
   const active = hasFeedingPointFilters(filters);
 
-  // Build the governorate filter from the currently loaded results.
-  const governorates = useMemo(
-    () =>
-      Array.from(
-        new Set(
-          (query.data?.items ?? []).map(
-            (point) => point.location.governorate,
-          ),
-        ),
-      ).sort((a, b) => a.localeCompare(b, 'ar')),
-    [query.data?.items],
-  );
-
   const onState = useCallback(
     (state: DataTableQueryState) => {
       const sort = state.sorting[0];
@@ -144,73 +129,48 @@ export function FeedingPointsPage() {
           { label: 'نقاط الإطعام' },
         ]}
         actions={
-          <>
-            <ExportMenuButton
-              title="نقاط الإطعام"
-              fileName="resq-feeding-points"
-              rows={query.data?.items ?? []}
-              disabled={query.isLoading}
-              subtitle="تصدير النتائج الظاهرة حاليًا وفق الفلاتر المطبقة."
-              columns={[
-                {
-                  label: 'النقطة',
-                  value: (item: FeedingPointListRow) => item.name ?? item.id,
-                },
-                {
-                  label: 'الحالة',
-                  value: (item: FeedingPointListRow) =>
-                    feedingPointStatusLabels[item.status],
-                },
-                {
-                  label: 'المحافظة',
-                  value: (item: FeedingPointListRow) =>
-                    item.location.governorate,
-                },
-                {
-                  label: 'المدينة',
-                  value: (item: FeedingPointListRow) =>
-                    item.location.city ?? '',
-                },
-                {
-                  label: 'أضيفت بواسطة',
-                  value: (item: FeedingPointListRow) =>
-                    `${item.createdBy.name} — ${creatorTypeLabels[item.createdBy.type]}`,
-                },
-                {
-                  label: 'تعبئات بانتظار التحقق',
-                  value: (item: FeedingPointListRow) =>
-                    item.pendingRefillsCount,
-                },
-                {
-                  label: 'آخر تحديث',
-                  value: (item: FeedingPointListRow) =>
-                    new Date(item.updatedAt).toLocaleString('ar-SY-u-nu-latn'),
-                },
-              ]}
-            />
-
-            <div className="flex h-9 rounded-xl border border-border/45 bg-white p-1">
-              <Button
-                size="sm"
-                variant={view === 'LIST' ? 'primary' : 'ghost'}
-                className="h-7 rounded-lg px-2.5"
-                onClick={() => setView('LIST')}
-              >
-                <List className="size-4" />
-                القائمة
-              </Button>
-
-              <Button
-                size="sm"
-                variant={view === 'MAP' ? 'primary' : 'ghost'}
-                className="h-7 rounded-lg px-2.5"
-                onClick={() => setView('MAP')}
-              >
-                <Map className="size-4" />
-                الخريطة
-              </Button>
-            </div>
-          </>
+          <ExportMenuButton
+            title="نقاط الإطعام"
+            fileName="resq-feeding-points"
+            rows={query.data?.items ?? []}
+            disabled={query.isLoading}
+            subtitle="تصدير النتائج الظاهرة حاليًا وفق الفلاتر المطبقة."
+            columns={[
+              {
+                label: 'النقطة',
+                value: (item: FeedingPointListRow) => item.name ?? item.id,
+              },
+              {
+                label: 'الحالة',
+                value: (item: FeedingPointListRow) =>
+                  feedingPointStatusLabels[item.status],
+              },
+              {
+                label: 'المحافظة',
+                value: (item: FeedingPointListRow) =>
+                  item.location.governorate,
+              },
+              {
+                label: 'المدينة',
+                value: (item: FeedingPointListRow) =>
+                  item.location.city ?? '',
+              },
+              {
+                label: 'أضيفت بواسطة',
+                value: (item: FeedingPointListRow) =>
+                  `${item.createdBy.name} — ${creatorTypeLabels[item.createdBy.type]}`,
+              },
+              {
+                label: 'تعبئات بانتظار التحقق',
+                value: (item: FeedingPointListRow) => item.pendingRefillsCount,
+              },
+              {
+                label: 'آخر تحديث',
+                value: (item: FeedingPointListRow) =>
+                  new Date(item.updatedAt).toLocaleString('ar-SY-u-nu-latn'),
+              },
+            ]}
+          />
         }
       />
 
@@ -220,13 +180,43 @@ export function FeedingPointsPage() {
         onFilter={update}
       />
 
+      {/* Keep the list/map switch in its own bounded surface so it never competes with header actions. */}
+      <div className="flex w-full min-w-0 items-center rounded-2xl border border-border/45 bg-white p-1.5 shadow-sm">
+        <div className="grid w-full min-w-0 grid-cols-2 gap-1" role="tablist" aria-label="طريقة عرض نقاط الإطعام">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={view === 'LIST'}
+            onClick={() => setView('LIST')}
+            className={`flex min-w-0 items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold transition-[background-color,color,box-shadow] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 ${
+              view === 'LIST'
+                ? 'bg-primary text-primary-foreground shadow-sm'
+                : 'text-muted-foreground hover:bg-primary/[0.05] hover:text-foreground'
+            }`}
+          >
+            <List className="size-4 shrink-0" strokeWidth={1.8} />
+            <span className="truncate">القائمة</span>
+          </button>
+
+          <button
+            type="button"
+            role="tab"
+            aria-selected={view === 'MAP'}
+            onClick={() => setView('MAP')}
+            className={`flex min-w-0 items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold transition-[background-color,color,box-shadow] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 ${
+              view === 'MAP'
+                ? 'bg-primary text-primary-foreground shadow-sm'
+                : 'text-muted-foreground hover:bg-primary/[0.05] hover:text-foreground'
+            }`}
+          >
+            <Map className="size-4 shrink-0" strokeWidth={1.8} />
+            <span className="truncate">الخريطة</span>
+          </button>
+        </div>
+      </div>
+
       <FeedingPointFilterBar
         filters={filters}
-        governorates={
-          governorates.length
-            ? governorates
-            : ['دمشق', 'حلب', 'حمص', 'اللاذقية', 'طرطوس', 'درعا', 'حماة', 'ريف دمشق']
-        }
         onChange={update}
         onClear={clear}
         active={active}

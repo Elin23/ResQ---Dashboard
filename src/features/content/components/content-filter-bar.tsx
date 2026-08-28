@@ -1,53 +1,49 @@
-import { Button, FilterBar, Input, Select } from '@/components/ui';
+import { RotateCcw } from 'lucide-react';
 
-import { articleCategoryOptions, commonTags, contentStatusOptions } from '../constants';
+import { Button, DebouncedSearchInput, FilterBar, Select } from '@/components/ui';
+
+import { articleCategoryOptions, contentStatusOptions } from '../constants';
 import type { ContentListFilters } from '../types';
 
 export function ContentFilterBar({ filters, onChange, articles = false }: { filters: ContentListFilters; onChange: (patch: Partial<ContentListFilters>) => void; articles?: boolean }) {
   const active = Boolean(
     filters.search ||
-    filters.status ||
-    filters.category ||
-    filters.author ||
-    filters.tag ||
-    filters.dateFrom ||
-    filters.dateTo,
+      filters.status ||
+      filters.category ||
+      filters.author ||
+      filters.tag ||
+      filters.dateFrom ||
+      filters.dateTo,
   );
 
   return (
     <FilterBar>
-      <Input
-        aria-label="بحث"
-        placeholder="بحث بالعنوان أو الرقم أو الرابط المختصر"
+      <DebouncedSearchInput
+        aria-label="البحث في المحتوى"
+        placeholder="العنوان، الرقم أو الرابط المختصر…"
         value={filters.search}
-        onChange={(event) =>
-          onChange({
-            search: event.target.value,
-            page: 1,
-          })
-        }
-        className="sm:max-w-xs"
+        onValueChange={(value) => onChange({ search: value, page: 1 })}
+        className="min-w-0 flex-1 sm:min-w-72"
       />
 
-      <Select
-        value={filters.status ?? 'ALL'}
-        onValueChange={(value) =>
-          onChange({
-            status:
-              value === 'ALL'
-                ? undefined
-                : (value as ContentListFilters['status']),
-            page: 1,
-          })
-        }
-        options={[
-          { value: 'ALL', label: 'كل الحالات' },
-          ...contentStatusOptions,
-        ]}
-      />
+      <div className="w-full sm:w-auto sm:min-w-[170px]">
+        <Select
+          value={filters.status ?? 'ALL'}
+          onValueChange={(value) =>
+            onChange({
+              status: value === 'ALL' ? undefined : (value as ContentListFilters['status']),
+              page: 1,
+            })
+          }
+          options={[
+            { value: 'ALL', label: 'كل الحالات' },
+            ...contentStatusOptions,
+          ]}
+        />
+      </div>
 
       {articles && (
-        <>
+        <div className="w-full sm:w-auto sm:min-w-[180px]">
           <Select
             value={filters.category ?? 'ALL'}
             onValueChange={(value) =>
@@ -61,55 +57,16 @@ export function ContentFilterBar({ filters, onChange, articles = false }: { filt
               ...articleCategoryOptions,
             ]}
           />
-
-          <Select
-            value={filters.tag ?? 'ALL'}
-            onValueChange={(value) =>
-              onChange({
-                tag: value === 'ALL' ? undefined : value,
-                page: 1,
-              })
-            }
-            options={[
-              { value: 'ALL', label: 'كل الوسوم' },
-              ...commonTags.map((value) => ({
-                value,
-                label: value,
-              })),
-            ]}
-          />
-        </>
+        </div>
       )}
 
-      <Input
-        aria-label="من تاريخ"
-        type="date"
-        value={filters.dateFrom ?? ''}
-        onChange={(event) =>
-          onChange({
-            dateFrom: event.target.value || undefined,
-            page: 1,
-          })
-        }
-        className="sm:w-auto"
-      />
-
-      <Input
-        aria-label="إلى تاريخ"
-        type="date"
-        value={filters.dateTo ?? ''}
-        onChange={(event) =>
-          onChange({
-            dateTo: event.target.value || undefined,
-            page: 1,
-          })
-        }
-        className="sm:w-auto"
-      />
-
+      {/* Content filters stay limited to publishing state and article category. */}
       {active && (
         <Button
+          type="button"
           variant="ghost"
+          size="sm"
+          className="h-9 shrink-0 rounded-xl px-3 text-[12px] font-medium text-muted-foreground hover:bg-primary/[0.04] hover:text-primary"
           onClick={() =>
             onChange({
               search: '',
@@ -123,7 +80,8 @@ export function ContentFilterBar({ filters, onChange, articles = false }: { filt
             })
           }
         >
-          مسح الفلاتر
+          <RotateCcw className="size-4" strokeWidth={1.7} />
+          مسح
         </Button>
       )}
     </FilterBar>

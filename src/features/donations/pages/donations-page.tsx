@@ -1,8 +1,9 @@
 import { useCallback, useMemo } from 'react';
 import type { ColumnDef } from '@tanstack/react-table';
-import { ExternalLink, MoreHorizontal, RotateCcw, Search } from 'lucide-react';
+import { CircleDollarSign, Clock3, ExternalLink, HeartHandshake, MoreHorizontal, RotateCcw, Search, UsersRound } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router';
-import { Button, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, EmptyState, ErrorState, ExportMenuButton, IconButton, Input, Select, Skeleton } from '@/components/ui';
+import { Button, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, EmptyState, ErrorState, ExportMenuButton, IconButton, Input, Select } from '@/components/ui';
+import { SummaryCard, SummaryCardSkeleton } from '@/components/ui/summary-card';
 import { DataTable, type DataTableQueryState } from '@/components/ui/data-table';
 import { commitSearchParams } from '@/lib/search-params';
 import { DonationCampaignStatusBadge } from '../components/donation-badges';
@@ -59,27 +60,26 @@ function write(filters: DonationCampaignFilters): URLSearchParams {
 
 function Summary({ loading, pending, published, donors, amount }: { loading: boolean; pending: number; published: number; donors: number; amount: string }) {
   const items = [
-    ['بانتظار المراجعة', pending],
-    ['حملات منشورة', published],
-    ['المتبرعون بالأرشيف', donors],
-    ['إجمالي التبرعات', amount],
+    { key: 'pending', label: 'بانتظار المراجعة', value: pending, icon: Clock3, tone: 'pending' as const },
+    { key: 'published', label: 'حملات منشورة', value: published, icon: HeartHandshake, tone: 'success' as const },
+    { key: 'donors', label: 'المتبرعون بالأرشيف', value: donors, icon: UsersRound, tone: 'info' as const },
+    { key: 'amount', label: 'إجمالي التبرعات', value: amount, icon: CircleDollarSign, tone: 'primary' as const },
   ];
 
+  // Donation totals stay compact while preserving clear financial hierarchy.
   return (
     <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
-      {items.map(([label, value]) =>
+      {items.map((item) =>
         loading ? (
-          <Skeleton key={label} className="h-[86px] rounded-xl" />
+          <SummaryCardSkeleton key={item.key} />
         ) : (
-          <div
-            key={label}
-            className="h-[86px] rounded-xl border border-border/45 bg-white p-3.5"
-          >
-            <p className="text-[12px] text-muted-foreground">{label}</p>
-            <p className="mt-2 text-[22px] font-medium leading-none text-foreground">
-              {value}
-            </p>
-          </div>
+          <SummaryCard
+            key={item.key}
+            label={item.label}
+            value={typeof item.value === 'number' ? item.value.toLocaleString('ar-SA-u-nu-latn') : item.value}
+            icon={item.icon}
+            tone={item.tone}
+          />
         ),
       )}
     </div>

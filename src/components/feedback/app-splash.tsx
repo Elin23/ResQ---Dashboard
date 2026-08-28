@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type RefObject } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 
 type AppSplashScreenProps = {
   onComplete: () => void;
@@ -10,15 +10,10 @@ type AppInlineLoaderProps = {
 
 type LoaderSize = 'small' | 'large';
 
-const SPLASH_VISIBLE_DURATION = 1300;
-const SPLASH_FADE_DURATION = 500;
+const SPLASH_VISIBLE_DURATION = 1900;
+const SPLASH_FADE_DURATION = 350;
 
-const LETTER_DELAYS = [0, 90, 180, 270] as const;
-const DOT_DELAYS = [0, 140, 280] as const;
-
-export function AppSplashScreen({
-  onComplete,
-}: AppSplashScreenProps) {
+export function AppSplashScreen({ onComplete }: AppSplashScreenProps) {
   const [isLeaving, setIsLeaving] = useState(false);
 
   useEffect(() => {
@@ -38,271 +33,78 @@ export function AppSplashScreen({
 
   return (
     <div
-      className={[
-        'fixed inset-0 z-[100] grid place-items-center bg-background',
-        'will-change-opacity',
-        isLeaving
-          ? 'pointer-events-none opacity-0'
-          : 'opacity-100',
-      ].join(' ')}
-      style={{
-        transitionProperty: 'opacity',
-        transitionDuration: `${SPLASH_FADE_DURATION}ms`,
-        transitionTimingFunction: 'cubic-bezier(0.22, 1, 0.36, 1)',
-      }}
+      className={`resq-splash fixed inset-0 z-[100] grid place-items-center bg-background ${isLeaving ? 'resq-splash--leaving pointer-events-none' : ''}`}
+      style={{ '--resq-splash-fade-duration': `${SPLASH_FADE_DURATION}ms` } as CSSProperties}
       role="status"
       aria-live="polite"
-      aria-label="جارٍ تجهيز لوحة ResQ"
+      aria-label="جارٍ فتح لوحة إدارة ResQ"
     >
-      <div className="relative flex flex-col items-center px-6 text-center">
+      <div className="resq-splash__content relative flex flex-col items-center px-6 text-center">
         <SplashDecoration />
 
         <div className="relative">
-          <div
-            className="pointer-events-none absolute left-1/2 top-1/2 h-24 w-56 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/10"
-            aria-hidden="true"
-          />
-
+          <div className="resq-splash__glow pointer-events-none absolute left-1/2 top-1/2 h-24 w-56 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/10" aria-hidden="true" />
           <AnimatedResQ size="large" />
         </div>
 
-        <div
-          className="mt-6 h-px w-24 bg-gradient-to-r from-transparent via-primary/50 to-transparent"
-          aria-hidden="true"
-        />
+        <div className="resq-splash__divider mt-6 h-px w-24 bg-gradient-to-r from-transparent via-primary/50 to-transparent" aria-hidden="true" />
 
-        <p className="mt-4 text-sm font-semibold text-foreground/80">
-          لوحة الإدارة التشغيلية
-        </p>
-
-        <p className="mt-1 text-xs text-muted-foreground">
-          جارٍ تجهيز مساحة العمل
-        </p>
+        <div className="resq-splash__copy">
+          <p className="mt-4 text-sm font-semibold text-foreground/80">ResQ Admin</p>
+          <p className="mt-1 text-xs text-muted-foreground">جارٍ فتح لوحة الإدارة</p>
+        </div>
 
         <AnimatedDots />
-
-        <span className="sr-only">
-          جارٍ تحميل لوحة إدارة ResQ
-        </span>
+        <span className="sr-only">جارٍ فتح لوحة إدارة ResQ</span>
       </div>
     </div>
   );
 }
 
-export function AppInlineLoader({
-  label = 'جارٍ تحميل البيانات',
-}: AppInlineLoaderProps) {
+export function AppInlineLoader({ label = 'جارٍ تحميل البيانات' }: AppInlineLoaderProps) {
   return (
-    <div
-      className="flex min-h-40 items-center justify-center"
-      role="status"
-      aria-live="polite"
-    >
+    <div className="flex min-h-40 items-center justify-center" role="status" aria-live="polite">
       <div className="flex flex-col items-center text-center">
         <AnimatedResQ size="small" />
-
-        <p className="mt-3 text-sm font-medium text-muted-foreground">
-          {label}
-        </p>
+        <p className="mt-3 text-sm font-medium text-muted-foreground">{label}</p>
       </div>
     </div>
   );
 }
 
-function AnimatedResQ({
-  size,
-}: {
-  size: LoaderSize;
-}) {
-  const rRef = useRef<HTMLSpanElement>(null);
-  const eRef = useRef<HTMLSpanElement>(null);
-  const sRef = useRef<HTMLSpanElement>(null);
-  const qRef = useRef<HTMLSpanElement>(null);
-
-  // Small delay between letters makes the animation feel smoother.
-  useLetterAnimation(rRef, LETTER_DELAYS[0]);
-  useLetterAnimation(eRef, LETTER_DELAYS[1]);
-  useLetterAnimation(sRef, LETTER_DELAYS[2]);
-  useLetterAnimation(qRef, LETTER_DELAYS[3]);
-
-  const sizeClass =
-    size === 'large'
-      ? 'text-[4.5rem] sm:text-[5.5rem]'
-      : 'text-3xl';
+function AnimatedResQ({ size }: { size: LoaderSize }) {
+  const sizeClass = size === 'large' ? 'text-[4.5rem] sm:text-[5.5rem]' : 'text-3xl';
 
   return (
-    <div
-      dir="ltr"
-      className={[
-        'relative flex items-baseline justify-center select-none',
-        'font-black tracking-[-0.075em]',
-        sizeClass,
-      ].join(' ')}
-      aria-label="ResQ"
-    >
-      <span ref={rRef} className="inline-block text-foreground">
-        R
-      </span>
-
-      <span ref={eRef} className="inline-block text-foreground">
-        e
-      </span>
-
-      <span ref={sRef} className="inline-block text-foreground">
-        s
-      </span>
-
-      <span ref={qRef} className="relative inline-block text-primary">
+    <div dir="ltr" className={`relative flex items-baseline justify-center select-none font-black tracking-[-0.075em] ${sizeClass}`} aria-label="ResQ">
+      <span className="resq-logo-letter resq-logo-letter--1 inline-block text-foreground">R</span>
+      <span className="resq-logo-letter resq-logo-letter--2 inline-block text-foreground">e</span>
+      <span className="resq-logo-letter resq-logo-letter--3 inline-block text-foreground">s</span>
+      <span className="resq-logo-letter resq-logo-letter--4 relative inline-block text-primary">
         Q
-
-        {size === 'large' && (
-          <span
-            className="pointer-events-none absolute -right-2 -top-1 size-2 rounded-full bg-primary/45"
-            aria-hidden="true"
-          />
-        )}
+        {size === 'large' && <span className="resq-splash__accent pointer-events-none absolute -right-2 -top-1 size-2 rounded-full bg-primary/45" aria-hidden="true" />}
       </span>
     </div>
   );
 }
 
 function AnimatedDots() {
-  const firstDotRef = useRef<HTMLSpanElement>(null);
-  const secondDotRef = useRef<HTMLSpanElement>(null);
-  const thirdDotRef = useRef<HTMLSpanElement>(null);
-
-  useDotAnimation(firstDotRef, DOT_DELAYS[0]);
-  useDotAnimation(secondDotRef, DOT_DELAYS[1]);
-  useDotAnimation(thirdDotRef, DOT_DELAYS[2]);
-
   return (
-    <div
-      className="mt-7 flex items-center gap-2"
-      aria-hidden="true"
-    >
-      <span
-        ref={firstDotRef}
-        className="block size-1.5 rounded-full bg-primary"
-      />
-
-      <span
-        ref={secondDotRef}
-        className="block size-1.5 rounded-full bg-primary"
-      />
-
-      <span
-        ref={thirdDotRef}
-        className="block size-1.5 rounded-full bg-primary"
-      />
+    <div className="mt-7 flex items-center gap-2" aria-hidden="true">
+      <span className="resq-loading-dot resq-loading-dot--1 block size-1.5 rounded-full bg-primary" />
+      <span className="resq-loading-dot resq-loading-dot--2 block size-1.5 rounded-full bg-primary" />
+      <span className="resq-loading-dot resq-loading-dot--3 block size-1.5 rounded-full bg-primary" />
     </div>
   );
-}
-
-function useLetterAnimation(
-  ref: RefObject<HTMLSpanElement | null>,
-  delay: number,
-) {
-  useEffect(() => {
-    const element = ref.current;
-
-    if (!element) {
-      return;
-    }
-
-    const animation = element.animate(
-      [
-        {
-          transform: 'translateY(0) scale(1)',
-        },
-        {
-          transform: 'translateY(-12px) scale(1.035)',
-          offset: 0.34,
-        },
-        {
-          transform: 'translateY(-3px) scale(1.01)',
-          offset: 0.58,
-        },
-        {
-          transform: 'translateY(0) scale(1)',
-        },
-      ],
-      {
-        duration: 1100,
-        delay,
-        iterations: Infinity,
-        easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
-      },
-    );
-
-    return () => {
-      animation.cancel();
-    };
-  }, [delay, ref]);
-}
-
-function useDotAnimation(
-  ref: RefObject<HTMLSpanElement | null>,
-  delay: number,
-) {
-  useEffect(() => {
-    const element = ref.current;
-
-    if (!element) {
-      return;
-    }
-
-    // Simple loading loop for the three dots.
-    const animation = element.animate(
-      [
-        {
-          opacity: 0.25,
-          transform: 'translateY(0) scale(0.8)',
-        },
-        {
-          opacity: 1,
-          transform: 'translateY(-5px) scale(1)',
-        },
-        {
-          opacity: 0.25,
-          transform: 'translateY(0) scale(0.8)',
-        },
-      ],
-      {
-        duration: 900,
-        delay,
-        iterations: Infinity,
-        easing: 'ease-in-out',
-      },
-    );
-
-    return () => {
-      animation.cancel();
-    };
-  }, [delay, ref]);
 }
 
 function SplashDecoration() {
   return (
     <>
-      <span
-        className="pointer-events-none absolute -left-24 -top-24 size-44 rounded-full bg-primary/[0.07]"
-        aria-hidden="true"
-      />
-
-      <span
-        className="pointer-events-none absolute -bottom-20 -right-24 size-40 rounded-full bg-primary/10"
-        aria-hidden="true"
-      />
-
-      <span
-        className="pointer-events-none absolute -left-10 top-4 size-1.5 rounded-full bg-primary/40"
-        aria-hidden="true"
-      />
-
-      <span
-        className="pointer-events-none absolute -right-8 bottom-7 size-1 rounded-full bg-primary/40"
-        aria-hidden="true"
-      />
+      <span className="resq-splash__orb resq-splash__orb--one pointer-events-none absolute -left-24 -top-24 size-44 rounded-full bg-primary/[0.07]" aria-hidden="true" />
+      <span className="resq-splash__orb resq-splash__orb--two pointer-events-none absolute -bottom-20 -right-24 size-40 rounded-full bg-primary/10" aria-hidden="true" />
+      <span className="resq-splash__spark resq-splash__spark--one pointer-events-none absolute -left-10 top-4 size-1.5 rounded-full bg-primary/40" aria-hidden="true" />
+      <span className="resq-splash__spark resq-splash__spark--two pointer-events-none absolute -right-8 bottom-7 size-1 rounded-full bg-primary/40" aria-hidden="true" />
     </>
   );
 }

@@ -4,21 +4,19 @@ import { Link, useSearchParams } from 'react-router';
 import { Button, Card, EmptyState, ErrorState, PageHeader } from '@/components/ui';
 import type { DataTableQueryState } from '@/components/ui/data-table';
 import { PermissionGuard } from '@/features/auth/rbac';
-import { commitSearchParams } from '@/lib/search-params';
+import { commitSearchParams, readEnumParam } from '@/lib/search-params';
 import { BroadcastsTable } from '../components/broadcasts-table';
 import { NotificationFilterBar } from '../components/notification-filter-bar';
 import { NotificationSummaryCards } from '../components/notification-summary';
 import { useBroadcastNotifications, useNotificationSummary } from '../hooks';
 import { notificationChannels, notificationDeliveryStatuses, type BroadcastFilters } from '../types';
 
-const valid = <T extends string>(value: string | null, options: readonly T[]): T | undefined =>
-  value && options.includes(value as T) ? (value as T) : undefined;
 
 function read(params: URLSearchParams): BroadcastFilters {
   return {
     search: params.get('q') ?? '',
-    status: valid(params.get('status'), notificationDeliveryStatuses),
-    channel: valid(params.get('channel'), notificationChannels),
+    status: readEnumParam(params.get('status'), notificationDeliveryStatuses),
+    channel: readEnumParam(params.get('channel'), notificationChannels),
     audienceType: (['EVERYONE', 'USER', 'ORGANIZATION'] as const).find(
       (value) => value === params.get('audienceType'),
     ),

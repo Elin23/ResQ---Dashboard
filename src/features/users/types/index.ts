@@ -111,13 +111,6 @@ export interface UserFilters {
   search: string;
   accountStatus?: UserAccountStatus;
   verificationStatus?: UserVerificationStatus;
-  governorate?: string;
-  dateFrom?: string;
-  dateTo?: string;
-  recentActivity?: 'ACTIVE_7_DAYS' | 'INACTIVE_30_DAYS';
-  hasReports?: 'YES' | 'NO';
-  hasAdoptions?: 'YES' | 'NO';
-  hasActiveAdoptions?: 'YES';
   page: number;
   pageSize: number;
   sortBy?: 'createdAt' | 'lastActiveAt' | 'fullName' | 'accountStatus';

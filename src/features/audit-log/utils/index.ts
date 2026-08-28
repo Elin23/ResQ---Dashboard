@@ -20,19 +20,26 @@ export function formatAuditRelative(value: string) {
   }
 
   const difference = Date.now() - date.getTime();
-  const minutes = Math.max(0, Math.round(difference / 60_000));
+  const future = difference < 0;
+  const minutes = Math.round(Math.abs(difference) / 60_000);
+
+  if (minutes < 1) {
+    return 'الآن';
+  }
 
   if (minutes < 60) {
-    return `منذ ${minutes || 1} دقيقة`;
+    return future ? `بعد ${minutes} دقيقة` : `منذ ${minutes} دقيقة`;
   }
 
   const hours = Math.round(minutes / 60);
 
   if (hours < 24) {
-    return `منذ ${hours} ساعة`;
+    return future ? `بعد ${hours} ساعة` : `منذ ${hours} ساعة`;
   }
 
-  return `منذ ${Math.round(hours / 24)} يوم`;
+  const days = Math.round(hours / 24);
+
+  return future ? `بعد ${days} يوم` : `منذ ${days} يوم`;
 }
 
 export function resourcePath(type: AuditResourceType, id: string) {

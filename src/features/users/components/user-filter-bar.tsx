@@ -1,5 +1,7 @@
 import { RotateCcw } from 'lucide-react';
+
 import { Button, DebouncedSearchInput, FilterBar, Select } from '@/components/ui';
+
 import { accountStatusLabels, verificationLabels } from '../constants';
 import { userAccountStatuses, userVerificationStatuses, type UserFilters } from '../types';
 
@@ -19,7 +21,7 @@ const verificationOptions = [
   })),
 ];
 
-export function UserFilterBar({ filters, onChange, onClear, active }: { filters: UserFilters; governorates: string[]; onChange: (patch: Partial<UserFilters>) => void; onClear: () => void; active: boolean }) {
+export function UserFilterBar({ filters, onChange, onClear, active }: { filters: UserFilters; onChange: (patch: Partial<UserFilters>) => void; onClear: () => void; active: boolean }) {
   return (
     <FilterBar>
       <label className="min-w-0 flex-1 sm:min-w-72">
@@ -31,7 +33,7 @@ export function UserFilterBar({ filters, onChange, onClear, active }: { filters:
         />
       </label>
 
-      <label className="min-w-[165px]">
+      <label className="w-full sm:w-auto sm:min-w-[170px]">
         <span className="sr-only">حالة الحساب</span>
         <Select
           value={filters.accountStatus ?? 'ALL'}
@@ -45,7 +47,7 @@ export function UserFilterBar({ filters, onChange, onClear, active }: { filters:
         />
       </label>
 
-      <label className="min-w-[165px]">
+      <label className="w-full sm:w-auto sm:min-w-[170px]">
         <span className="sr-only">حالة التوثيق</span>
         <Select
           value={filters.verificationStatus ?? 'ALL'}
@@ -59,16 +61,17 @@ export function UserFilterBar({ filters, onChange, onClear, active }: { filters:
         />
       </label>
 
-      {/* Only show the reset action when at least one filter is active. */}
+      {/* Keep the users queue focused on the three filters used most often. */}
       {active && (
         <Button
+          type="button"
           variant="ghost"
           size="sm"
-          className="h-9 rounded-xl px-3 text-[12px] font-normal text-muted-foreground hover:bg-primary/[0.04] hover:text-primary"
+          className="h-9 shrink-0 rounded-xl px-3 text-[12px] font-medium text-muted-foreground hover:bg-primary/[0.04] hover:text-primary"
           onClick={onClear}
         >
           <RotateCcw className="size-4" strokeWidth={1.7} />
-          مسح الفلاتر
+          مسح
         </Button>
       )}
     </FilterBar>

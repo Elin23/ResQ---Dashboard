@@ -5,23 +5,21 @@ import { toast } from 'sonner';
 import { Button, EmptyState, ErrorState, ExportMenuButton } from '@/components/ui';
 import type { DataTableQueryState } from '@/components/ui/data-table';
 import { usePermission } from '@/features/auth/rbac';
-import { commitSearchParams } from '@/lib/search-params';
+import { commitSearchParams, readEnumParam } from '@/lib/search-params';
 import { ReportsFilterBar } from '../components/reports-filter-bar';
 import { ReportsSummaryCards } from '../components/reports-summary';
 import { ReportsTable } from '../components/reports-table';
 import { animalTypeLabels, reportStatusLabels } from '../constants';
-import { useEligibleOrganizations, useReports, useReportsSummary } from '../hooks';
+import { useReports, useReportsSummary } from '../hooks';
 import { animalTypes, reportStatuses, type Report, type ReportFilters } from '../types';
 import { hasActiveFilters } from '../utils';
 
-const valid = <T extends string>(value: string | null, options: readonly T[]): T | undefined =>
-  value && options.includes(value as T) ? (value as T) : undefined;
 
 function filtersFromParams(params: URLSearchParams): ReportFilters {
   return {
     search: params.get('q') ?? '',
-    status: valid(params.get('status'), reportStatuses),
-    animalType: valid(params.get('animal'), animalTypes),
+    status: readEnumParam(params.get('status'), reportStatuses),
+    animalType: readEnumParam(params.get('animal'), animalTypes),
     governorate: params.get('governorate') ?? undefined,
     organizationId: params.get('organization') ?? undefined,
     userId: params.get('userId') ?? undefined,
@@ -31,7 +29,7 @@ function filtersFromParams(params: URLSearchParams): ReportFilters {
     pageSize: [10, 20, 50].includes(Number(params.get('pageSize')))
       ? Number(params.get('pageSize'))
       : 10,
-    sortBy: valid(params.get('sort'), ['createdAt', 'updatedAt', 'status'] as const),
+    sortBy: readEnumParam(params.get('sort'), ['createdAt', 'updatedAt', 'status'] as const),
     sortDirection: params.get('direction') === 'asc' ? 'asc' : 'desc',
   };
 }
@@ -108,7 +106,6 @@ export function ReportsPage() {
   const filters = filtersFromParams(params);
   const reportsQuery = useReports(filters);
   const summaryQuery = useReportsSummary();
-  const organizationsQuery = useEligibleOrganizations('');
 
   const [selected, setSelected] = useState<Report[]>([]);
 
@@ -286,7 +283,6 @@ export function ReportsPage() {
 
       <ReportsFilterBar
         filters={filters}
-        organizations={organizationsQuery.data ?? []}
         onChange={updateFilters}
         onClear={clearFilters}
         active={active}

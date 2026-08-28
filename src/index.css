@@ -842,3 +842,232 @@ main td {
     font-size: 7.5px;
   }
 }
+
+
+/* =========================================================
+   Reduced motion
+   ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  html:focus-within {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+/* =========================================================
+   ResQ splash motion
+   ========================================================= */
+
+.resq-splash {
+  opacity: 1;
+  transition: opacity var(--resq-splash-fade-duration, 350ms) cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.resq-splash--leaving {
+  opacity: 0;
+}
+
+.resq-splash__content {
+  animation: resq-splash-enter 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.resq-splash__glow {
+  animation: resq-splash-glow 1800ms ease-in-out infinite;
+}
+
+.resq-splash__divider {
+  transform-origin: center;
+  animation: resq-splash-divider 680ms 180ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.resq-splash__copy {
+  animation: resq-splash-copy 520ms 240ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.resq-logo-letter {
+  animation: resq-logo-bounce 1180ms cubic-bezier(0.22, 1, 0.36, 1) infinite;
+  will-change: transform;
+}
+
+.resq-logo-letter--1 {
+  animation-delay: 0ms;
+}
+
+.resq-logo-letter--2 {
+  animation-delay: 90ms;
+}
+
+.resq-logo-letter--3 {
+  animation-delay: 180ms;
+}
+
+.resq-logo-letter--4 {
+  animation-delay: 270ms;
+}
+
+.resq-loading-dot {
+  animation: resq-loading-dot 900ms ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+.resq-loading-dot--1 {
+  animation-delay: 0ms;
+}
+
+.resq-loading-dot--2 {
+  animation-delay: 140ms;
+}
+
+.resq-loading-dot--3 {
+  animation-delay: 280ms;
+}
+
+.resq-splash__accent {
+  animation: resq-splash-accent 1100ms ease-in-out infinite;
+}
+
+.resq-splash__orb--one {
+  animation: resq-splash-float-one 2600ms ease-in-out infinite;
+}
+
+.resq-splash__orb--two {
+  animation: resq-splash-float-two 2800ms ease-in-out infinite;
+}
+
+.resq-splash__spark {
+  animation: resq-splash-spark 1300ms ease-in-out infinite;
+}
+
+.resq-splash__spark--two {
+  animation-delay: 420ms;
+}
+
+@keyframes resq-splash-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes resq-splash-copy {
+  from {
+    opacity: 0;
+    transform: translateY(7px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes resq-splash-divider {
+  from {
+    opacity: 0;
+    transform: scaleX(0.2);
+  }
+  to {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+}
+
+@keyframes resq-logo-bounce {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+  }
+  34% {
+    transform: translateY(-12px) scale(1.045);
+  }
+  58% {
+    transform: translateY(-3px) scale(1.012);
+  }
+}
+
+@keyframes resq-loading-dot {
+  0%, 100% {
+    opacity: 0.25;
+    transform: translateY(0) scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-5px) scale(1);
+  }
+}
+
+@keyframes resq-splash-glow {
+  0%, 100% {
+    opacity: 0.55;
+    transform: translate(-50%, -50%) scale(0.92);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.08);
+  }
+}
+
+@keyframes resq-splash-accent {
+  0%, 100% {
+    opacity: 0.35;
+    transform: scale(0.75);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+}
+
+@keyframes resq-splash-float-one {
+  0%, 100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(8px, 7px, 0);
+  }
+}
+
+@keyframes resq-splash-float-two {
+  0%, 100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(-8px, -6px, 0);
+  }
+}
+
+@keyframes resq-splash-spark {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.25);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .resq-splash__content,
+  .resq-splash__glow,
+  .resq-splash__divider,
+  .resq-splash__copy,
+  .resq-logo-letter,
+  .resq-loading-dot,
+  .resq-splash__accent,
+  .resq-splash__orb,
+  .resq-splash__spark {
+    animation: none !important;
+  }
+}

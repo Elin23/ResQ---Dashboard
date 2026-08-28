@@ -2,26 +2,23 @@ import { useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router';
 import { Button, EmptyState, ErrorState, ExportMenuButton, PageHeader } from '@/components/ui';
 import type { DataTableQueryState } from '@/components/ui/data-table';
-import { commitSearchParams } from '@/lib/search-params';
+import { commitSearchParams, readEnumParam } from '@/lib/search-params';
 import { OrganizationFilterBar } from '../components/organization-filter-bar';
 import { OrganizationSummaryCards } from '../components/organization-summary';
 import { OrganizationsTable } from '../components/organizations-table';
 import { verificationLabels } from '../constants';
 import { useOrganizations, useOrganizationSummary } from '../hooks';
-import { organizationFixtures } from '../services/organization-fixtures';
 import { organizationServiceKeys, organizationStatuses, organizationVerificationStatuses, type Organization, type OrganizationFilters } from '../types';
 import { hasOrganizationFilters } from '../utils';
 
-const valid = <T extends string>(value: string | null, options: readonly T[]): T | undefined =>
-  value && options.includes(value as T) ? (value as T) : undefined;
 
 function fromParams(p: URLSearchParams): OrganizationFilters {
   return {
     search: p.get('q') ?? '',
-    status: valid(p.get('status'), organizationStatuses),
-    verificationStatus: valid(p.get('verification'), organizationVerificationStatuses),
+    status: readEnumParam(p.get('status'), organizationStatuses),
+    verificationStatus: readEnumParam(p.get('verification'), organizationVerificationStatuses),
     governorate: p.get('governorate') ?? undefined,
-    service: valid(p.get('service'), organizationServiceKeys),
+    service: readEnumParam(p.get('service'), organizationServiceKeys),
     activeReports:
       p.get('activeReports') === 'YES'
         ? 'YES'
@@ -34,7 +31,7 @@ function fromParams(p: URLSearchParams): OrganizationFilters {
     pageSize: [10, 20, 50].includes(Number(p.get('pageSize')))
       ? Number(p.get('pageSize'))
       : 10,
-    sortBy: valid(p.get('sort'), ['createdAt', 'updatedAt', 'name', 'status'] as const),
+    sortBy: readEnumParam(p.get('sort'), ['createdAt', 'updatedAt', 'name', 'status'] as const),
     sortDirection: p.get('direction') === 'asc' ? 'asc' : 'desc',
   };
 }
@@ -96,12 +93,6 @@ export function OrganizationsPage() {
   };
 
   const active = hasOrganizationFilters(filters);
-
-  const governors = [
-    ...new Set(
-      organizationFixtures.map((o) => o.governorate),
-    ),
-  ];
 
   const onState = useCallback(
     (state: DataTableQueryState) => {
@@ -218,7 +209,6 @@ export function OrganizationsPage() {
 
       <OrganizationFilterBar
         filters={filters}
-        governorates={governors}
         onChange={update}
         onClear={clear}
         active={active}

@@ -34,7 +34,7 @@ test('stored sessions are schema validated before RBAC rendering', () => {
 
 test('viewport surfaces and modal positioning avoid black-frame and RTL centering traps', () => {
   const css = read('src/index.css');
-  const ui = read('src/components/ui/index.tsx');
+  const ui = read('src/components/ui/core/overlays.tsx');
   assert.match(css, /html,[\s\S]*body,[\s\S]*#root \{[\s\S]*border: 0;[\s\S]*outline: 0;[\s\S]*box-shadow: none;/u);
   assert.match(css, /overscroll-behavior: none/u);
   assert.match(ui, /fixed left-1\/2 top-1\/2/u);

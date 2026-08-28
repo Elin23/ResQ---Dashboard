@@ -1,5 +1,4 @@
-import {Activity,Bell,Building2,CircleDollarSign,HeartHandshake,Home,Map,Megaphone,MessageCircleQuestion,Newspaper,
-  Settings,ShieldCheck,Users,Utensils,type LucideIcon,} from 'lucide-react';
+import { Activity, Bell, Building2, CircleDollarSign, HeartHandshake, Home, Map, Megaphone, MessageCircleQuestion, Newspaper, Settings, ShieldCheck, Users, Utensils, type LucideIcon } from 'lucide-react';
 
 import type { Permission } from '@/features/auth/permissions';
 

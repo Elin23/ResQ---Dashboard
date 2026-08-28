@@ -3,24 +3,22 @@ import { useSearchParams } from 'react-router';
 import { ErrorState, PageHeader } from '@/components/ui';
 import type { DataTableQueryState } from '@/components/ui/data-table';
 import { PermissionGuard, usePermission } from '@/features/auth/rbac';
-import { commitSearchParams } from '@/lib/search-params';
+import { commitSearchParams, readEnumParam } from '@/lib/search-params';
 import { AuditDetailModal, AuditExportButton, AuditFilterBar, AuditSummaryStrip, AuditTable } from '../components/audit-components';
 import { useAuditEvents, useAuditFilterOptions, useAuditSummary } from '../hooks';
 import { getAuditExportEvents } from '../services/audit-log.mock';
 import { auditActions, auditActorTypes, auditResourceTypes, type AuditEvent, type AuditFilters } from '../types';
 import { auditCsv, downloadTextFile } from '../utils';
 
-const valid = <T extends string>(value: string | null, values: readonly T[]): T | undefined =>
-  value && values.includes(value as T) ? (value as T) : undefined;
 
 function read(params: URLSearchParams): AuditFilters {
   return {
     search: params.get('q') ?? '',
     actorId: params.get('actorId') ?? undefined,
     actorRole: params.get('actorRole') ?? undefined,
-    actorType: valid(params.get('actorType'), auditActorTypes),
-    action: valid(params.get('action'), auditActions),
-    resourceType: valid(params.get('resourceType'), auditResourceTypes),
+    actorType: readEnumParam(params.get('actorType'), auditActorTypes),
+    action: readEnumParam(params.get('action'), auditActions),
+    resourceType: readEnumParam(params.get('resourceType'), auditResourceTypes),
     resourceId: params.get('resourceId') ?? undefined,
     from: params.get('from') ?? undefined,
     to: params.get('to') ?? undefined,

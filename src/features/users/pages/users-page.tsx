@@ -2,33 +2,24 @@ import { useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router';
 import { Button, EmptyState, ErrorState, ExportMenuButton, PageHeader } from '@/components/ui';
 import type { DataTableQueryState } from '@/components/ui/data-table';
-import { commitSearchParams } from '@/lib/search-params';
+import { commitSearchParams, readEnumParam } from '@/lib/search-params';
 import { UserFilterBar } from '../components/user-filter-bar';
 import { UserSummaryCards } from '../components/user-summary';
 import { UsersTable } from '../components/users-table';
-import { accountStatusLabels, userGovernorates, verificationLabels } from '../constants';
+import { accountStatusLabels, verificationLabels } from '../constants';
 import { useUsers, useUserSummary } from '../hooks';
 import { userAccountStatuses, userVerificationStatuses, type User, type UserFilters } from '../types';
 import { hasUserFilters } from '../utils';
 
-const valid = <T extends string>(value: string | null, options: readonly T[]): T | undefined =>
-  value && options.includes(value as T) ? (value as T) : undefined;
 
 function fromParams(params: URLSearchParams): UserFilters {
   return {
     search: params.get('q') ?? '',
-    accountStatus: valid(params.get('status'), userAccountStatuses),
-    verificationStatus: valid(params.get('verification'), userVerificationStatuses),
-    governorate: params.get('governorate') ?? undefined,
-    dateFrom: params.get('from') ?? undefined,
-    dateTo: params.get('to') ?? undefined,
-    recentActivity: valid(params.get('activity'), ['ACTIVE_7_DAYS', 'INACTIVE_30_DAYS'] as const),
-    hasReports: valid(params.get('hasReports'), ['YES', 'NO'] as const),
-    hasAdoptions: valid(params.get('hasAdoptions'), ['YES', 'NO'] as const),
-    hasActiveAdoptions: params.get('activeAdoptions') === 'YES' ? 'YES' : undefined,
+    accountStatus: readEnumParam(params.get('status'), userAccountStatuses),
+    verificationStatus: readEnumParam(params.get('verification'), userVerificationStatuses),
     page: Math.max(1, Number(params.get('page') ?? 1) || 1),
     pageSize: [10, 20, 50].includes(Number(params.get('pageSize'))) ? Number(params.get('pageSize')) : 10,
-    sortBy: valid(params.get('sort'), ['createdAt', 'lastActiveAt', 'fullName', 'accountStatus'] as const),
+    sortBy: readEnumParam(params.get('sort'), ['createdAt', 'lastActiveAt', 'fullName', 'accountStatus'] as const),
     sortDirection: params.get('direction') === 'asc' ? 'asc' : 'desc',
   };
 }
@@ -40,13 +31,6 @@ function toParams(filters: UserFilters) {
     ['q', filters.search || undefined],
     ['status', filters.accountStatus],
     ['verification', filters.verificationStatus],
-    ['governorate', filters.governorate],
-    ['from', filters.dateFrom],
-    ['to', filters.dateTo],
-    ['activity', filters.recentActivity],
-    ['hasReports', filters.hasReports],
-    ['hasAdoptions', filters.hasAdoptions],
-    ['activeAdoptions', filters.hasActiveAdoptions],
     ['page', filters.page > 1 ? filters.page : undefined],
     ['pageSize', filters.pageSize !== 10 ? filters.pageSize : undefined],
     ['sort', filters.sortBy],
@@ -84,7 +68,6 @@ export function UsersPage() {
 
   const clear = () => setParams(new URLSearchParams());
   const active = hasUserFilters(filters);
-  const governors = [...userGovernorates];
 
   const onState = useCallback(
     (state: DataTableQueryState) => {
@@ -184,7 +167,6 @@ export function UsersPage() {
 
       <UserFilterBar
         filters={filters}
-        governorates={governors}
         onChange={update}
         onClear={clear}
         active={active}
