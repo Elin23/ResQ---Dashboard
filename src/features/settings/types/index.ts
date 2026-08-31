@@ -60,8 +60,7 @@ export type LookupType =
   | 'ADOPTION_REJECTION_REASONS'
   | 'ORGANIZATION_REASONS'
   | 'ORGANIZATION_SERVICES'
-  | 'ANIMAL_TYPES'
-  | 'GOVERNORATES';
+  | 'ANIMAL_TYPES';
 
 export interface SystemLookupItem {
   id: string;
@@ -125,8 +124,32 @@ export interface SystemBackupExport {
 }
 
 // Central system settings consumed by the settings pages and mock service.
+
+export interface GovernorateRecord {
+  id: string;
+  name: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface RegionRecord {
+  id: string;
+  governorateId: string;
+  name: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface LocationCatalog {
+  governorates: GovernorateRecord[];
+  regions: RegionRecord[];
+}
+
 export interface SystemSettings {
   lookups: Record<LookupType, SystemLookupItem[]>;
+  locations: LocationCatalog;
   emergencyContacts: EmergencyContact[];
   media: MediaLimits;
   targets: OperationalTargets;

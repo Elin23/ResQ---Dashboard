@@ -1,9 +1,13 @@
 import { Checkbox, DebouncedSearchInput, Select } from '@/components/ui';
 
-import { mapLayerConfigs, syrianGovernorates } from '../constants';
+import { mapLayerConfigs } from '../constants';
+import { useLocations } from '@/features/settings/hooks';
 import type { MapFilters, MapLayerKey } from '../types';
 
 export function MapControls({ filters, onFilters, layers, onLayer }: { filters: MapFilters; onFilters: (next: MapFilters) => void; layers: Set<MapLayerKey>; onLayer: (key: MapLayerKey, visible: boolean) => void }) {
+  const locations = useLocations();
+  const governorates = locations.data?.governorates ?? [];
+
   return (
     <div className="space-y-4 rounded-xl border border-border/45 bg-white p-3.5">
       <div>
@@ -38,9 +42,9 @@ export function MapControls({ filters, onFilters, layers, onLayer }: { filters: 
           }
           options={[
             { value: 'ALL', label: 'كل المحافظات' },
-            ...syrianGovernorates.map((value) => ({
-              value,
-              label: value,
+            ...governorates.map((item) => ({
+              value: item.name,
+              label: item.name,
             })),
           ]}
         />

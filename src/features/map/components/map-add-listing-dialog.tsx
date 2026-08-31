@@ -4,7 +4,8 @@ import { toast } from 'sonner';
 
 import { Button, Input, Modal, Select, Textarea } from '@/components/ui';
 
-import { mapLayerConfigs, syrianGovernorates } from '../constants';
+import { mapLayerConfigs } from '../constants';
+import { useLocations } from '@/features/settings/hooks';
 import { useCreateMapListing } from '../hooks';
 import type { CreateMapListingInput } from '../types';
 
@@ -15,8 +16,8 @@ const manualTypes = mapLayerConfigs
 const defaultDraft = {
   type: 'PET_SUPPLIES' as CreateMapListingInput['type'],
   title: '',
-  governorate: 'دمشق',
-  city: '',
+  governorateId: '',
+  regionId: '',
   address: '',
   latitude: '33.5138',
   longitude: '36.2765',
@@ -32,7 +33,10 @@ type Draft = typeof defaultDraft;
 
 export function MapAddListingDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (value: boolean) => void }) {
   const mutation = useCreateMapListing();
+  const locations = useLocations();
   const [form, setForm] = useState<Draft>(defaultDraft);
+  const governorates = locations.data?.governorates ?? [];
+  const regions = (locations.data?.regions ?? []).filter((item) => item.governorateId === form.governorateId);
 
   useEffect(() => {
     if (open) {
@@ -56,6 +60,11 @@ export function MapAddListingDialog({ open, onOpenChange }: { open: boolean; onO
       latitude <= 90 &&
       longitude >= -180 &&
       longitude <= 180;
+
+    if (!form.governorateId || !form.regionId) {
+      toast.error('اختر المحافظة والمنطقة من القوائم المعتمدة.');
+      return;
+    }
 
     if (!form.title.trim() || !form.address.trim()) {
       toast.error('أكمل اسم المكان والعنوان.');
@@ -115,15 +124,22 @@ export function MapAddListingDialog({ open, onOpenChange }: { open: boolean; onO
         <label className="text-[12px] font-medium">
           المحافظة
           <Select
-            value={form.governorate}
-            onValueChange={(value) => update('governorate', value)}
-            options={syrianGovernorates.map((value) => ({ value, label: value }))}
+            value={form.governorateId}
+            onValueChange={(value) => setForm((current) => ({ ...current, governorateId: value, regionId: '' }))}
+            placeholder="اختر المحافظة"
+            options={governorates.map((item) => ({ value: item.id, label: item.name }))}
           />
         </label>
 
         <label className="text-[12px] font-medium">
-          المدينة / المنطقة
-          <Input className="mt-1" value={form.city} onChange={(event) => update('city', event.target.value)} />
+          المنطقة
+          <Select
+            value={form.regionId}
+            onValueChange={(value) => update('regionId', value)}
+            placeholder={form.governorateId ? 'اختر المنطقة' : 'اختر المحافظة أولًا'}
+            disabled={!form.governorateId}
+            options={regions.map((item) => ({ value: item.id, label: item.name }))}
+          />
         </label>
 
         <label className="text-[12px] font-medium sm:col-span-2">

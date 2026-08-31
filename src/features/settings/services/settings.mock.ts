@@ -3,7 +3,7 @@ import { getRolePermissions, permissionDefinitions, replaceRolePermissions, role
 import { organizationServiceLabels } from '@/features/organizations/constants';
 import { animalTypeLabels } from '@/features/reports/constants';
 import { mockDelay } from '@/services/mock/delay';
-import type { AdminFilters, AdminListResult, AdminRoleRecord, AdminUser, CreateRoleInput, InviteAdminInput, LookupType, SystemLookupItem, SystemSettings, UpdateAdminRolesInput, UpdateRoleInput } from '../types';
+import type { AdminFilters, AdminListResult, AdminRoleRecord, AdminUser, CreateRoleInput, InviteAdminInput, LookupType, RegionRecord, SystemLookupItem, SystemSettings, UpdateAdminRolesInput, UpdateRoleInput } from '../types';
 import { createRoleKey } from '../utils';
 
 type Actor = {
@@ -152,6 +152,53 @@ let admins: AdminUser[] = [
   },
 ];
 
+const baseGovernorateNames = [
+  'دمشق',
+  'ريف دمشق',
+  'حلب',
+  'حمص',
+  'حماة',
+  'اللاذقية',
+  'طرطوس',
+  'إدلب',
+  'درعا',
+  'السويداء',
+  'القنيطرة',
+  'دير الزور',
+  'الرقة',
+  'الحسكة',
+];
+
+const baseGovernorates = baseGovernorateNames.map((name, index) => ({
+  id: `GOV-${String(index + 1).padStart(3, '0')}`,
+  name,
+  isActive: true,
+  createdAt: '2026-01-01T09:00:00+03:00',
+  updatedAt: '2026-01-01T09:00:00+03:00',
+}));
+
+const baseRegions: RegionRecord[] = (
+  [
+    ['REG-001', 'GOV-001', 'دمشق'],
+    ['REG-002', 'GOV-002', 'دوما'],
+    ['REG-003', 'GOV-002', 'جرمانا'],
+    ['REG-004', 'GOV-003', 'حلب'],
+    ['REG-005', 'GOV-004', 'حمص'],
+    ['REG-006', 'GOV-005', 'حماة'],
+    ['REG-007', 'GOV-006', 'اللاذقية'],
+    ['REG-008', 'GOV-007', 'طرطوس'],
+    ['REG-009', 'GOV-009', 'درعا'],
+  ] as Array<[string, string, string]>
+).map(([id, governorateId, name]) => ({
+  id,
+  governorateId,
+  name,
+  isActive: true,
+  createdAt: '2026-01-01T09:00:00+03:00',
+  updatedAt: '2026-01-01T09:00:00+03:00',
+}));
+
+
 const baseLookups: Record<LookupType, SystemLookupItem[]> = {
   REPORT_REJECTION_REASONS: [
     'بلاغ مكرر',
@@ -232,34 +279,11 @@ const baseLookups: Record<LookupType, SystemLookupItem[]> = {
     order: i + 1,
     locked: true,
   })),
-
-  GOVERNORATES: [
-    'دمشق',
-    'ريف دمشق',
-    'حلب',
-    'حمص',
-    'حماة',
-    'اللاذقية',
-    'طرطوس',
-    'إدلب',
-    'درعا',
-    'السويداء',
-    'القنيطرة',
-    'دير الزور',
-    'الرقة',
-    'الحسكة',
-  ].map((label, i) => ({
-    id: `GOV-${i + 1}`,
-    key: `GOV_${i + 1}`,
-    label,
-    active: true,
-    order: i + 1,
-    locked: true,
-  })),
 };
 
 let settings: SystemSettings = {
   lookups: baseLookups,
+  locations: { governorates: baseGovernorates, regions: baseRegions },
   emergencyContacts: [
     {
       id: 'EC-001',
@@ -851,6 +875,10 @@ export async function updateMediaLimits(next: SystemSettings['media'], actor: Ac
 export async function addEmergencyContact(input: Omit<SystemSettings['emergencyContacts'][number], 'id'>, actor: Actor) {
   await mockDelay(25);
 
+  if (input.governorate && !settings.locations.governorates.some((item) => item.isActive && item.name === input.governorate)) {
+    throw new Error('المحافظة غير موجودة أو غير فعالة.');
+  }
+
   const contact = {
     ...clone(input),
     id: `EC-${String(settings.emergencyContacts.length + 1).padStart(3, '0')}`,
@@ -889,6 +917,13 @@ export async function addEmergencyContact(input: Omit<SystemSettings['emergencyC
 
 export async function updateEmergencyContact(contact: SystemSettings['emergencyContacts'][number], actor: Actor) {
   await mockDelay(25);
+
+  if (contact.governorate && !settings.locations.governorates.some((item) => item.isActive && item.name === contact.governorate)) {
+    const current = settings.emergencyContacts.find((item) => item.id === contact.id);
+    if (current?.governorate !== contact.governorate) {
+      throw new Error('المحافظة غير موجودة أو غير فعالة.');
+    }
+  }
 
   const idx = settings.emergencyContacts.findIndex(
     (x) => x.id === contact.id,
@@ -1244,10 +1279,9 @@ export async function getLookupValues(type: LookupType) {
 }
 
 export const getConfiguredGovernorates = () =>
-  settings.lookups.GOVERNORATES
-    .filter((x) => x.active)
-    .sort((a, b) => a.order - b.order)
-    .map((x) => x.label);
+  settings.locations.governorates
+    .filter((item) => item.isActive)
+    .map((item) => item.name);
 
 export const getConfiguredOrganizationServices = () =>
   clone(
@@ -1258,3 +1292,118 @@ export const getConfiguredOrganizationServices = () =>
 
 export const getConfiguredOperationalTargets = () =>
   clone(settings.targets);
+export async function getLocationCatalog(options?: { includeInactive?: boolean }) {
+  await mockDelay(10);
+  const includeInactive = options?.includeInactive ?? false;
+  const governorates = settings.locations.governorates
+    .filter((item) => includeInactive || item.isActive)
+    .sort((a, b) => a.name.localeCompare(b.name, 'ar'));
+  const activeGovernorateIds = new Set(
+    settings.locations.governorates.filter((item) => item.isActive).map((item) => item.id),
+  );
+  const regions = settings.locations.regions
+    .filter((item) => includeInactive || (item.isActive && activeGovernorateIds.has(item.governorateId)))
+    .sort((a, b) => a.name.localeCompare(b.name, 'ar'));
+  return clone({ governorates, regions });
+}
+
+export function resolveActiveLocation(governorateId: string, regionId?: string) {
+  const governorate = settings.locations.governorates.find((item) => item.id === governorateId);
+  if (!governorate || !governorate.isActive) {
+    throw new Error('المحافظة غير موجودة أو غير فعالة.');
+  }
+
+  if (!regionId) {
+    return { governorate: clone(governorate), region: undefined };
+  }
+
+  const region = settings.locations.regions.find((item) => item.id === regionId);
+  if (!region || !region.isActive || region.governorateId !== governorate.id) {
+    throw new Error('المنطقة غير موجودة أو غير فعالة أو لا تتبع المحافظة المختارة.');
+  }
+
+  return { governorate: clone(governorate), region: clone(region) };
+}
+
+export async function addGovernorate(name: string, actor: Actor) {
+  await mockDelay(25);
+  const normalized = name.trim();
+  if (normalized.length < 2) throw new Error('اسم المحافظة مطلوب.');
+  if (settings.locations.governorates.some((item) => item.name === normalized)) {
+    throw new Error('المحافظة موجودة مسبقًا.');
+  }
+  const item = {
+    id: `GOV-${Date.now().toString().slice(-6)}`,
+    name: normalized,
+    isActive: true,
+    createdAt: now(),
+    updatedAt: now(),
+  };
+  settings.locations.governorates.push(item);
+  settings.updatedAt = now();
+  settings.updatedBy = { id: actor.id, name: actor.name };
+  return clone(item);
+}
+
+export async function updateGovernorate(id: string, patch: { name?: string; isActive?: boolean }, actor: Actor) {
+  await mockDelay(25);
+  const item = settings.locations.governorates.find((row) => row.id === id);
+  if (!item) throw new Error('المحافظة غير موجودة.');
+  if (patch.name !== undefined) {
+    const normalized = patch.name.trim();
+    if (normalized.length < 2) throw new Error('اسم المحافظة مطلوب.');
+    if (settings.locations.governorates.some((row) => row.id !== id && row.name === normalized)) {
+      throw new Error('اسم المحافظة مستخدم مسبقًا.');
+    }
+    item.name = normalized;
+  }
+  if (patch.isActive !== undefined) item.isActive = patch.isActive;
+  item.updatedAt = now();
+  settings.updatedAt = now();
+  settings.updatedBy = { id: actor.id, name: actor.name };
+  return clone(item);
+}
+
+export async function addRegion(input: { governorateId: string; name: string }, actor: Actor) {
+  await mockDelay(25);
+  const governorate = settings.locations.governorates.find((item) => item.id === input.governorateId);
+  if (!governorate || !governorate.isActive) throw new Error('اختر محافظة فعالة.');
+  const normalized = input.name.trim();
+  if (normalized.length < 2) throw new Error('اسم المنطقة مطلوب.');
+  if (settings.locations.regions.some((item) => item.governorateId === input.governorateId && item.name === normalized)) {
+    throw new Error('المنطقة موجودة مسبقًا ضمن هذه المحافظة.');
+  }
+  const item = {
+    id: `REG-${Date.now().toString().slice(-6)}`,
+    governorateId: input.governorateId,
+    name: normalized,
+    isActive: true,
+    createdAt: now(),
+    updatedAt: now(),
+  };
+  settings.locations.regions.push(item);
+  settings.updatedAt = now();
+  settings.updatedBy = { id: actor.id, name: actor.name };
+  return clone(item);
+}
+
+export async function updateRegion(id: string, patch: { governorateId?: string; name?: string; isActive?: boolean }, actor: Actor) {
+  await mockDelay(25);
+  const item = settings.locations.regions.find((row) => row.id === id);
+  if (!item) throw new Error('المنطقة غير موجودة.');
+  if (patch.governorateId !== undefined) {
+    const governorate = settings.locations.governorates.find((row) => row.id === patch.governorateId);
+    if (!governorate || !governorate.isActive) throw new Error('اختر محافظة فعالة.');
+    item.governorateId = patch.governorateId;
+  }
+  if (patch.name !== undefined) {
+    const normalized = patch.name.trim();
+    if (normalized.length < 2) throw new Error('اسم المنطقة مطلوب.');
+    item.name = normalized;
+  }
+  if (patch.isActive !== undefined) item.isActive = patch.isActive;
+  item.updatedAt = now();
+  settings.updatedAt = now();
+  settings.updatedBy = { id: actor.id, name: actor.name };
+  return clone(item);
+}

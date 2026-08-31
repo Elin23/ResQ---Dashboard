@@ -80,21 +80,3 @@ export const entityTypeLabels: Record<MapEntityType, string> = {
   ORGANIZATION: 'جمعية',
   FEEDING_POINT: 'نقطة إطعام',
 };
-
-// Keep governorate values centralized so map filters stay consistent.
-export const syrianGovernorates = [
-  'دمشق',
-  'ريف دمشق',
-  'حلب',
-  'حمص',
-  'حماة',
-  'اللاذقية',
-  'طرطوس',
-  'إدلب',
-  'درعا',
-  'السويداء',
-  'القنيطرة',
-  'دير الزور',
-  'الرقة',
-  'الحسكة',
-] as const;

@@ -39,14 +39,3 @@ export const blockReasons = [
   'مخالفة جسيمة لشروط الاستخدام',
   'سبب آخر',
 ] as const;
-
-export const userGovernorates = [
-  'دمشق',
-  'ريف دمشق',
-  'حلب',
-  'حمص',
-  'حماة',
-  'اللاذقية',
-  'طرطوس',
-  'درعا',
-] as const;

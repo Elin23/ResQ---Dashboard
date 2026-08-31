@@ -13,7 +13,6 @@ export const lookupLabels: Record<LookupType, string> = {
   ORGANIZATION_REASONS: 'أسباب مراجعة الجمعيات',
   ORGANIZATION_SERVICES: 'خدمات الجمعيات',
   ANIMAL_TYPES: 'أنواع الحيوانات',
-  GOVERNORATES: 'المحافظات',
 };
 
 // Keep emergency category labels centralized for consistent display.

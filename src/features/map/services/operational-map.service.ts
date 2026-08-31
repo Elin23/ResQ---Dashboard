@@ -1,6 +1,7 @@
 import { getFeedingPoints } from '@/features/feeding-points/services/feeding-points.mock';
 import { getOrganizations } from '@/features/organizations/services/organizations.mock';
 import { mockDelay } from '@/services/mock/delay';
+import { resolveActiveLocation } from '@/features/settings/services/settings.mock';
 import type { CreateMapListingInput, MapDirectoryData, MapEntity, MapListingRequest } from '../types';
 
 const now = () => new Date().toISOString();
@@ -303,6 +304,8 @@ export async function getOperationalMapData(): Promise<MapDirectoryData> {
 export async function createMapListing(input: CreateMapListingInput) {
   await mockDelay(90);
 
+  const location = resolveActiveLocation(input.governorateId, input.regionId);
+
   sequence += 1;
 
   const id = `MAN-${String(sequence).padStart(3, '0')}`;
@@ -316,8 +319,8 @@ export async function createMapListing(input: CreateMapListingInput) {
       longitude: input.longitude,
     },
     title: input.title,
-    governorate: input.governorate,
-    city: input.city,
+    governorate: location.governorate.name,
+    city: location.region?.name,
     address: input.address,
     updatedAt: now(),
     metadata: {

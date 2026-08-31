@@ -2,7 +2,7 @@ import { Pencil, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { Badge, Button, Card, ConfirmDialog, IconButton, Input, Modal, SectionHeader, Select, Switch } from '@/components/ui';
-import { useAddEmergencyContact, useDeleteEmergencyContact, useUpdateEmergencyContact, useUpdateMediaLimits } from '../../hooks';
+import { useAddEmergencyContact, useDeleteEmergencyContact, useLocations, useUpdateEmergencyContact, useUpdateMediaLimits } from '../../hooks';
 import type { EmergencyContact, EmergencyContactCategory, SystemSettings } from '../../types';
 
 export function MediaLimitsForm({ settings, readOnly = false }: { settings: SystemSettings; readOnly?: boolean }) {
@@ -135,6 +135,8 @@ export function EmergencyContactsManager({ settings, readOnly = false }: { setti
   const update = useUpdateEmergencyContact();
   const add = useAddEmergencyContact();
   const remove = useDeleteEmergencyContact();
+  const locations = useLocations();
+  const governorateOptions = (locations.data?.governorates ?? []).map((item) => ({ value: item.name, label: item.name }));
 
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
@@ -253,10 +255,11 @@ export function EmergencyContactsManager({ settings, readOnly = false }: { setti
               options={emergencyCategoryOptions}
             />
 
-            <Input
+            <Select
+              value={governorate || undefined}
+              onValueChange={setGovernorate}
               placeholder="المحافظة (اختياري)"
-              value={governorate}
-              onChange={(event) => setGovernorate(event.target.value)}
+              options={governorateOptions}
             />
 
             <Button
@@ -367,16 +370,24 @@ export function EmergencyContactsManager({ settings, readOnly = false }: { setti
 
             <label className="block text-[12px] font-medium">
               المحافظة
-              <Input
-                className="mt-1"
-                value={editing.governorate ?? ''}
-                onChange={(event) =>
-                  setEditing({
-                    ...editing,
-                    governorate: event.target.value || undefined,
-                  })
-                }
-              />
+              <div className="mt-1">
+                <Select
+                  value={editing.governorate}
+                  onValueChange={(value) =>
+                    setEditing({
+                      ...editing,
+                      governorate: value,
+                    })
+                  }
+                  placeholder="اختر المحافظة"
+                  options={[
+                    ...(editing.governorate && !governorateOptions.some((option) => option.value === editing.governorate)
+                      ? [{ value: editing.governorate, label: `${editing.governorate} (غير فعالة)` }]
+                      : []),
+                    ...governorateOptions,
+                  ]}
+                />
+              </div>
             </label>
           </div>
         )}

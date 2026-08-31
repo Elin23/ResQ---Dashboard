@@ -1,6 +1,6 @@
 import { Checkbox, Select } from '@/components/ui';
 
-import { governorates } from '../constants';
+import { useLocations } from '@/features/settings/hooks';
 import { useNotificationTargets } from '../hooks';
 import type { NotificationAudience, NotificationAudienceUserType } from '../types';
 
@@ -45,6 +45,8 @@ function modeOf(value: NotificationAudience): Mode {
 
 export function AudienceSelector({ value, onChange }: { value: NotificationAudience; onChange: (value: NotificationAudience) => void }) {
   const targets = useNotificationTargets();
+  const locations = useLocations();
+  const governorates = locations.data?.governorates ?? [];
   const mode = modeOf(value);
 
   // Reset audience-specific fields when switching between targeting modes.
@@ -69,7 +71,7 @@ export function AudienceSelector({ value, onChange }: { value: NotificationAudie
       onChange({
         everyone: false,
         userTypes: ['USER'],
-        governorates: ['دمشق'],
+        governorates: governorates[0] ? [governorates[0].name] : [],
       });
     } else {
       onChange({
@@ -140,7 +142,7 @@ export function AudienceSelector({ value, onChange }: { value: NotificationAudie
             <label className="mb-1.5 block text-sm font-semibold">المحافظة</label>
 
             <Select
-              value={value.governorates?.[0] ?? 'دمشق'}
+              value={value.governorates?.[0]}
               onValueChange={(nextValue) =>
                 onChange({
                   ...value,
@@ -148,8 +150,8 @@ export function AudienceSelector({ value, onChange }: { value: NotificationAudie
                 })
               }
               options={governorates.map((governorate) => ({
-                value: governorate,
-                label: governorate,
+                value: governorate.name,
+                label: governorate.name,
               }))}
             />
           </div>

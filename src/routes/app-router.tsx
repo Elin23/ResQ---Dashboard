@@ -31,6 +31,7 @@ import { EmergencyContactsPage } from '@/features/settings/pages/emergency-conta
 import { RoleDetailsPage } from '@/features/settings/pages/role-details-page';
 import { RolesPage } from '@/features/settings/pages/roles-page';
 import { SettingsLandingPage } from '@/features/settings/pages/settings-landing-page';
+import { LocationsPage } from '@/features/settings/pages/locations-page';
 import { SupportPage } from '@/features/support/pages/support-page';
 import { SupportTicketDetailsPage } from '@/features/support/pages/support-ticket-details-page';
 import { UserDetailsPage } from '@/features/users/pages/user-details-page';
@@ -424,6 +425,14 @@ export function AppRouter() {
           element={
             <ProtectedRoute permission="roles.read">
               <RoleDetailsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="settings/locations"
+          element={
+            <ProtectedRoute permission="settings.read">
+              <LocationsPage />
             </ProtectedRoute>
           }
         />

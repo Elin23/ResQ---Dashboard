@@ -13,6 +13,7 @@ export const settingsKeys = {
   system: ['settings', 'system'] as const,
   permissions: ['settings', 'permissions'] as const,
   lookup: (type: LookupType) => ['settings', 'lookup', type] as const,
+  locations: ['settings', 'locations'] as const,
 };
 
 const actor = (session: NonNullable<ReturnType<typeof useSession>['session']>) => ({
@@ -263,4 +264,35 @@ export function useAddLookup() {
       service.addLookup(type, label, currentActor),
     onSuccess: () => invalidate(queryClient),
   });
+}
+
+export function useLocations(includeInactive = false) {
+  return useQuery({
+    queryKey: [...settingsKeys.locations, includeInactive] as const,
+    queryFn: () => service.getLocationCatalog({ includeInactive }),
+  });
+}
+
+export function useAddGovernorate() {
+  const queryClient = useQueryClient();
+  const currentActor = useActor();
+  return useMutation({ mutationFn: (name: string) => service.addGovernorate(name, currentActor), onSuccess: () => invalidate(queryClient) });
+}
+
+export function useUpdateGovernorate() {
+  const queryClient = useQueryClient();
+  const currentActor = useActor();
+  return useMutation({ mutationFn: ({ id, patch }: { id: string; patch: { name?: string; isActive?: boolean } }) => service.updateGovernorate(id, patch, currentActor), onSuccess: () => invalidate(queryClient) });
+}
+
+export function useAddRegion() {
+  const queryClient = useQueryClient();
+  const currentActor = useActor();
+  return useMutation({ mutationFn: (input: { governorateId: string; name: string }) => service.addRegion(input, currentActor), onSuccess: () => invalidate(queryClient) });
+}
+
+export function useUpdateRegion() {
+  const queryClient = useQueryClient();
+  const currentActor = useActor();
+  return useMutation({ mutationFn: ({ id, patch }: { id: string; patch: { governorateId?: string; name?: string; isActive?: boolean } }) => service.updateRegion(id, patch, currentActor), onSuccess: () => invalidate(queryClient) });
 }

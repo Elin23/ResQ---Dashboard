@@ -19,15 +19,3 @@ export const animalTypeLabels: Record<AnimalType, string> = {
   BIRD: 'طائر',
   OTHER: 'حيوان آخر',
 };
-
-// Keep the supported governorates centralized for report filters.
-export const governorates = [
-  'دمشق',
-  'ريف دمشق',
-  'حلب',
-  'حمص',
-  'حماة',
-  'اللاذقية',
-  'طرطوس',
-  'درعا',
-] as const;

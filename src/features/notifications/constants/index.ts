@@ -20,16 +20,6 @@ export const notificationAudienceTypeLabels: Record<NotificationAudienceUserType
   ORGANIZATION: 'الجمعيات',
 };
 
-export const governorates = [
-  'دمشق',
-  'ريف دمشق',
-  'حلب',
-  'حمص',
-  'حماة',
-  'اللاذقية',
-  'طرطوس',
-  'درعا',
-] as const;
 
 // Only allow deep links that match known application routes.
 export const deepLinkPatterns = [

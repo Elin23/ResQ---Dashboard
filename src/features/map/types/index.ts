@@ -43,8 +43,8 @@ export type MapDirectoryData = { entities:MapEntity[]; requests:MapListingReques
 export type CreateMapListingInput = {
   type:Exclude<MapEntityType,'ORGANIZATION'|'FEEDING_POINT'>;
   title:string;
-  governorate:string;
-  city?:string;
+  governorateId:string;
+  regionId?:string;
   address:string;
   latitude:number;
   longitude:number;

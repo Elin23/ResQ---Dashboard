@@ -1,4 +1,4 @@
-import { DatabaseBackup, PhoneCall, ShieldCheck, UsersRound } from 'lucide-react';
+import { DatabaseBackup, MapPinned, PhoneCall, ShieldCheck, UsersRound } from 'lucide-react';
 import { Link } from 'react-router';
 import { Card, PageHeader } from '@/components/ui';
 import { PermissionGuard } from '@/features/auth/rbac';
@@ -17,6 +17,13 @@ const cards = [
     href: '/settings/roles',
     icon: ShieldCheck,
     permission: 'roles.read' as const,
+  },
+  {
+    title: 'المحافظات والمناطق',
+    description: 'إدارة المحافظات والمناطق النشطة وربط كل منطقة بمحافظتها.',
+    href: '/settings/locations',
+    icon: MapPinned,
+    permission: 'settings.read' as const,
   },
   {
     title: 'جهات اتصال الطوارئ',
@@ -39,7 +46,7 @@ export function SettingsLandingPage() {
     <div className="space-y-6 pb-6">
       <PageHeader
         title="الإعدادات"
-        description="إدارة الوصول الإداري، جهات اتصال الطوارئ والنسخ الاحتياطي."
+        description="إدارة الوصول الإداري، المواقع المرجعية، جهات اتصال الطوارئ والنسخ الاحتياطي."
         breadcrumbs={[
           { label: 'الرئيسية', href: '/dashboard' },
           { label: 'الإعدادات' },
