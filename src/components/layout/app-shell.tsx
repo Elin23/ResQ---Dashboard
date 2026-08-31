@@ -1,9 +1,7 @@
 import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import { Outlet, useLocation } from 'react-router';
-
 import { Header } from './header';
 import { Sidebar } from './sidebar';
-
 import { RouteRenderBoundary } from '@/routes/route-boundary';
 
 const SIDEBAR_STORAGE_KEY = 'resq-admin-sidebar-collapsed';

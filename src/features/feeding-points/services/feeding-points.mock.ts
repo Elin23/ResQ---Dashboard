@@ -20,14 +20,14 @@ const media = (id: string, seed: number) => [
   {
     id: `${id}-img-1`,
     type: 'IMAGE' as const,
-    url: `https://images.unsplash.com/photo-${seed}?auto=format&fit=crop&w=1200&q=70`,
+    url: `https://picsum.photos/seed/${encodeURIComponent(`${id}-${seed}-1`)}/1200/800`,
     caption: 'صورة توثيقية للموقع',
     createdAt: daysAgo(4),
   },
   {
     id: `${id}-img-2`,
     type: 'IMAGE' as const,
-    url: `https://images.unsplash.com/photo-${seed + 1}?auto=format&fit=crop&w=1200&q=70`,
+    url: `https://picsum.photos/seed/${encodeURIComponent(`${id}-${seed}-2`)}/1200/800`,
     caption: 'صورة إضافية للنقطة',
     createdAt: daysAgo(2),
   },
