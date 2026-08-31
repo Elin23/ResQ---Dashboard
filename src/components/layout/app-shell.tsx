@@ -4,7 +4,6 @@ import { Outlet, useLocation } from 'react-router';
 import { Header } from './header';
 import { Sidebar } from './sidebar';
 
-import { DevelopmentRoleSwitcher } from '@/features/foundation/development-role-switcher';
 import { RouteRenderBoundary } from '@/routes/route-boundary';
 
 const SIDEBAR_STORAGE_KEY = 'resq-admin-sidebar-collapsed';
@@ -85,7 +84,7 @@ export function AppShell() {
         </main>
       </div>
 
-      <DevelopmentRoleSwitcher />
+      {/* <DevelopmentRoleSwitcher /> */}
     </div>
   );
 }
