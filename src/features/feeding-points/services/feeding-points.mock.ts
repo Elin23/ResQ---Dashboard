@@ -16,18 +16,40 @@ const daysAgo = (n: number) =>
 const clone = <T,>(value: T): T =>
   structuredClone(value);
 
+const feedingPointImage = (label: string, variant: number) => {
+  const accent = variant % 2 === 0 ? '#D97706' : '#2563EB';
+  const secondary = variant % 2 === 0 ? '#FEF3C7' : '#DBEAFE';
+
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800">
+      <rect width="1200" height="800" fill="#FFF7ED"/>
+      <circle cx="1040" cy="140" r="210" fill="${secondary}"/>
+      <circle cx="150" cy="700" r="250" fill="${secondary}" opacity="0.7"/>
+      <rect x="210" y="245" width="780" height="310" rx="44" fill="white" stroke="${accent}" stroke-width="10"/>
+      <circle cx="600" cy="350" r="72" fill="${secondary}"/>
+      <path d="M566 348c0-18 15-33 33-33s33 15 33 33c0 17-12 30-27 33v31h-12v-31c-16-3-27-16-27-33Z" fill="${accent}"/>
+      <circle cx="579" cy="322" r="19" fill="${accent}"/>
+      <circle cx="620" cy="322" r="19" fill="${accent}"/>
+      <text x="600" y="470" text-anchor="middle" font-family="Arial, sans-serif" font-size="44" font-weight="700" fill="#292524">ResQ Feeding Point</text>
+      <text x="600" y="525" text-anchor="middle" font-family="Arial, sans-serif" font-size="28" fill="#78716C">${label}</text>
+    </svg>
+  `;
+
+  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+};
+
 const media = (id: string, seed: number) => [
   {
     id: `${id}-img-1`,
     type: 'IMAGE' as const,
-    url: `https://picsum.photos/seed/${encodeURIComponent(`${id}-${seed}-1`)}/1200/800`,
+    url: feedingPointImage(`${id} / 1`, seed),
     caption: 'صورة توثيقية للموقع',
     createdAt: daysAgo(4),
   },
   {
     id: `${id}-img-2`,
     type: 'IMAGE' as const,
-    url: `https://picsum.photos/seed/${encodeURIComponent(`${id}-${seed}-2`)}/1200/800`,
+    url: feedingPointImage(`${id} / 2`, seed + 1),
     caption: 'صورة إضافية للنقطة',
     createdAt: daysAgo(2),
   },
