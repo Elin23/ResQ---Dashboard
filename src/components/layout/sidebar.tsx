@@ -3,7 +3,7 @@ import { ChevronLeft, ChevronRight, LogOut, X } from 'lucide-react';
 import { NavLink } from 'react-router';
 
 import { IconButton, Tooltip } from '@/components/ui';
-import { rolePermissions } from '@/features/auth/permissions';
+import { hasPermission } from '@/features/auth/rbac';
 import { useSession } from '@/features/auth/session';
 import { cn } from '@/lib/cn';
 import { routeGroups } from '@/routes/module-routes';
@@ -44,7 +44,7 @@ function SidebarContent({ collapsed, mobile, onToggleCollapsed, onNavigate, onCl
   const visibleGroups = routeGroups
     .map((group) => ({
       ...group,
-      items: group.items.filter((item) => !item.permission || Boolean(session && rolePermissions[session.role]?.has(item.permission))),
+      items: group.items.filter((item) => !item.permission || hasPermission(session, item.permission)),
     }))
     .filter((group) => group.items.length > 0);
 

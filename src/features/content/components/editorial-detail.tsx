@@ -149,6 +149,7 @@ export function EditorialDetail({ kind, record }: { kind: ContentKind; record: E
                 onClick={() =>
                   addNote.mutate(
                     {
+                      kind: mutationKind,
                       id: item.id,
                       note,
                     },

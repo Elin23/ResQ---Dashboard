@@ -3,7 +3,7 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tansta
 import { useSession } from '@/features/auth/session';
 import { dashboardKeys } from '@/features/dashboard/hooks';
 
-import { approveDonationCampaign, deleteDonationCampaign, getDonationCampaignById, getDonationCampaigns, getDonationSummary, rejectDonationCampaign } from '../services/donations.mock';
+import { approveDonationCampaign, deleteDonationCampaign, getDonationCampaignById, getDonationCampaigns, getDonationSummary, rejectDonationCampaign } from '../services/donations.service';
 import type { DonationCampaignFilters } from '../types';
 
 export const donationKeys = {
@@ -16,20 +16,20 @@ export const donationKeys = {
 export const useDonationCampaigns = (filters: DonationCampaignFilters) =>
   useQuery({
     queryKey: donationKeys.list(filters),
-    queryFn: () => getDonationCampaigns(filters),
+    queryFn: ({ signal }) => getDonationCampaigns(filters, signal),
     placeholderData: keepPreviousData,
   });
 
 export const useDonationSummary = (filters?: Partial<DonationCampaignFilters>) =>
   useQuery({
     queryKey: donationKeys.summary(filters),
-    queryFn: () => getDonationSummary(filters),
+    queryFn: ({ signal }) => getDonationSummary(filters, signal),
   });
 
 export const useDonationCampaign = (id: string) =>
   useQuery({
     queryKey: donationKeys.detail(id),
-    queryFn: () => getDonationCampaignById(id),
+    queryFn: ({ signal }) => getDonationCampaignById(id, signal),
     // Avoid requesting a campaign until a valid ID is available.
     enabled: Boolean(id),
   });

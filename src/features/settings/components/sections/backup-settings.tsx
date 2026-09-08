@@ -67,8 +67,12 @@ export function BackupSettingsManager({ settings, readOnly = false }: { settings
     try {
       const backup = await create.mutateAsync();
 
-      downloadBackup(backup.fileName, backup.payload);
-      toast.success('تم إنشاء النسخة الاحتياطية وتنزيلها.');
+      if (backup) {
+        downloadBackup(backup.fileName, backup.payload);
+        toast.success('تم إنشاء النسخة الاحتياطية وتنزيلها.');
+      } else {
+        toast.success('تم إنشاء النسخة الاحتياطية على الخادم.');
+      }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'تعذر إنشاء النسخة الاحتياطية.');
     }

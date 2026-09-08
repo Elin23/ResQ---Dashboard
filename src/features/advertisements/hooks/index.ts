@@ -1,7 +1,7 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSession } from '@/features/auth/session';
 import type { AdvertisementFilters, CreateAdvertisementInput } from '../types';
-import { activateAdvertisement, createAdvertisement, deleteAdvertisement, getAdvertisementById, getAdvertisements, getAdvertisementSummary, getAdvertiserAdvertisementSummary, pauseAdvertisement } from '../services/advertisements.mock';
+import { activateAdvertisement, createAdvertisement, deleteAdvertisement, getAdvertisementById, getAdvertisements, getAdvertisementSummary, getAdvertiserAdvertisementSummary, pauseAdvertisement } from '../services/advertisements.service';
 
 export const advertisementKeys = {
   all: ['advertisements'] as const,
@@ -14,27 +14,27 @@ export const advertisementKeys = {
 export const useAdvertisements = (filters: AdvertisementFilters) =>
   useQuery({
     queryKey: advertisementKeys.list(filters),
-    queryFn: () => getAdvertisements(filters),
+    queryFn: ({ signal }) => getAdvertisements(filters, signal),
     placeholderData: keepPreviousData,
   });
 
 export const useAdvertisementSummary = () =>
   useQuery({
     queryKey: advertisementKeys.summary(),
-    queryFn: getAdvertisementSummary,
+    queryFn: ({ signal }) => getAdvertisementSummary(signal),
   });
 
 export const useAdvertisement = (id: string) =>
   useQuery({
     queryKey: advertisementKeys.detail(id),
-    queryFn: () => getAdvertisementById(id),
+    queryFn: ({ signal }) => getAdvertisementById(id, signal),
     enabled: Boolean(id),
   });
 
 export const useAdvertiserAdvertisementSummary = (type: string, id?: string) =>
   useQuery({
     queryKey: advertisementKeys.advertiser(type, id),
-    queryFn: () => getAdvertiserAdvertisementSummary(type, id),
+    queryFn: ({ signal }) => getAdvertiserAdvertisementSummary(type, id, signal),
   });
 
 function useActor() {

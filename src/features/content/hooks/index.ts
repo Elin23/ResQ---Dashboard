@@ -2,9 +2,10 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 import { useSession } from '@/features/auth/session';
+import { dashboardKeys } from '@/features/dashboard/hooks';
 
 import type { ContentListFilters, ContentStatus, EditorialInput } from '../types';
-import * as service from '../services/content.mock';
+import * as service from '../services/content.service';
 
 export const contentKeys = {
   all: ['content'] as const,
@@ -19,45 +20,48 @@ export const contentKeys = {
 export const useContentOverview = () =>
   useQuery({
     queryKey: contentKeys.overview,
-    queryFn: service.getContentOverview,
+    queryFn: ({ signal }) => service.getContentOverview(signal),
   });
 
 export const useArticles = (filters: ContentListFilters) =>
   useQuery({
     queryKey: contentKeys.articles(filters),
-    queryFn: () => service.getArticles(filters),
+    queryFn: ({ signal }) => service.getArticles(filters, signal),
   });
 
 export const useSuccessStories = (filters: ContentListFilters) =>
   useQuery({
     queryKey: contentKeys.stories(filters),
-    queryFn: () => service.getStories(filters),
+    queryFn: ({ signal }) => service.getStories(filters, signal),
   });
 
 export const useAwarenessContent = (filters: ContentListFilters) =>
   useQuery({
     queryKey: contentKeys.awareness(filters),
-    queryFn: () => service.getAwareness(filters),
+    queryFn: ({ signal }) => service.getAwareness(filters, signal),
   });
 
 export const useEditorialRecord = (kind: 'article' | 'story' | 'awareness', id: string) =>
   useQuery({
     queryKey: contentKeys.record(kind, id),
-    queryFn: () => service.getEditorialRecord(kind, id),
+    queryFn: ({ signal }) => service.getEditorialRecord(kind, id, signal),
     enabled: Boolean(id),
   });
 
 export const useFaqItems = () =>
   useQuery({
     queryKey: contentKeys.faq,
-    queryFn: service.getFaqItems,
+    queryFn: ({ signal }) => service.getFaqItems(signal),
   });
 
 // Refresh all content queries after any content update.
 function useInvalidate() {
   const queryClient = useQueryClient();
 
-  return () => queryClient.invalidateQueries({ queryKey: contentKeys.all });
+  return () => Promise.all([
+    queryClient.invalidateQueries({ queryKey: contentKeys.all }),
+    queryClient.invalidateQueries({ queryKey: dashboardKeys.all }),
+  ]);
 }
 
 export function useSaveEditorial() {
@@ -109,12 +113,12 @@ export function useAddEditorialNote() {
   const invalidate = useInvalidate();
 
   return useMutation({
-    mutationFn: ({ id, note }: { id: string; note: string }) => {
+    mutationFn: ({ kind, id, note }: { kind: 'article' | 'story' | 'awareness'; id: string; note: string }) => {
       if (!session) {
         throw new Error('NO_SESSION');
       }
 
-      return service.addEditorialNote(id, note, session);
+      return service.addEditorialNote(kind, id, note, session);
     },
     onSuccess: () => {
       invalidate();

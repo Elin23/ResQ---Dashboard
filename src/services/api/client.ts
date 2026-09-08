@@ -1,6 +1,7 @@
 import { env } from '@/config/env';
-
 import type { ApiError } from '@/types/api';
+import { clearAuthTokens, getAccessToken, getRefreshToken, updateAuthTokens } from './auth-tokens';
+import { emitAuthExpired } from './auth-events';
 
 export class ApiClientError extends Error implements ApiError {
   readonly code: string;
@@ -10,7 +11,6 @@ export class ApiClientError extends Error implements ApiError {
 
   constructor(error: ApiError) {
     super(error.message);
-
     this.name = 'ApiClientError';
     this.code = error.code;
     this.status = error.status;
@@ -20,77 +20,177 @@ export class ApiClientError extends Error implements ApiError {
 }
 
 export interface ApiRequestOptions {
-  method?: 'GET' | 'POST' | 'PATCH' | 'DELETE';
+  method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   body?: unknown;
   signal?: AbortSignal;
   headers?: Record<string, string>;
+  skipAuth?: boolean;
+  skipRefresh?: boolean;
 }
 
 export interface ApiClient {
   request<T>(path: string, options?: ApiRequestOptions): Promise<T>;
   get<T>(path: string, signal?: AbortSignal): Promise<T>;
+  post<T>(path: string, body?: unknown): Promise<T>;
+  put<T>(path: string, body?: unknown): Promise<T>;
+  patch<T>(path: string, body?: unknown): Promise<T>;
+  delete<T>(path: string, body?: unknown): Promise<T>;
 }
 
-// Accept absolute URLs as-is; otherwise resolve requests against the configured API base URL.
 function resolveUrl(path: string): string {
-  if (/^https?:\/\//u.test(path)) {
-    return path;
-  }
-
+  if (/^https?:\/\//u.test(path)) return path;
   return `${env.apiBaseUrl}${path.startsWith('/') ? path : `/${path}`}`;
 }
 
-// Normalize backend errors into one predictable shape for the rest of the application.
 async function readError(response: Response): Promise<ApiError> {
-  const correlationId = response.headers.get('x-correlation-id') ?? undefined;
+  const headerCorrelationId = response.headers.get('x-correlation-id') ?? undefined;
 
   try {
-    const payload = (await response.json()) as Partial<ApiError>;
+    const payload = (await response.json()) as Record<string, unknown>;
+    const fieldErrors =
+      payload.errors && typeof payload.errors === 'object'
+        ? (payload.errors as Record<string, string[]>)
+        : undefined;
 
     return {
-      code: payload.code ?? 'HTTP_ERROR',
-      message: payload.message ?? 'تعذر إتمام الطلب.',
+      code: typeof payload.code === 'string' ? payload.code : 'HTTP_ERROR',
+      message:
+        (typeof payload.detail === 'string' && payload.detail) ||
+        (typeof payload.message === 'string' && payload.message) ||
+        (typeof payload.title === 'string' && payload.title) ||
+        'تعذر إتمام الطلب.',
       status: response.status,
-      fieldErrors: payload.fieldErrors,
-      correlationId: payload.correlationId ?? correlationId,
+      fieldErrors,
+      correlationId:
+        (typeof payload.traceId === 'string' && payload.traceId) ||
+        (typeof payload.correlationId === 'string' && payload.correlationId) ||
+        headerCorrelationId,
     };
   } catch {
     return {
       code: 'HTTP_ERROR',
       message: 'تعذر إتمام الطلب.',
       status: response.status,
-      correlationId,
+      correlationId: headerCorrelationId,
     };
+  }
+}
+
+function extractToken(payload: unknown, names: readonly string[]): string | null {
+  if (!payload || typeof payload !== 'object') return null;
+  const record = payload as Record<string, unknown>;
+
+  for (const name of names) {
+    const value = record[name];
+    if (typeof value === 'string' && value.trim()) return value;
+  }
+
+  for (const containerName of ['data', 'result']) {
+    const nested = record[containerName];
+    const value = extractToken(nested, names);
+    if (value) return value;
+  }
+
+  return null;
+}
+
+let refreshPromise: Promise<string | null> | null = null;
+
+async function refreshAccessToken(): Promise<string | null> {
+  const refreshToken = getRefreshToken();
+  if (!refreshToken) return null;
+
+  if (refreshPromise) return refreshPromise;
+
+  refreshPromise = (async () => {
+    const response = await fetch(resolveUrl('/api/dashboard/auth/refresh'), {
+      method: 'POST',
+      headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken }),
+    });
+
+    if (!response.ok) {
+      clearAuthTokens();
+      emitAuthExpired();
+      return null;
+    }
+
+    const payload = (await response.json()) as unknown;
+    const accessToken = extractToken(payload, ['accessToken', 'token', 'jwt', 'access_token']);
+    const nextRefreshToken = extractToken(payload, ['refreshToken', 'refresh_token']);
+
+    if (!accessToken) {
+      clearAuthTokens();
+      emitAuthExpired();
+      return null;
+    }
+
+    updateAuthTokens({ accessToken, refreshToken: nextRefreshToken ?? refreshToken });
+    return accessToken;
+  })().finally(() => {
+    refreshPromise = null;
+  });
+
+  return refreshPromise;
+}
+
+async function parseSuccess<T>(response: Response): Promise<T> {
+  if (response.status === 204) return undefined as T;
+
+  // ASP.NET actions may legitimately return HTTP 200 with an empty body.
+  // Read once as text so those responses do not fail with an unexpected JSON parse error.
+  const text = await response.text();
+  if (!text.trim()) return undefined as T;
+
+  const contentType = response.headers.get('content-type') ?? '';
+  if (!contentType.includes('json')) return text as T;
+
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    return text as T;
   }
 }
 
 export const apiClient: ApiClient = {
   async request<T>(path: string, options: ApiRequestOptions = {}) {
-    const response = await fetch(resolveUrl(path), {
-      method: options.method ?? 'GET',
-      signal: options.signal,
-      headers: {
-        Accept: 'application/json',
-        ...(options.body === undefined ? {} : { 'Content-Type': 'application/json' }),
-        ...options.headers,
-      },
-      body: options.body === undefined ? undefined : JSON.stringify(options.body),
-    });
+    const execute = async (token: string | null) =>
+      fetch(resolveUrl(path), {
+        method: options.method ?? 'GET',
+        signal: options.signal,
+        headers: {
+          Accept: 'application/json',
+          ...(options.body === undefined ? {} : { 'Content-Type': 'application/json' }),
+          ...(!options.skipAuth && token ? { Authorization: `Bearer ${token}` } : {}),
+          ...options.headers,
+        },
+        body: options.body === undefined ? undefined : JSON.stringify(options.body),
+      });
 
-    // Convert non-success HTTP responses into the shared client error type.
-    if (!response.ok) {
-      throw new ApiClientError(await readError(response));
+    let response = await execute(options.skipAuth ? null : getAccessToken());
+
+    if (response.status === 401 && !options.skipAuth && !options.skipRefresh) {
+      const nextToken = await refreshAccessToken();
+      if (nextToken) response = await execute(nextToken);
     }
 
-    // A 204 response intentionally has no JSON body to deserialize.
-    if (response.status === 204) {
-      return undefined as T;
-    }
-
-    return (await response.json()) as T;
+    if (!response.ok) throw new ApiClientError(await readError(response));
+    return parseSuccess<T>(response);
   },
 
   get<T>(path: string, signal?: AbortSignal) {
     return this.request<T>(path, { signal });
+  },
+  post<T>(path: string, body?: unknown) {
+    return this.request<T>(path, { method: 'POST', body });
+  },
+  put<T>(path: string, body?: unknown) {
+    return this.request<T>(path, { method: 'PUT', body });
+  },
+  patch<T>(path: string, body?: unknown) {
+    return this.request<T>(path, { method: 'PATCH', body });
+  },
+  delete<T>(path: string, body?: unknown) {
+    return this.request<T>(path, { method: 'DELETE', body });
   },
 };

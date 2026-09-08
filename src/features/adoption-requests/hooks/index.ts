@@ -2,7 +2,7 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tansta
 import { useSession } from '@/features/auth/session';
 import { dashboardKeys } from '@/features/dashboard/hooks';
 import type { AdoptionRequestFilters, RejectAdoptionInput } from '../types';
-import { addAdoptionNote, approveAdoptionRequest, deleteAdoptionRequest, getAdoptionRequestById, getAdoptionRequests, getAdoptionRequestSummary, rejectAdoptionRequest } from '../services/adoption-requests.mock';
+import { addAdoptionNote, approveAdoptionRequest, deleteAdoptionRequest, getAdoptionRequestById, getAdoptionRequests, getAdoptionRequestSummary, rejectAdoptionRequest } from '../services/adoption-requests.service';
 
 export const adoptionKeys = {
   all: ['adoption-requests'] as const,
@@ -16,21 +16,21 @@ export const adoptionKeys = {
 export const useAdoptionRequests = (filters: AdoptionRequestFilters) =>
   useQuery({
     queryKey: adoptionKeys.list(filters),
-    queryFn: () => getAdoptionRequests(filters),
+    queryFn: ({ signal }) => getAdoptionRequests(filters, signal),
     placeholderData: keepPreviousData,
   });
 
 export const useAdoptionRequest = (id: string) =>
   useQuery({
     queryKey: adoptionKeys.detail(id),
-    queryFn: () => getAdoptionRequestById(id),
+    queryFn: ({ signal }) => getAdoptionRequestById(id, signal),
     enabled: Boolean(id),
   });
 
 export const useAdoptionRequestSummary = () =>
   useQuery({
     queryKey: adoptionKeys.summary(),
-    queryFn: getAdoptionRequestSummary,
+    queryFn: ({ signal }) => getAdoptionRequestSummary(signal),
   });
 
 function useActor() {

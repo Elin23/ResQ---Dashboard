@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 
 import type { AuditFilters } from '../types';
-import * as service from '../services/audit-log.mock';
+import * as service from '../services/audit-log.service';
 
 export const auditKeys = {
   all: ['audit-log'] as const,
@@ -14,7 +14,7 @@ export const auditKeys = {
 export function useAuditEvents(filters: AuditFilters) {
   return useQuery({
     queryKey: auditKeys.list(filters),
-    queryFn: () => service.getAuditEvents(filters),
+    queryFn: ({ signal }) => service.getAuditEvents(filters, signal),
 
     // Audit data should refresh whenever the page is opened.
     staleTime: 0,
@@ -25,14 +25,14 @@ export function useAuditEvents(filters: AuditFilters) {
 export function useAuditSummary(filters: Pick<AuditFilters, 'from' | 'to'>) {
   return useQuery({
     queryKey: auditKeys.summary(filters),
-    queryFn: () => service.getAuditSummary(filters),
+    queryFn: ({ signal }) => service.getAuditSummary(filters, signal),
   });
 }
 
 export function useAuditEvent(id: string) {
   return useQuery({
     queryKey: auditKeys.detail(id),
-    queryFn: () => service.getAuditEvent(id),
+    queryFn: ({ signal }) => service.getAuditEvent(id, signal),
     enabled: Boolean(id),
   });
 }
@@ -40,6 +40,6 @@ export function useAuditEvent(id: string) {
 export function useAuditFilterOptions() {
   return useQuery({
     queryKey: auditKeys.options,
-    queryFn: service.getAuditFilterOptions,
+    queryFn: ({ signal }) => service.getAuditFilterOptions(signal),
   });
 }

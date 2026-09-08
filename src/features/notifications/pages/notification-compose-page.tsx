@@ -82,7 +82,7 @@ export function NotificationComposePage() {
     draftMutation.mutate(makeInput(values), {
       onSuccess: (created) => {
         toast.success('تم حفظ الإشعار كمسودة');
-        navigate(`/notifications/${created.id}`);
+        navigate(created?.id ? `/notifications/${created.id}` : '/notifications');
       },
       onError: (error) =>
         toast.error(
@@ -108,7 +108,7 @@ export function NotificationComposePage() {
       {
         onSuccess: (created) => {
           toast.success('تمت جدولة الإشعار');
-          navigate(`/notifications/${created.id}`);
+          navigate(created?.id ? `/notifications/${created.id}` : '/notifications');
         },
         onError: () =>
           toast.error('تعذر جدولة الإشعار'),
@@ -120,7 +120,7 @@ export function NotificationComposePage() {
     sendMutation.mutate(makeInput(values), {
       onSuccess: (created) => {
         toast.success('تم تسجيل الإرسال التجريبي');
-        navigate(`/notifications/${created.id}`);
+        navigate(created?.id ? `/notifications/${created.id}` : '/notifications');
       },
       onError: () =>
         toast.error('تعذر إرسال الإشعار'),

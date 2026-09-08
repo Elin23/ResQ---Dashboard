@@ -4,8 +4,8 @@ import { useForm } from 'react-hook-form';
 
 import { Button, Modal, Select, Textarea } from '@/components/ui';
 
-import { escalationTeamLabels, supportAssignees, supportPriorityLabels } from '../constants';
-import { useAssignSupportTicket, useChangeTicketPriority, useEscalateTicket, useReopenTicket, useResolveTicket } from '../hooks';
+import { escalationTeamLabels, supportPriorityLabels } from '../constants';
+import { useAssignSupportTicket, useChangeTicketPriority, useEscalateTicket, useReopenTicket, useResolveTicket, useSupportAssignees } from '../hooks';
 import { assignmentSchema, escalationSchema, prioritySchema, reopenSchema, resolutionSchema } from '../schemas';
 import type { SupportEscalationTeam, SupportTicketPriority } from '../types';
 
@@ -33,6 +33,8 @@ type Reopen = {
 
 export function AssignmentDialog({ id, open, onOpenChange }: { id: string; open: boolean; onOpenChange: (v: boolean) => void }) {
   const m = useAssignSupportTicket(id);
+  const assigneesQuery = useSupportAssignees();
+  const supportAssignees = assigneesQuery.data ?? [];
   const {
     watch,
     setValue,

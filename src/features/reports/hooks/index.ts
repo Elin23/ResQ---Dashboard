@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSession } from '@/features/auth/session';
 import { dashboardKeys } from '@/features/dashboard/hooks';
 
-import { addReportNote, adminOverrideReportStatus, assignReport, deleteReport, getEligibleOrganizations, getReportById, getReportSummary, getReports } from '../services/reports.mock';
+import { addReportNote, adminOverrideReportStatus, assignReport, deleteReport, getEligibleOrganizations, getReportById, getReportSummary, getReports } from '../services/reports.service';
 import type { AdminStatusOverrideInput, DeleteReportInput, ReportFilters } from '../types';
 
 export const reportKeys = {
@@ -31,7 +31,7 @@ export const reportKeys = {
 export function useReports(filters: ReportFilters) {
   return useQuery({
     queryKey: reportKeys.list(filters),
-    queryFn: () => getReports(filters),
+    queryFn: ({ signal }) => getReports(filters, signal),
     placeholderData: (previous) => previous,
   });
 }
@@ -39,14 +39,14 @@ export function useReports(filters: ReportFilters) {
 export function useReportsSummary() {
   return useQuery({
     queryKey: reportKeys.summary(),
-    queryFn: getReportSummary,
+    queryFn: ({ signal }) => getReportSummary(signal),
   });
 }
 
 export function useReport(reportId: string) {
   return useQuery({
     queryKey: reportKeys.detail(reportId),
-    queryFn: () => getReportById(reportId),
+    queryFn: ({ signal }) => getReportById(reportId, signal),
     enabled: Boolean(reportId),
   });
 }
@@ -54,7 +54,7 @@ export function useReport(reportId: string) {
 export function useEligibleOrganizations(search: string) {
   return useQuery({
     queryKey: reportKeys.organizations(search),
-    queryFn: () => getEligibleOrganizations(search),
+    queryFn: ({ signal }) => getEligibleOrganizations(search, signal),
   });
 }
 

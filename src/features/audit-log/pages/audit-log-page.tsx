@@ -6,7 +6,7 @@ import { PermissionGuard, usePermission } from '@/features/auth/rbac';
 import { commitSearchParams, readEnumParam } from '@/lib/search-params';
 import { AuditDetailModal, AuditExportButton, AuditFilterBar, AuditSummaryStrip, AuditTable } from '../components/audit-components';
 import { useAuditEvents, useAuditFilterOptions, useAuditSummary } from '../hooks';
-import { getAuditExportEvents } from '../services/audit-log.mock';
+import { getAuditExportEvents } from '../services/audit-log.service';
 import { auditActions, auditActorTypes, auditResourceTypes, type AuditEvent, type AuditFilters } from '../types';
 import { auditCsv, downloadTextFile } from '../utils';
 

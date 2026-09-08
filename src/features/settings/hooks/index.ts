@@ -1,6 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSession } from '@/features/auth/session';
-import * as service from '../services/settings.mock';
+import { auditKeys } from '@/features/audit-log/hooks';
+import * as service from '../services/settings.service';
+import * as locationService from '../services/locations.service';
 import type { AdminFilters, CreateRoleInput, InviteAdminInput, LookupType, SystemLookupItem, SystemSettings, UpdateRoleInput } from '../types';
 
 export const settingsKeys = {
@@ -25,14 +27,14 @@ const actor = (session: NonNullable<ReturnType<typeof useSession>['session']>) =
 export function useAdminUsers(filters: AdminFilters) {
   return useQuery({
     queryKey: settingsKeys.adminList(filters),
-    queryFn: () => service.getAdminUsers(filters),
+    queryFn: ({ signal }) => service.getAdminUsers(filters, signal),
   });
 }
 
 export function useAdminUser(id: string) {
   return useQuery({
     queryKey: settingsKeys.admin(id),
-    queryFn: () => service.getAdminUser(id),
+    queryFn: ({ signal }) => service.getAdminUser(id, signal),
     enabled: Boolean(id),
   });
 }
@@ -40,14 +42,14 @@ export function useAdminUser(id: string) {
 export function useRoles() {
   return useQuery({
     queryKey: settingsKeys.roles,
-    queryFn: service.getRoles,
+    queryFn: ({ signal }) => service.getRoles(signal),
   });
 }
 
 export function useRole(id: string) {
   return useQuery({
     queryKey: settingsKeys.role(id),
-    queryFn: () => service.getRole(id),
+    queryFn: ({ signal }) => service.getRole(id, signal),
     enabled: Boolean(id),
   });
 }
@@ -55,14 +57,14 @@ export function useRole(id: string) {
 export function useSystemSettings() {
   return useQuery({
     queryKey: settingsKeys.system,
-    queryFn: service.getSystemSettings,
+    queryFn: ({ signal }) => service.getSystemSettings(signal),
   });
 }
 
 export function usePermissionDefinitions() {
   return useQuery({
     queryKey: settingsKeys.permissions,
-    queryFn: service.getPermissionDefinitions,
+    queryFn: ({ signal }) => service.getPermissionDefinitions(signal),
     staleTime: Infinity,
   });
 }
@@ -70,7 +72,7 @@ export function usePermissionDefinitions() {
 export function useLookupValues(type: LookupType) {
   return useQuery({
     queryKey: settingsKeys.lookup(type),
-    queryFn: () => service.getLookupValues(type),
+    queryFn: ({ signal }) => service.getLookupValues(type, signal),
   });
 }
 
@@ -87,7 +89,7 @@ function useActor() {
 // Settings mutations also affect the shared audit log.
 function invalidate(queryClient: ReturnType<typeof useQueryClient>) {
   void queryClient.invalidateQueries({ queryKey: settingsKeys.all });
-  void queryClient.invalidateQueries({ queryKey: ['audit-log'] });
+  void queryClient.invalidateQueries({ queryKey: auditKeys.all });
 }
 
 export function useInviteAdmin() {
@@ -269,30 +271,30 @@ export function useAddLookup() {
 export function useLocations(includeInactive = false) {
   return useQuery({
     queryKey: [...settingsKeys.locations, includeInactive] as const,
-    queryFn: () => service.getLocationCatalog({ includeInactive }),
+    queryFn: ({ signal }) => locationService.getLocationCatalog({ includeInactive, signal }),
   });
 }
 
 export function useAddGovernorate() {
   const queryClient = useQueryClient();
   const currentActor = useActor();
-  return useMutation({ mutationFn: (name: string) => service.addGovernorate(name, currentActor), onSuccess: () => invalidate(queryClient) });
+  return useMutation({ mutationFn: (name: string) => locationService.addGovernorate(name, currentActor), onSuccess: () => invalidate(queryClient) });
 }
 
 export function useUpdateGovernorate() {
   const queryClient = useQueryClient();
   const currentActor = useActor();
-  return useMutation({ mutationFn: ({ id, patch }: { id: string; patch: { name?: string; isActive?: boolean } }) => service.updateGovernorate(id, patch, currentActor), onSuccess: () => invalidate(queryClient) });
+  return useMutation({ mutationFn: ({ id, patch }: { id: string; patch: { name?: string; isActive?: boolean } }) => locationService.updateGovernorate(id, patch, currentActor), onSuccess: () => invalidate(queryClient) });
 }
 
 export function useAddRegion() {
   const queryClient = useQueryClient();
   const currentActor = useActor();
-  return useMutation({ mutationFn: (input: { governorateId: string; name: string }) => service.addRegion(input, currentActor), onSuccess: () => invalidate(queryClient) });
+  return useMutation({ mutationFn: (input: { governorateId: string; name: string }) => locationService.addRegion(input, currentActor), onSuccess: () => invalidate(queryClient) });
 }
 
 export function useUpdateRegion() {
   const queryClient = useQueryClient();
   const currentActor = useActor();
-  return useMutation({ mutationFn: ({ id, patch }: { id: string; patch: { governorateId?: string; name?: string; isActive?: boolean } }) => service.updateRegion(id, patch, currentActor), onSuccess: () => invalidate(queryClient) });
+  return useMutation({ mutationFn: ({ id, patch }: { id: string; patch: { governorateId?: string; name?: string; isActive?: boolean } }) => locationService.updateRegion(id, patch, currentActor), onSuccess: () => invalidate(queryClient) });
 }

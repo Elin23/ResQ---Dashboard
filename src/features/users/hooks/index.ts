@@ -2,7 +2,7 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tansta
 
 import { useSession } from '@/features/auth/session';
 
-import { addUserNote, blockUser, getUserById, getUsers, getUserSummary, reactivateUser, suspendUser, unblockUser } from '../services/users.mock';
+import { addUserNote, blockUser, getUserById, getUsers, getUserSummary, reactivateUser, suspendUser, unblockUser } from '../services/users.service';
 import type { ModerateUserInput, UserDetails, UserFilters, UserInternalNote } from '../types';
 
 export const userKeys = {
@@ -16,20 +16,20 @@ export const userKeys = {
 export const useUsers = (filters: UserFilters) =>
   useQuery({
     queryKey: userKeys.list(filters),
-    queryFn: () => getUsers(filters),
+    queryFn: ({ signal }) => getUsers(filters, signal),
     placeholderData: keepPreviousData,
   });
 
 export const useUserSummary = () =>
   useQuery({
     queryKey: userKeys.summary(),
-    queryFn: getUserSummary,
+    queryFn: ({ signal }) => getUserSummary(signal),
   });
 
 export const useUser = (id: string) =>
   useQuery({
     queryKey: userKeys.detail(id),
-    queryFn: () => getUserById(id),
+    queryFn: ({ signal }) => getUserById(id, signal),
     enabled: Boolean(id),
   });
 

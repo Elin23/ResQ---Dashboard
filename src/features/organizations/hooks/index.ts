@@ -3,7 +3,7 @@ import { useSession } from '@/features/auth/session';
 import { adoptionKeys } from '@/features/adoption-requests/hooks';
 import { dashboardKeys } from '@/features/dashboard/hooks';
 import { reportKeys } from '@/features/reports/hooks';
-import { addOrganizationNote, approveOrganization, getAssignableOrganizations, getOrganizationById, getOrganizations, getOrganizationSummary, reactivateOrganization, rejectOrganization, requestOrganizationInfo, reviewOrganizationDocument, startOrganizationReview, suspendOrganization } from '../services/organizations.mock';
+import { addOrganizationNote, approveOrganization, getAssignableOrganizations, getOrganizationById, getOrganizations, getOrganizationSummary, reactivateOrganization, rejectOrganization, requestOrganizationInfo, reviewOrganizationDocument, startOrganizationReview, suspendOrganization } from '../services/organizations.service';
 import type { OrganizationFilters, RejectOrganizationInput, RequestInfoInput, ReviewDocumentInput, SuspendOrganizationInput } from '../types';
 
 export const organizationKeys = {
@@ -26,27 +26,27 @@ export const organizationKeys = {
 export const useOrganizations = (filters: OrganizationFilters) =>
   useQuery({
     queryKey: organizationKeys.list(filters),
-    queryFn: () => getOrganizations(filters),
+    queryFn: ({ signal }) => getOrganizations(filters, signal),
     placeholderData: keepPreviousData,
   });
 
 export const useOrganizationSummary = () =>
   useQuery({
     queryKey: organizationKeys.summary(),
-    queryFn: getOrganizationSummary,
+    queryFn: ({ signal }) => getOrganizationSummary(signal),
   });
 
 export const useOrganization = (id: string) =>
   useQuery({
     queryKey: organizationKeys.detail(id),
-    queryFn: () => getOrganizationById(id),
+    queryFn: ({ signal }) => getOrganizationById(id, signal),
     enabled: Boolean(id),
   });
 
 export const useAssignableOrganizations = (search = '') =>
   useQuery({
     queryKey: organizationKeys.assignable(search),
-    queryFn: () => getAssignableOrganizations(search),
+    queryFn: ({ signal }) => getAssignableOrganizations(search, signal),
   });
 
 function useActor() {

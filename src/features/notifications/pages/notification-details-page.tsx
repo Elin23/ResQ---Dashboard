@@ -75,7 +75,7 @@ export function NotificationDetailsPage() {
             duplicate.mutate(undefined, {
               onSuccess: (copy) => {
                 toast.success('تم إنشاء نسخة كمسودة');
-                navigate(`/notifications/${copy.id}`);
+                navigate(copy?.id ? `/notifications/${copy.id}` : '/notifications');
               },
               onError: () =>
                 toast.error('تعذر إنشاء نسخة'),

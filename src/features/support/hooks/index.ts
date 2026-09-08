@@ -1,7 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useSession } from '@/features/auth/session';
-import * as s from '../services/support.mock';
+import { dashboardKeys } from '@/features/dashboard/hooks';
+import { userKeys } from '@/features/users/hooks';
+import * as s from '../services/support.service';
 import type { AssignTicketInput, ChangePriorityInput, EscalateTicketInput, ReplyTicketInput, ReopenTicketInput, ResolveTicketInput, SupportFilters, SupportTicketStatus } from '../types';
 
 export const supportKeys = {
@@ -11,26 +13,27 @@ export const supportKeys = {
   detail: (id: string) => ['support', 'detail', id] as const,
   user: (id: string) => ['support', 'user', id] as const,
   canned: ['support', 'canned'] as const,
+  assignees: ['support', 'assignees'] as const,
 };
 
 export function useSupportTickets(f: SupportFilters) {
   return useQuery({
     queryKey: supportKeys.list(f),
-    queryFn: () => s.getSupportTickets(f),
+    queryFn: ({ signal }) => s.getSupportTickets(f, signal),
   });
 }
 
 export function useSupportSummary() {
   return useQuery({
     queryKey: supportKeys.summary,
-    queryFn: s.getSupportSummary,
+    queryFn: ({ signal }) => s.getSupportSummary(signal),
   });
 }
 
 export function useSupportTicket(id: string) {
   return useQuery({
     queryKey: supportKeys.detail(id),
-    queryFn: () => s.getSupportTicket(id),
+    queryFn: ({ signal }) => s.getSupportTicket(id, signal),
     enabled: Boolean(id),
   });
 }
@@ -38,7 +41,7 @@ export function useSupportTicket(id: string) {
 export function useUserSupportSummary(id: string) {
   return useQuery({
     queryKey: supportKeys.user(id),
-    queryFn: () => s.getUserSupportSummary(id),
+    queryFn: ({ signal }) => s.getUserSupportSummary(id, signal),
     enabled: Boolean(id),
   });
 }
@@ -46,7 +49,15 @@ export function useUserSupportSummary(id: string) {
 export function useCannedResponses() {
   return useQuery({
     queryKey: supportKeys.canned,
-    queryFn: s.getSupportCannedResponses,
+    queryFn: ({ signal }) => s.getSupportCannedResponses(signal),
+  });
+}
+
+export function useSupportAssignees() {
+  return useQuery({
+    queryKey: supportKeys.assignees,
+    queryFn: ({ signal }) => s.getSupportAssignees(signal),
+    staleTime: 60_000,
   });
 }
 
@@ -67,8 +78,8 @@ function useInvalidate(id: string) {
   return () => {
     void q.invalidateQueries({ queryKey: supportKeys.all });
     void q.invalidateQueries({ queryKey: supportKeys.detail(id) });
-    void q.invalidateQueries({ queryKey: ['dashboard'] });
-    void q.invalidateQueries({ queryKey: ['users'] });
+    void q.invalidateQueries({ queryKey: dashboardKeys.all });
+    void q.invalidateQueries({ queryKey: userKeys.all });
   };
 }
 

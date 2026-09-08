@@ -1,30 +1,32 @@
 import type { ReactNode } from 'react';
 import { Navigate, useLocation } from 'react-router';
+import { permissionDefinitions, rolePermissions, type Permission } from './permissions';
+import { useSession, type AdminSession } from './session';
 
-import { permissionDefinitions, rolePermissions, roles, type AdminRole, type Permission } from './permissions';
-import { useSession } from './session';
+function sessionHasPermission(session: AdminSession | null, permission: Permission): boolean {
+  if (!session) return false;
 
-const validRoles = new Set<AdminRole>(roles);
+  // Prefer the permissions returned by the backend. Fall back to the legacy
+  // role matrix only when the backend does not expose permissions yet.
+  if (session.permissions.length > 0) {
+    return session.permissions.includes(permission) || session.permissions.includes('*');
+  }
 
-function permissionsForRole(role: AdminRole | string | undefined) {
-  return role && validRoles.has(role as AdminRole)
-    ? rolePermissions[role as AdminRole]
-    : null;
+  return rolePermissions[session.role]?.has(permission) ?? false;
+}
+
+export function hasPermission(session: AdminSession | null, permission: Permission): boolean {
+  return sessionHasPermission(session, permission);
 }
 
 export function usePermission(permission: Permission): boolean {
   const { session } = useSession();
-
-  return permissionsForRole(session?.role)?.has(permission) ?? false;
+  return sessionHasPermission(session, permission);
 }
 
 export function useAnyPermission(required: readonly Permission[]): boolean {
   const { session } = useSession();
-  const granted = permissionsForRole(session?.role);
-
-  return granted
-    ? required.some((permission) => granted.has(permission))
-    : false;
+  return required.some((permission) => sessionHasPermission(session, permission));
 }
 
 export function PermissionGuard({ permission, children, fallback = null }: { permission: Permission; children: ReactNode; fallback?: ReactNode }) {
@@ -32,45 +34,22 @@ export function PermissionGuard({ permission, children, fallback = null }: { per
 }
 
 export function ProtectedRoute({ children, permission }: { children: ReactNode; permission?: Permission }) {
-  const { session } = useSession();
+  const { session, isBootstrapping } = useSession();
   const location = useLocation();
 
+  if (isBootstrapping && !session) return null;
+
   if (!session) {
-    return (
-      <Navigate
-        to="/login"
-        replace
-        state={{ from: `${location.pathname}${location.search}` }}
-      />
-    );
+    return <Navigate to="/login" replace state={{ from: `${location.pathname}${location.search}` }} />;
   }
 
-  const granted = permissionsForRole(session.role);
-
-  // An unknown role is treated as an invalid session.
-  if (!granted) {
-    return (
-      <Navigate
-        to="/login"
-        replace
-        state={{ sessionInvalid: true }}
-      />
-    );
-  }
-
-  // Redirect authenticated admins when they do not have the required permission.
-  if (permission && !granted.has(permission)) {
+  if (permission && !sessionHasPermission(session, permission)) {
     const definition = permissionDefinitions.find((item) => item.key === permission);
-
     return (
       <Navigate
         to="/unauthorized"
         replace
-        state={{
-          from: location.pathname,
-          permission,
-          permissionLabel: definition?.label,
-        }}
+        state={{ from: location.pathname, permission, permissionLabel: definition?.label }}
       />
     );
   }

@@ -4,6 +4,7 @@ import { HashRouter } from 'react-router';
 import { Toaster } from 'sonner';
 
 import { env } from '@/config/env';
+import { ApiClientError } from '@/services/api/client';
 import { SessionProvider } from '@/features/auth/session';
 
 export function AppProviders({ children }: { children: ReactNode }) {
@@ -16,7 +17,11 @@ export function AppProviders({ children }: { children: ReactNode }) {
             // Mock data does not change externally, so it can stay fresh indefinitely.
             staleTime: env.dataSource === 'mock' ? Infinity : 30_000,
             gcTime: 30 * 60_000,
-            retry: 1,
+            retry: (failureCount, error) => {
+              // Do not retry validation/auth/permission/not-found failures. Retry only transient server/network failures once.
+              if (error instanceof ApiClientError && error.status < 500) return false;
+              return failureCount < 1;
+            },
             refetchOnWindowFocus: false,
           },
           mutations: {

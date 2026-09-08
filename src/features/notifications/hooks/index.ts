@@ -1,7 +1,7 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSession } from '@/features/auth/session';
 import { playNotificationChime } from '../services/notification-sound';
-import { cancelBroadcast, createBroadcastDraft, duplicateBroadcast, estimateNotificationAudience, getBroadcastNotification, getBroadcastNotifications, getNotificationSummary, getNotificationTargetSources, getNotificationTemplate, getNotificationTemplates, scheduleBroadcast, scheduleExistingBroadcast, sendBroadcast, sendExistingBroadcast, updateNotificationTemplate } from '../services/notifications.mock';
+import { cancelBroadcast, createBroadcastDraft, duplicateBroadcast, estimateNotificationAudience, getBroadcastNotification, getBroadcastNotifications, getNotificationSummary, getNotificationTargetSources, getNotificationTemplate, getNotificationTemplates, scheduleBroadcast, scheduleExistingBroadcast, sendBroadcast, sendExistingBroadcast, updateNotificationTemplate } from '../services/notifications.service';
 import type { BroadcastDraftInput, BroadcastFilters, ScheduleBroadcastInput, SendBroadcastInput, TemplateUpdateInput } from '../types';
 
 export const notificationKeys = {
@@ -18,41 +18,41 @@ export const notificationKeys = {
 export const useBroadcastNotifications = (filters: BroadcastFilters) =>
   useQuery({
     queryKey: notificationKeys.list(filters),
-    queryFn: () => getBroadcastNotifications(filters),
+    queryFn: ({ signal }) => getBroadcastNotifications(filters, signal),
     placeholderData: keepPreviousData,
   });
 
 export const useBroadcastNotification = (id: string) =>
   useQuery({
     queryKey: notificationKeys.detail(id),
-    queryFn: () => getBroadcastNotification(id),
+    queryFn: ({ signal }) => getBroadcastNotification(id, signal),
     enabled: Boolean(id),
   });
 
 export const useNotificationSummary = (enabled = true) =>
   useQuery({
     queryKey: notificationKeys.summary,
-    queryFn: getNotificationSummary,
+    queryFn: ({ signal }) => getNotificationSummary(signal),
     enabled,
   });
 
 export const useNotificationTemplates = () =>
   useQuery({
     queryKey: notificationKeys.templates,
-    queryFn: getNotificationTemplates,
+    queryFn: ({ signal }) => getNotificationTemplates(signal),
   });
 
 export const useNotificationTemplate = (key: string) =>
   useQuery({
     queryKey: notificationKeys.template(key),
-    queryFn: () => getNotificationTemplate(key),
+    queryFn: ({ signal }) => getNotificationTemplate(key, signal),
     enabled: Boolean(key),
   });
 
 export const useNotificationTargets = () =>
   useQuery({
     queryKey: notificationKeys.targets,
-    queryFn: getNotificationTargetSources,
+    queryFn: ({ signal }) => getNotificationTargetSources(signal),
   });
 
 export function useAudienceEstimate(audience: BroadcastDraftInput['audience']) {
@@ -61,7 +61,7 @@ export function useAudienceEstimate(audience: BroadcastDraftInput['audience']) {
   // Cache the same audience definition briefly to avoid repeated estimates.
   return useQuery({
     queryKey: notificationKeys.audience(serialized),
-    queryFn: () => estimateNotificationAudience(audience),
+    queryFn: ({ signal }) => estimateNotificationAudience(audience, signal),
     staleTime: 20_000,
   });
 }

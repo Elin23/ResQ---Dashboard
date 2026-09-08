@@ -1,4 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { dashboardKeys } from '@/features/dashboard/hooks';
+import { feedingPointKeys } from '@/features/feeding-points/hooks';
+import { organizationKeys } from '@/features/organizations/hooks';
 
 import { approveMapListing, createMapListing, deleteMapListing, getOperationalMapData, rejectMapListing, toggleMapListing } from '../services/operational-map.service';
 
@@ -10,7 +13,7 @@ export const operationalMapKeys = {
 export function useOperationalMapData(enabled = true) {
   return useQuery({
     queryKey: operationalMapKeys.data(),
-    queryFn: getOperationalMapData,
+    queryFn: ({ signal }) => getOperationalMapData(signal),
     enabled,
   });
 }
@@ -19,10 +22,14 @@ function useRefresh() {
   const client = useQueryClient();
 
   // Refresh all map directory data after any listing mutation.
-  return () =>
-    client.invalidateQueries({
-      queryKey: operationalMapKeys.all,
-    });
+  return async () => {
+    await Promise.all([
+      client.invalidateQueries({ queryKey: operationalMapKeys.all }),
+      client.invalidateQueries({ queryKey: dashboardKeys.all }),
+      client.invalidateQueries({ queryKey: feedingPointKeys.all }),
+      client.invalidateQueries({ queryKey: organizationKeys.all }),
+    ]);
+  };
 }
 
 export function useCreateMapListing() {

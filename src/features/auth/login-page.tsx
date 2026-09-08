@@ -9,7 +9,7 @@ import { Button, Checkbox, Input } from '@/components/ui';
 import { useSession } from './session';
 
 const loginSchema = z.object({
-  username: z.string().trim().min(1, 'أدخل اسم المستخدم.'),
+  username: z.string().trim().min(1, 'أدخل البريد الإلكتروني.'),
   password: z.string().min(1, 'أدخل كلمة المرور.'),
   remember: z.boolean(),
 });
@@ -52,7 +52,7 @@ export function LoginPage() {
       ? fromState.from
       : '/dashboard';
 
-  const onSubmit = (values: LoginValues) => {
+  const onSubmit = async (values: LoginValues) => {
     if (isLoggingIn) {
       return;
     }
@@ -60,15 +60,19 @@ export function LoginPage() {
     setAuthError('');
     setIsLoggingIn(true);
 
-    const authenticated = login(
-      values.username,
-      values.password,
-      values.remember,
-    );
+    let authenticated = false;
+
+    try {
+      authenticated = await login(values.username, values.password, values.remember);
+    } catch (error) {
+      setAuthError(error instanceof Error ? error.message : 'تعذر تسجيل الدخول. حاول مرة أخرى.');
+      setIsLoggingIn(false);
+      return;
+    }
 
     if (!authenticated) {
       setAuthError(
-        'اسم المستخدم أو كلمة المرور غير صحيحة. تحقق من البيانات وحاول مرة أخرى.',
+        'البريد الإلكتروني أو كلمة المرور غير صحيحة. تحقق من البيانات وحاول مرة أخرى.',
       );
       setIsLoggingIn(false);
       return;
@@ -104,14 +108,14 @@ export function LoginPage() {
               htmlFor="username"
               className="mb-2 block text-sm font-semibold text-foreground"
             >
-              اسم المستخدم
+              البريد الإلكتروني
             </label>
 
             <Input
               id="username"
-              autoComplete="username"
+              autoComplete="email"
               dir="ltr"
-              placeholder="username"
+              placeholder="name@example.com"
               disabled={isLoggingIn}
               className="h-12 w-full rounded-xl px-4 text-left"
               {...register('username')}
