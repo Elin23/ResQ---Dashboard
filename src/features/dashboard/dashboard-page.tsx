@@ -156,19 +156,19 @@ export function DashboardPage() {
         />
       ) : summary.data ? (
         <>
-          <DashboardMetrics metrics={summary.data.metrics} />
+          <DashboardMetrics metrics={summary.data.metrics ?? []} />
 
           <OperationalOverview
             attentionItems={attention.data}
             attentionLoading={attention.isLoading}
             attentionError={queryErrorMessage(attention.error)}
             onAttentionRetry={() => void attention.refetch()}
-            weeklyReports={summary.data.weeklyReports}
+            weeklyReports={summary.data.weeklyReports ?? []}
           />
 
           <DashboardWorkOverview
-            missions={summary.data.activeMissions}
-            reports={summary.data.criticalReports}
+            missions={summary.data.activeMissions ?? []}
+            reports={summary.data.criticalReports ?? []}
           />
         </>
       ) : null}
