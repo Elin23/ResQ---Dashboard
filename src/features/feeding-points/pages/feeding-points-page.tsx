@@ -1,3 +1,4 @@
+import { getUserErrorMessage } from '@/lib/user-error-message';
 import { useCallback, useMemo, useState } from 'react';
 import { List, Map } from 'lucide-react';
 import { useSearchParams } from 'react-router';
@@ -224,7 +225,7 @@ export function FeedingPointsPage() {
 
       {query.isError ? (
         <ErrorState
-          description={query.error.message}
+          description={getUserErrorMessage(query.error)}
           onRetry={() => void query.refetch()}
         />
       ) : view === 'MAP' ? (

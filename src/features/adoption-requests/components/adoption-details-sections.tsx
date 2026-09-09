@@ -59,7 +59,32 @@ export function AdoptionMainDetails({
 
               <Info
                 label="العمر التقريبي"
-                value={formatEstimatedAge(animal.estimatedAgeMonths)}
+                value={animal.ageText ?? formatEstimatedAge(animal.estimatedAgeMonths)}
+              />
+
+              <Info
+                label="الجنس"
+                value={animal.sex === 'MALE' ? 'ذكر' : animal.sex === 'FEMALE' ? 'أنثى' : 'غير محدد'}
+              />
+
+              <Info
+                label="الحالة الصحية"
+                value={animal.healthStatus ?? 'غير محددة'}
+              />
+
+              <Info
+                label="مطعّم"
+                value={animal.vaccinated === undefined ? 'غير محدد' : animal.vaccinated ? 'نعم' : 'لا'}
+              />
+
+              <Info
+                label="خضع لفحص بيطري"
+                value={animal.veterinaryExamined === undefined ? 'غير محدد' : animal.veterinaryExamined ? 'نعم' : 'لا'}
+              />
+
+              <Info
+                label="خالٍ من الأمراض المعدية"
+                value={animal.freeOfInfectiousDiseases === undefined ? 'غير محدد' : animal.freeOfInfectiousDiseases ? 'نعم' : 'لا'}
               />
 
               <Info

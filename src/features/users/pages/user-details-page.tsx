@@ -1,3 +1,4 @@
+import { getUserErrorMessage } from '@/lib/user-error-message';
 import { Ban, PauseCircle, PlayCircle, ShieldOff } from 'lucide-react';
 import { useState } from 'react';
 import { useParams } from 'react-router';
@@ -44,7 +45,7 @@ export function UserDetailsPage() {
     return (
       <ErrorState
         title="تعذر تحميل حساب المستخدم"
-        description={query.error.message}
+        description={getUserErrorMessage(query.error)}
         onRetry={() => void query.refetch()}
       />
     );

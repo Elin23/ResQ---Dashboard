@@ -50,12 +50,6 @@ class RouteBoundaryImpl extends Component<BoundaryProps, BoundaryState> {
           حدث خطأ أثناء عرض محتوى الصفحة. بقيت لوحة الإدارة فعّالة ويمكن إعادة تحميل هذه الصفحة دون فقدان التنقل الرئيسي.
         </p>
 
-        {import.meta.env.DEV ? (
-          <p dir="ltr" className="mt-3 max-h-36 max-w-full overflow-auto rounded-md bg-muted p-3 text-start font-mono text-xs text-muted-foreground">
-            {this.state.error.message}
-          </p>
-        ) : null}
-
         <Button className="mt-5" variant="secondary" onClick={this.props.onRetry}>
           <RotateCcw className="size-4" />
           إعادة تحميل الصفحة

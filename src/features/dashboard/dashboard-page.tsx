@@ -4,6 +4,7 @@ import { Check, ChevronDown } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { ErrorState } from '@/components/ui';
 import { useSession } from '@/features/auth/session';
+import { getUserErrorMessage } from '@/lib/user-error-message';
 import { DashboardMetrics, DashboardSectionSkeleton, DashboardWorkOverview, OperationalOverview } from './components/dashboard-sections';
 import { useAttentionQueue, useDashboardSummary } from './hooks';
 import type { DashboardRange } from './types';
@@ -24,7 +25,7 @@ function greeting(name: string): string {
 }
 
 function queryErrorMessage(error: Error | null): string | undefined {
-  return error?.message;
+  return error ? getUserErrorMessage(error) : undefined;
 }
 
 function RangeFilter({ value, onChange }: { value: DashboardRange; onChange: (value: DashboardRange) => void }) {
@@ -151,7 +152,7 @@ export function DashboardPage() {
         <DashboardSectionSkeleton />
       ) : summary.isError ? (
         <ErrorState
-          description={summary.error.message}
+          description={getUserErrorMessage(summary.error)}
           onRetry={() => void summary.refetch()}
         />
       ) : summary.data ? (

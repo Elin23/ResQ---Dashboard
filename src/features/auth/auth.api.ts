@@ -106,7 +106,7 @@ export async function loginAdmin(email: string, password: string, remember: bool
   const accessToken = tokenRecord.accessToken ?? tokenRecord.token ?? tokenRecord.jwt ?? tokenRecord.access_token;
   const refreshToken = tokenRecord.refreshToken ?? tokenRecord.refresh_token;
 
-  if (!accessToken) throw new Error('استجابة تسجيل الدخول لا تحتوي على access token صالح.');
+  if (!accessToken) throw new Error('لم يرسل الخادم رمز تسجيل دخول صالحًا. حاول تسجيل الدخول مرة أخرى.');
   setAuthTokens({ accessToken, refreshToken }, remember);
 
   try {
@@ -120,7 +120,7 @@ export async function loginAdmin(email: string, password: string, remember: bool
 export async function getCurrentAdmin(): Promise<ApiAdminSession> {
   const raw = await apiClient.get<unknown>('/api/dashboard/auth/me');
   const payload = unwrap(raw);
-  if (!payload || typeof payload !== 'object') throw new Error('استجابة بيانات المسؤول غير صالحة.');
+  if (!payload || typeof payload !== 'object') throw new Error('تعذر قراءة بيانات الحساب من الخادم.');
 
   const record = payload as Record<string, unknown>;
   const id = readString(record, ['id', 'userId', 'adminId']) ?? '';
@@ -129,7 +129,7 @@ export async function getCurrentAdmin(): Promise<ApiAdminSession> {
   const roleName = readRoleName(record) ?? 'ADMIN';
   const avatarUrl = readString(record, ['avatarUrl', 'imageUrl', 'photoUrl']);
 
-  if (!id || !email) throw new Error('استجابة بيانات المسؤول ناقصة.');
+  if (!id || !email) throw new Error('بيانات الحساب المستلمة من الخادم غير مكتملة.');
 
   return {
     id,

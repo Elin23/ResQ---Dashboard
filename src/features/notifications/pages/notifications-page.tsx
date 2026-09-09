@@ -1,3 +1,4 @@
+import { getUserErrorMessage } from '@/lib/user-error-message';
 import { useCallback, useMemo } from 'react';
 import { FilePlus2, Layers3 } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router';
@@ -188,7 +189,7 @@ export function NotificationsPage() {
 
       {query.isError ? (
         <ErrorState
-          description={query.error.message}
+          description={getUserErrorMessage(query.error)}
           onRetry={() => void query.refetch()}
         />
       ) : (

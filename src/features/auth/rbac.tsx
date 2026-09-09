@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Navigate, useLocation } from 'react-router';
-import { permissionDefinitions, rolePermissions, type Permission } from './permissions';
+import { permissionDefinitions, rolePermissions as permissionsForRole, type Permission } from './permissions';
 import { useSession, type AdminSession } from './session';
 
 function sessionHasPermission(session: AdminSession | null, permission: Permission): boolean {
@@ -12,7 +12,7 @@ function sessionHasPermission(session: AdminSession | null, permission: Permissi
     return session.permissions.includes(permission) || session.permissions.includes('*');
   }
 
-  return rolePermissions[session.role]?.has(permission) ?? false;
+  return permissionsForRole[session.role]?.has(permission) ?? false;
 }
 
 export function hasPermission(session: AdminSession | null, permission: Permission): boolean {

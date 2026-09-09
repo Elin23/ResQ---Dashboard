@@ -1,3 +1,4 @@
+import { getUserErrorMessage } from '@/lib/user-error-message';
 import { ArrowRight, Building2, CircleHelp } from 'lucide-react';
 import { Link, useParams } from 'react-router';
 
@@ -34,7 +35,7 @@ export function ReportDetailsPage() {
     return (
       <ErrorState
         title="تعذر تحميل البلاغ"
-        description={query.error.message}
+        description={getUserErrorMessage(query.error)}
         onRetry={() => void query.refetch()}
       />
     );

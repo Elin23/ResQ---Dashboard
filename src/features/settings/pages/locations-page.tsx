@@ -1,3 +1,4 @@
+import { getUserErrorMessage } from '@/lib/user-error-message';
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { Badge, Button, Card, Input, PageHeader, Select, Switch } from '@/components/ui';
@@ -13,7 +14,7 @@ function GovernorateRow({ item }: { item: GovernorateRecord }) {
       await mutation.mutateAsync({ id: item.id, patch });
       toast.success('تم تحديث المحافظة.');
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'تعذر تحديث المحافظة.');
+      toast.error(getUserErrorMessage(error, 'تعذر تحديث المحافظة.'));
     }
   };
 
@@ -42,7 +43,7 @@ function RegionRow({ item, governorates }: { item: RegionRecord; governorates: G
       await mutation.mutateAsync({ id: item.id, patch });
       toast.success('تم تحديث المنطقة.');
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'تعذر تحديث المنطقة.');
+      toast.error(getUserErrorMessage(error, 'تعذر تحديث المنطقة.'));
     }
   };
 
@@ -99,7 +100,7 @@ export function LocationsPage() {
               setGovernorateName('');
               toast.success('تمت إضافة المحافظة.');
             } catch (error) {
-              toast.error(error instanceof Error ? error.message : 'تعذر إضافة المحافظة.');
+              toast.error(getUserErrorMessage(error, 'تعذر إضافة المحافظة.'));
             }
           }}>إضافة</Button>
         </div>
@@ -125,7 +126,7 @@ export function LocationsPage() {
               setRegionName('');
               toast.success('تمت إضافة المنطقة.');
             } catch (error) {
-              toast.error(error instanceof Error ? error.message : 'تعذر إضافة المنطقة.');
+              toast.error(getUserErrorMessage(error, 'تعذر إضافة المنطقة.'));
             }
           }}>إضافة</Button>
         </div>

@@ -1,3 +1,4 @@
+import { getUserErrorMessage } from '@/lib/user-error-message';
 import { useState } from 'react';
 import { Check, Trash2, X } from 'lucide-react';
 import { Link, useNavigate, useParams } from 'react-router';
@@ -34,7 +35,7 @@ export function DonationDetailsPage() {
     return (
       <ErrorState
         title="تعذر تحميل الحملة"
-        description={query.error.message}
+        description={getUserErrorMessage(query.error)}
         onRetry={() => void query.refetch()}
       />
     );

@@ -19,6 +19,11 @@ export interface AdoptionAnimalRef {
   breed?: string;
   sex?: 'MALE' | 'FEMALE' | 'UNKNOWN';
   estimatedAgeMonths?: number;
+  ageText?: string;
+  healthStatus?: string;
+  vaccinated?: boolean;
+  freeOfInfectiousDiseases?: boolean;
+  veterinaryExamined?: boolean;
   imageUrls: string[];
   description: string;
 }

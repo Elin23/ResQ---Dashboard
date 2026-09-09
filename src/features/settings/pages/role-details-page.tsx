@@ -1,3 +1,4 @@
+import { getUserErrorMessage } from '@/lib/user-error-message';
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { toast } from 'sonner';
@@ -28,7 +29,7 @@ export function RoleDetailsPage() {
     return (
       <ErrorState
         title="تعذر تحميل الدور"
-        description={query.error.message}
+        description={getUserErrorMessage(query.error)}
         onRetry={() => void query.refetch()}
       />
     );
@@ -104,7 +105,7 @@ export function RoleDetailsPage() {
             toast.success('تم حذف الدور المخصص.');
             nav('/settings/roles');
           } catch (e) {
-            toast.error(e instanceof Error ? e.message : 'تعذر حذف الدور.');
+            toast.error(getUserErrorMessage(e, 'تعذر حذف الدور.'));
           }
         }}
       />

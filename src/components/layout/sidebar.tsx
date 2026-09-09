@@ -1,8 +1,9 @@
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { ChevronLeft, ChevronRight, LogOut, X } from 'lucide-react';
+import { useState } from 'react';
 import { NavLink } from 'react-router';
 
-import { IconButton, Tooltip } from '@/components/ui';
+import { ConfirmDialog, IconButton, Tooltip } from '@/components/ui';
 import { hasPermission } from '@/features/auth/rbac';
 import { useSession } from '@/features/auth/session';
 import { cn } from '@/lib/cn';
@@ -41,6 +42,10 @@ function SidebarLink({ item, collapsed, onNavigate }: { item: (typeof routeGroup
 function SidebarContent({ collapsed, mobile, onToggleCollapsed, onNavigate, onClose }: { collapsed: boolean; mobile: boolean; onToggleCollapsed: () => void; onNavigate?: () => void; onClose?: () => void }) {
   const { session, logout } = useSession();
   const isCollapsed = collapsed && !mobile;
+  const [logoutOpen, setLogoutOpen] = useState(false);
+  const handleLogout = async () => {
+    await logout();
+  };
   const visibleGroups = routeGroups
     .map((group) => ({
       ...group,
@@ -123,7 +128,7 @@ function SidebarContent({ collapsed, mobile, onToggleCollapsed, onNavigate, onCl
             <Tooltip content="تسجيل الخروج">
               <button
                 type="button"
-                onClick={logout}
+                onClick={() => setLogoutOpen(true)}
                 aria-label="تسجيل الخروج"
                 className="mx-auto flex size-10 items-center justify-center rounded-xl bg-critical/[0.07] text-critical transition-[background-color,color,transform] duration-150 hover:scale-[1.04] hover:bg-critical/[0.14] hover:text-critical focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-critical/25"
               >
@@ -133,7 +138,7 @@ function SidebarContent({ collapsed, mobile, onToggleCollapsed, onNavigate, onCl
           ) : (
             <button
               type="button"
-              onClick={logout}
+              onClick={() => setLogoutOpen(true)}
               className="flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-critical/[0.07] px-3 text-[13px] font-medium text-critical transition-[background-color,color,transform] duration-150 hover:-translate-y-px hover:bg-critical/[0.14] hover:text-critical focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-critical/25"
             >
               <LogOut className="size-[16px]" strokeWidth={1.8} />
@@ -142,6 +147,16 @@ function SidebarContent({ collapsed, mobile, onToggleCollapsed, onNavigate, onCl
           )}
         </div>
       )}
+
+      <ConfirmDialog
+        open={logoutOpen}
+        onOpenChange={setLogoutOpen}
+        title="تسجيل الخروج"
+        description="هل أنت متأكد أنك تريد تسجيل الخروج من لوحة الإدارة؟"
+        confirmLabel="تسجيل الخروج"
+        destructive
+        onConfirm={() => void handleLogout()}
+      />
     </aside>
   );
 }

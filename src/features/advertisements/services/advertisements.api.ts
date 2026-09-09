@@ -1,5 +1,6 @@
 import type { AdminSession } from '@/features/auth/session';
 import { apiClient } from '@/services/api/client';
+import { resolveMediaUrl } from '@/lib/media-url';
 import type {
   Advertisement,
   AdvertisementAdvertiserSummary,
@@ -47,7 +48,7 @@ function normalizeAd(v: unknown): Advertisement {
   const x = rec(v); const advertiser = rec(x.advertiser ?? x.user ?? x.owner); const creative = rec(x.creative); const performance = rec(x.performance);
   const createdAt = str(x.createdAt, x.creationTime, x.startDate) ?? now();
   const updatedAt = str(x.updatedAt, x.lastModificationTime) ?? createdAt;
-  const imageUrl = str(creative.imageUrl, x.imageUrl, x.coverImageUrl, arr(x.imageUrls)[0]) ?? '';
+  const imageUrl = resolveMediaUrl(str(creative.imageUrl, x.imageUrl, x.coverImageUrl, arr(x.imageUrls)[0]));
   const paid = bool(x.paid, x.isPaid) ?? false;
   const paymentRaw = String(x.paymentMethod ?? x.paymentType ?? '').toUpperCase();
   return {
@@ -61,7 +62,7 @@ function normalizeAd(v: unknown): Advertisement {
     transferReference: str(x.transferReference, x.paymentReference),
     title: str(x.title, x.publicationTitle) ?? 'إعلان',
     description: str(x.description),
-    creative: { type: String(creative.type ?? x.creativeType ?? '').toUpperCase().includes('IMAGE') ? 'IMAGE' : 'BANNER', imageUrl, galleryUrls: arr(creative.galleryUrls ?? x.imageUrls).map(String).filter(Boolean), altText: str(creative.altText, x.title) ?? 'إعلان', callToActionLabel: str(creative.callToActionLabel, x.callToActionLabel) },
+    creative: { type: String(creative.type ?? x.creativeType ?? '').toUpperCase().includes('IMAGE') ? 'IMAGE' : 'BANNER', imageUrl, galleryUrls: arr(creative.galleryUrls ?? x.imageUrls).map((value) => resolveMediaUrl(String(value))).filter(Boolean), altText: str(creative.altText, x.title) ?? 'إعلان', callToActionLabel: str(creative.callToActionLabel, x.callToActionLabel) },
     placement: normalizePlacement(x.placement ?? x.position),
     publicationPhone: str(x.publicationPhone, x.contactPhone), publicationEmail: str(x.publicationEmail, x.contactEmail),
     publicationTitle: str(x.publicationTitle, x.title) ?? 'إعلان', websiteUrl: str(x.websiteUrl, x.website),
@@ -102,6 +103,7 @@ export async function createAdvertisement(input: CreateAdvertisementInput, actor
     contactPhone: input.publicationPhone ?? input.ownerPhone, contactEmail: input.publicationEmail ?? null,
     placement: placementToApi[input.placement], startDate: input.startAt ?? new Date().toISOString(), endDate: input.endAt ?? new Date(Date.now() + 30 * 86400000).toISOString(),
     isPaid: input.paid, paymentMethod: paymentToApi[input.paymentMethod],
+    imageUrls: input.imageUrls,
   });
   return normalizeAd(unwrap(payload));
 }

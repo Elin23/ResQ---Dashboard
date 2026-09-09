@@ -1,3 +1,4 @@
+import { getUserErrorMessage } from '@/lib/user-error-message';
 import { Download } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { useSearchParams } from 'react-router';
@@ -177,7 +178,7 @@ export function ReportsPage() {
     return (
       <ErrorState
         title="تعذر تحميل البلاغات"
-        description={reportsQuery.error.message}
+        description={getUserErrorMessage(reportsQuery.error)}
         onRetry={() => void reportsQuery.refetch()}
       />
     );
@@ -294,7 +295,7 @@ export function ReportsPage() {
         pageCount={data?.pageCount ?? 1}
         filters={filters}
         loading={reportsQuery.isLoading || (reportsQuery.isFetching && !data)}
-        error={reportsQuery.isError ? reportsQuery.error.message : undefined}
+        error={reportsQuery.isError ? getUserErrorMessage(reportsQuery.error) : undefined}
         onRetry={() => void reportsQuery.refetch()}
         onQueryChange={onQueryChange}
         onSelectionChange={onSelectionChange}

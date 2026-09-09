@@ -1,3 +1,4 @@
+import { getUserErrorMessage } from '@/lib/user-error-message';
 import { Pencil, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -24,7 +25,7 @@ export function MediaLimitsForm({ settings, readOnly = false }: { settings: Syst
       toast.success('تم تحديث حدود الوسائط.');
       setConfirm(false);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'تعذر تحديث حدود الوسائط.');
+      toast.error(getUserErrorMessage(e, 'تعذر تحديث حدود الوسائط.'));
     }
   };
 
@@ -155,7 +156,7 @@ export function EmergencyContactsManager({ settings, readOnly = false }: { setti
       toast.success('تم تحديث جهة اتصال الطوارئ.');
       setEditing(null);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'تعذر تحديث جهة الاتصال.');
+      toast.error(getUserErrorMessage(error, 'تعذر تحديث جهة الاتصال.'));
     }
   };
 
@@ -285,7 +286,7 @@ export function EmergencyContactsManager({ settings, readOnly = false }: { setti
                   setCategory('VETERINARY');
                   toast.success('تمت إضافة جهة اتصال الطوارئ.');
                 } catch (error) {
-                  toast.error(error instanceof Error ? error.message : 'تعذر إضافة جهة الاتصال.');
+                  toast.error(getUserErrorMessage(error, 'تعذر إضافة جهة الاتصال.'));
                 }
               }}
             >
@@ -410,7 +411,7 @@ export function EmergencyContactsManager({ settings, readOnly = false }: { setti
             toast.success('تم حذف جهة الاتصال.');
             setDeleting(null);
           } catch (error) {
-            toast.error(error instanceof Error ? error.message : 'تعذر حذف جهة الاتصال.');
+            toast.error(getUserErrorMessage(error, 'تعذر حذف جهة الاتصال.'));
           }
         }}
       />

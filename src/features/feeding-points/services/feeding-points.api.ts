@@ -1,4 +1,5 @@
 import { apiClient } from '@/services/api/client';
+import { resolveMediaUrl } from '@/lib/media-url';
 import type {
   DeactivateFeedingPointInput,
   FeedingPoint,
@@ -57,13 +58,13 @@ function normalizeStatus(value: unknown): FeedingPointStatus {
 
 function normalizeMedia(value: unknown, parentId: string, index: number, fallbackDate: string): FeedingPointMedia {
   const item = rec(value);
-  const url = str(item.url, item.fileUrl, item.mediaUrl, item.imageUrl, typeof value === 'string' ? value : undefined) ?? '';
+  const url = resolveMediaUrl(str(item.url, item.fileUrl, item.mediaUrl, item.imageUrl, typeof value === 'string' ? value : undefined));
   const rawType = String(item.type ?? item.mediaType ?? '').toUpperCase();
   return {
     id: ident(item.id, item.mediaId, `${parentId}-media-${index}`),
     type: rawType.includes('VIDEO') ? 'VIDEO' : 'IMAGE',
     url,
-    thumbnailUrl: str(item.thumbnailUrl, item.previewUrl),
+    thumbnailUrl: resolveMediaUrl(str(item.thumbnailUrl, item.previewUrl)) || undefined,
     caption: str(item.caption, item.description),
     createdAt: str(item.createdAt, item.creationTime) ?? fallbackDate,
   };
@@ -233,10 +234,10 @@ function normalizeList(payload: unknown, filters: FeedingPointFilters): FeedingP
 function normalizeSummary(payload: unknown): FeedingPointSummary {
   const body = rec(unwrap(payload));
   return {
-    pendingPoints: num(body.pendingPoints, body.pendingFoodPointsCount, body.pendingCount) ?? 0,
+    pendingPoints: num(body.pendingPoints, body.pending, body.pendingFoodPointsCount, body.pendingCount) ?? 0,
     pendingRefills: num(body.pendingRefills, body.pendingRefillsCount) ?? 0,
-    activePoints: num(body.activePoints, body.activeFoodPointsCount, body.activeCount) ?? 0,
-    inactivePoints: num(body.inactivePoints, body.disabledFoodPointsCount, body.inactiveCount, body.disabledCount) ?? 0,
+    activePoints: num(body.activePoints, body.active, body.activeFoodPointsCount, body.activeCount) ?? 0,
+    inactivePoints: num(body.inactivePoints, body.inactive, body.disabledFoodPointsCount, body.inactiveCount, body.disabledCount) ?? 0,
   };
 }
 
@@ -260,6 +261,7 @@ function query(filters: FeedingPointFilters): string {
   if (filters.search.trim()) params.set('search', filters.search.trim());
   if (filters.status) params.set('status', String(statusValue[filters.status]));
   if (filters.governorate && /^\d+$/.test(filters.governorate)) params.set('governorateId', filters.governorate);
+  if (filters.pendingRefills !== undefined) params.set('pendingRefills', String(filters.pendingRefills));
   params.set('page', String(filters.page));
   params.set('pageSize', String(filters.pageSize));
   return params.toString();

@@ -1,3 +1,4 @@
+import { getUserErrorMessage } from '@/lib/user-error-message';
 import { useCallback, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 import { CircleCheck, CircleDollarSign, ExternalLink, FilePenLine, MoreHorizontal, PauseCircle, Plus, RotateCcw, Search } from 'lucide-react';
@@ -207,7 +208,7 @@ export function AdvertisementsPage() {
     return (
       <ErrorState
         title="تعذر تحميل الإعلانات"
-        description={query.error.message}
+        description={getUserErrorMessage(query.error)}
         onRetry={() => void query.refetch()}
       />
     );

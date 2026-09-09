@@ -1,3 +1,4 @@
+import { getUserErrorMessage } from '@/lib/user-error-message';
 import { ErrorState, PageHeader, Skeleton } from '@/components/ui';
 import { NotificationTemplatesList } from '../components/notification-templates';
 import { useNotificationTemplates } from '../hooks';
@@ -25,7 +26,7 @@ export function NotificationTemplatesPage() {
         </div>
       ) : query.isError ? (
         <ErrorState
-          description={query.error.message}
+          description={getUserErrorMessage(query.error)}
           onRetry={() => void query.refetch()}
         />
       ) : (

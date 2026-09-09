@@ -1,4 +1,5 @@
 import { apiClient } from '@/services/api/client';
+import { resolveMediaUrl } from '@/lib/media-url';
 import type {
   ModerateUserInput,
   User,
@@ -62,7 +63,7 @@ function normalizeUser(value: unknown): User {
   return {
     id: id(item.id, item.userId, item.user_id),
     fullName,
-    avatarUrl: text(item.avatarUrl, item.profileImageUrl, item.imageUrl),
+    avatarUrl: resolveMediaUrl(text(item.avatarUrl, item.profileImageUrl, item.imageUrl)) || undefined,
     phone: text(item.phone, item.phoneNumber, item.mobile),
     email: text(item.email),
     governorate: text(item.governorate, item.governorateName, record(item.governorate).name, record(item.governorate).nameAr),

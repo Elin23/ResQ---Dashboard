@@ -67,7 +67,7 @@ export function MapRequestsView({ requests }: { requests: MapListingRequest[] })
                             size="sm"
                             disabled={approve.isPending}
                             onClick={() =>
-                              approve.mutate(item.id, {
+                              approve.mutate(item.sourceId, {
                                 onSuccess: () => toast.success('تمت الموافقة ونشر المكان.'),
                                 onError: () => toast.error('تعذر نشر المكان. حاول مرة أخرى.'),
                               })
@@ -113,7 +113,7 @@ export function MapRequestsView({ requests }: { requests: MapListingRequest[] })
               onClick={() =>
                 rejecting &&
                 reject.mutate(
-                  { id: rejecting.id, reason: reason.trim() },
+                  { id: rejecting.sourceId, reason: reason.trim() },
                   {
                     onSuccess: () => {
                       toast.success('تم رفض الطلب وتسجيل السبب.');

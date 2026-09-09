@@ -1,3 +1,4 @@
+import { getUserErrorMessage } from '@/lib/user-error-message';
 import { DatabaseBackup } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -59,7 +60,7 @@ export function BackupSettingsManager({ settings, readOnly = false }: { settings
       await update.mutateAsync(draft);
       toast.success('تم حفظ إعدادات النسخ الاحتياطي.');
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'تعذر حفظ إعدادات النسخ الاحتياطي.');
+      toast.error(getUserErrorMessage(error, 'تعذر حفظ إعدادات النسخ الاحتياطي.'));
     }
   };
 
@@ -74,7 +75,7 @@ export function BackupSettingsManager({ settings, readOnly = false }: { settings
         toast.success('تم إنشاء النسخة الاحتياطية على الخادم.');
       }
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'تعذر إنشاء النسخة الاحتياطية.');
+      toast.error(getUserErrorMessage(error, 'تعذر إنشاء النسخة الاحتياطية.'));
     }
   };
 

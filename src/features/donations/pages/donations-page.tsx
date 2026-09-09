@@ -1,3 +1,4 @@
+import { getUserErrorMessage } from '@/lib/user-error-message';
 import { useCallback, useMemo } from 'react';
 import type { ColumnDef } from '@tanstack/react-table';
 import { CircleDollarSign, Clock3, ExternalLink, HeartHandshake, MoreHorizontal, RotateCcw, Search, UsersRound } from 'lucide-react';
@@ -215,7 +216,7 @@ export function DonationsPage() {
     return (
       <ErrorState
         title="تعذر تحميل حملات التبرع"
-        description={query.error.message}
+        description={getUserErrorMessage(query.error)}
         onRetry={() => void query.refetch()}
       />
     );

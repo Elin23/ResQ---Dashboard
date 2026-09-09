@@ -46,12 +46,6 @@ export class AppErrorBoundary extends Component<Props, State> {
             تعذر عرض الواجهة الحالية. يمكنك إعادة المحاولة أو العودة إلى الصفحة الرئيسية.
           </p>
 
-          {import.meta.env.DEV && this.state.errorMessage ? (
-            <p dir="ltr" className="mt-3 max-h-36 overflow-auto rounded-md bg-muted p-3 text-start font-mono text-xs text-muted-foreground">
-              {this.state.errorMessage}
-            </p>
-          ) : null}
-
           <div className="mt-5 flex flex-wrap justify-center gap-2">
             <Button variant="secondary" onClick={() => globalThis.location.reload()}>
               <RotateCcw className="size-4" />

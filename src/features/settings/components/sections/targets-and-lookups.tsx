@@ -1,3 +1,4 @@
+import { getUserErrorMessage } from '@/lib/user-error-message';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -37,7 +38,7 @@ export function TargetsForm({ settings }: { settings: SystemSettings }) {
       reset(pending);
       setPending(null);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'تعذر حفظ الإعدادات.');
+      toast.error(getUserErrorMessage(e, 'تعذر حفظ الإعدادات.'));
     }
   };
 
@@ -142,7 +143,7 @@ function LookupRow({ type, item, index, count, readOnly }: { type: LookupType; i
       });
       toast.success('تم تحديث القيمة المرجعية.');
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'تعذر تحديث القيمة.');
+      toast.error(getUserErrorMessage(e, 'تعذر تحديث القيمة.'));
     }
   };
 
@@ -266,7 +267,7 @@ export function LookupManager({ type, items, readOnly = false }: { type: LookupT
                 setLabel('');
                 toast.success('تمت إضافة القيمة المرجعية.');
               } catch (e) {
-                toast.error(e instanceof Error ? e.message : 'تعذر إضافة القيمة.');
+                toast.error(getUserErrorMessage(e, 'تعذر إضافة القيمة.'));
               }
             }}
           >

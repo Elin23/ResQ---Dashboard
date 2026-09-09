@@ -6,7 +6,7 @@ import { clearAuthTokens, getAccessToken } from '@/services/api/auth-tokens';
 import { AUTH_EXPIRED_EVENT } from '@/services/api/auth-events';
 import { getDevelopmentAdminForRole } from './mock-auth';
 import { getCurrentAdmin, loginAdmin, logoutAdmin } from './auth.api';
-import { type AdminRole } from './permissions';
+import { roleLabels, roles, type AdminRole } from './permissions';
 
 export interface AdminSession {
   id: string;
@@ -43,8 +43,8 @@ const storedSessionSchema = z.object({
   id: z.string().trim().min(1),
   name: z.string().trim().min(1),
   username: z.string().trim().min(1),
-  role: z.string().trim().min(1),
-  roleLabel: z.string().trim().min(1),
+  role: z.enum(roles),
+  roleLabel: z.string().trim().min(1).optional(),
   permissions: z.array(z.string()).default([]),
   avatarUrl: z.string().url().optional(),
 }).strip();
@@ -57,7 +57,7 @@ function readStoredSession(): AdminSession | null {
   try {
     const result = storedSessionSchema.safeParse(JSON.parse(raw));
     if (!result.success) return null;
-    return result.data as AdminSession;
+    return { ...result.data, roleLabel: roleLabels[result.data.role] } as AdminSession;
   } catch {
     return null;
   }

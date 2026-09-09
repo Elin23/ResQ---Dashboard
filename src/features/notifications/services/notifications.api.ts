@@ -1,5 +1,6 @@
 import type { AdminSession } from '@/features/auth/session';
 import { apiClient } from '@/services/api/client';
+import { resolveMediaUrl } from '@/lib/media-url';
 import type {
   BroadcastDetails, BroadcastDraftInput, BroadcastFilters, BroadcastListResult,
   BroadcastNotification, NotificationAudience, NotificationDeliveryStatus,
@@ -34,7 +35,7 @@ function broadcast(v: unknown): BroadcastNotification {
   const r=rec(v), creator=rec(r.createdBy ?? r.creator ?? r.admin), stats=rec(r.statistics ?? r.stats);
   return {
     id:id(r.id,r.broadcastId,r.notificationId), title:str(r.title) ?? '', body:str(r.body,r.message) ?? '',
-    channels: channels(r.channels), audience: audience(r.audience), deepLink:str(r.deepLink,r.deepLinkUrl), imageUrl:str(r.imageUrl,r.image),
+    channels: channels(r.channels), audience: audience(r.audience), deepLink:str(r.deepLink,r.deepLinkUrl), imageUrl:resolveMediaUrl(str(r.imageUrl,r.image)) || undefined,
     status:normalizeStatus(r.status), scheduledAt:iso(r.scheduledAt), sentAt:iso(r.sentAt),
     createdBy:{ id:id(creator.id,creator.userId,r.createdById), name:str(creator.name,creator.fullName,r.createdByName) ?? 'الإدارة' },
     statistics: Object.keys(stats).length ? { targetedCount:num(stats.targetedCount,stats.targetCount) ?? 0, sentCount:num(stats.sentCount), failedCount:num(stats.failedCount), openedCount:num(stats.openedCount) } : undefined,

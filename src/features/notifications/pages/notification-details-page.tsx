@@ -1,3 +1,4 @@
+import { getUserErrorMessage } from '@/lib/user-error-message';
 import { useState } from 'react';
 import { Ban, CalendarClock, Copy, ExternalLink, Send } from 'lucide-react';
 import { Link, useNavigate, useParams } from 'react-router';
@@ -47,7 +48,7 @@ export function NotificationDetailsPage() {
     return (
       <ErrorState
         title="تعذر تحميل الإشعار"
-        description={query.error.message}
+        description={getUserErrorMessage(query.error)}
         onRetry={() => void query.refetch()}
       />
     );

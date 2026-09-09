@@ -1,4 +1,5 @@
 import { apiClient } from '@/services/api/client';
+import { resolveMediaUrl } from '@/lib/media-url';
 import type {
   Organization,
   OrganizationAssignmentOption,
@@ -34,7 +35,7 @@ function status(value: unknown): Organization['status'] {
   const raw = String(value ?? '').toUpperCase();
   if (raw.includes('SUSPEND')) return 'SUSPENDED';
   if (raw.includes('REJECT')) return 'REJECTED';
-  if (raw.includes('ACTIVE') || raw.includes('APPROV') || raw === '2') return 'ACTIVE';
+  if (raw.includes('ACTIVE') || raw.includes('APPROV') || raw === '1') return 'ACTIVE';
   return 'PENDING_VERIFICATION';
 }
 
@@ -60,11 +61,11 @@ function normalizeOrganization(value: unknown): Organization {
     name: str(item.name, item.organizationName, item.nameAr) ?? 'جمعية',
     shortName: str(item.shortName),
     description: str(item.description, item.bio),
-    logoUrl: str(item.logoUrl, item.logo, item.imageUrl),
-    coverImageUrl: str(item.coverImageUrl, item.coverUrl),
+    logoUrl: resolveMediaUrl(str(item.logoUrl, item.logo, item.imageUrl)) || undefined,
+    coverImageUrl: resolveMediaUrl(str(item.coverImageUrl, item.coverUrl)) || undefined,
     status: status(item.status ?? item.organizationStatus),
     verificationStatus: verification(item.verificationStatus ?? item.reviewStatus),
-    registrationNumber: str(item.registrationNumber, item.registerNumber),
+    registrationNumber: str(item.registrationNumber, item.registerNumber, item.organizationNumber),
     licenseNumber: str(item.licenseNumber),
     foundedYear: num(item.foundedYear, item.establishedYear),
     governorate: str(item.governorate, item.governorateName, rec(item.governorate).name, rec(item.governorate).nameAr, location.governorateName) ?? '',
@@ -72,9 +73,9 @@ function normalizeOrganization(value: unknown): Organization {
     address: str(item.address, location.address) ?? '',
     latitude: num(item.latitude, location.latitude),
     longitude: num(item.longitude, location.longitude),
-    phone: str(item.phone, item.phoneNumber, primary.phone) ?? '',
-    email: str(item.email, primary.email) ?? '',
-    website: str(item.website),
+    phone: str(item.phone, item.phoneNumber, primary.phone, location.phone) ?? '',
+    email: str(item.email, primary.email, location.email) ?? '',
+    website: str(item.website, item.webSite, location.website, location.webSite),
     primaryContact: {
       name: str(primary.name, primary.fullName, item.contactName) ?? '',
       role: str(primary.role, primary.position, item.contactRole) ?? '',
@@ -98,7 +99,7 @@ function normalizeOrganization(value: unknown): Organization {
         id: ident(row.id, row.documentId),
         type: String(row.type ?? 'OTHER').toUpperCase() as Organization['documents'][number]['type'],
         name: str(row.name, row.fileName) ?? 'مستند',
-        url: str(row.url, row.fileUrl) ?? '',
+        url: resolveMediaUrl(str(row.url, row.fileUrl)),
         status: String(row.status ?? 'PENDING').toUpperCase() as Organization['documents'][number]['status'],
         uploadedAt: str(row.uploadedAt, row.createdAt, row.creationTime) ?? createdAt,
         reviewedAt: str(row.reviewedAt),
@@ -139,8 +140,8 @@ function summary(payload: unknown): OrganizationSummary {
   const body = rec(unwrap(payload));
   return {
     total: num(body.total, body.totalOrganizations) ?? 0,
-    pendingVerification: num(body.pendingVerification, body.pending, body.pendingOrganizations) ?? 0,
-    active: num(body.active, body.activeOrganizations) ?? 0,
+    pendingVerification: num(body.pendingVerification, body.pendingReview, body.pending, body.pendingOrganizations) ?? 0,
+    active: num(body.active, body.approved, body.activeOrganizations) ?? 0,
     suspended: num(body.suspended, body.suspendedOrganizations) ?? 0,
     withActiveReports: num(body.withActiveReports, body.organizationsWithActiveReports) ?? 0,
   };
@@ -153,7 +154,7 @@ function details(payload: unknown): OrganizationDetails | null {
   const orgSource = body.organization ?? body;
   const review = rec(body.review ?? body.verificationReview);
   return {
-    organization: normalizeOrganization(orgSource),
+    organization: normalizeOrganization({ ...rec(orgSource), documents: body.documents ?? rec(orgSource).documents }),
     review: {
       reviewer: Object.keys(rec(review.reviewer)).length ? {
         id: ident(rec(review.reviewer).id),
@@ -208,6 +209,13 @@ function qs(filters: OrganizationFilters): string {
   const params = new URLSearchParams();
   if (filters.search.trim()) params.set('search', filters.search.trim());
   if (filters.status) params.set('status', filters.status);
+  if (filters.verificationStatus) params.set('verificationStatus', filters.verificationStatus);
+  if (filters.activeReports) params.set('activeReports', filters.activeReports);
+  if (filters.governorate && /^\d+$/.test(filters.governorate)) params.set('governorateId', filters.governorate);
+  if (filters.dateFrom) params.set('dateFrom', filters.dateFrom);
+  if (filters.dateTo) params.set('dateTo', filters.dateTo);
+  if (filters.sortBy) params.set('sortBy', filters.sortBy);
+  if (filters.sortDirection) params.set('sortDirection', filters.sortDirection);
   params.set('page', String(filters.page));
   params.set('pageSize', String(filters.pageSize));
   return params.toString();

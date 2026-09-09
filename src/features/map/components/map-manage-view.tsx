@@ -66,7 +66,7 @@ export function MapManageView({ entities }: { entities: MapEntity[] }) {
                                 variant="secondary"
                                 disabled={toggle.isPending}
                                 onClick={() =>
-                                  toggle.mutate(item.id, {
+                                  toggle.mutate(item.sourceId, {
                                     onSuccess: () => toast.success(item.metadata.status === 'ACTIVE' ? 'تم إيقاف المكان.' : 'تمت إعادة تفعيل المكان.'),
                                     onError: () => toast.error('تعذر تحديث حالة المكان.'),
                                   })
@@ -111,7 +111,7 @@ export function MapManageView({ entities }: { entities: MapEntity[] }) {
         destructive
         onConfirm={() =>
           deleting &&
-          remove.mutate(deleting.id, {
+          remove.mutate(deleting.sourceId, {
             onSuccess: () => {
               toast.success('تم حذف المكان.');
               setDeleting(undefined);

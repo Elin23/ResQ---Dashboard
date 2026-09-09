@@ -1,3 +1,4 @@
+import { getUserErrorMessage } from '@/lib/user-error-message';
 import { Clock3, PauseCircle, ShieldCheck, UserCheck, UserPlus, UsersRound } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { useSearchParams } from 'react-router';
@@ -60,7 +61,7 @@ export function AdminUsersPage() {
     return (
       <ErrorState
         title="تعذر تحميل المسؤولين"
-        description={query.error.message}
+        description={getUserErrorMessage(query.error)}
         onRetry={() => void query.refetch()}
       />
     );

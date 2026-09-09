@@ -39,9 +39,32 @@ function region(value: unknown): RegionRecord {
 }
 
 function normalizeCatalog(payload: unknown, includeInactive: boolean): LocationCatalog {
-  const body = rec(unwrap(payload));
-  const governorates = arr(body.governorates ?? body.governorateList ?? body.items).map(governorate);
-  const regions = arr(body.regions ?? body.areas ?? body.areaList).map(region);
+  const raw = unwrap(payload);
+  const body = rec(raw);
+
+  // The dashboard endpoint returns an array of governorates with nested `regions`.
+  // Older adapters only handled a flat object, which caused selected regions to lose
+  // their governorate id and made the map form reject valid approved areas.
+  const rawGovernorates = Array.isArray(raw)
+    ? raw
+    : arr(body.governorates ?? body.governorateList ?? body.items);
+
+  const governorates = rawGovernorates.map(governorate);
+
+  const nestedRegions = rawGovernorates.flatMap((entry) => {
+    const gov = rec(entry);
+    const governorateId = ident(gov.id, gov.governorateId);
+    return arr(gov.regions ?? gov.areas).map((value) => ({
+      ...rec(value),
+      governorateId: ident(rec(value).governorateId, governorateId),
+    }));
+  });
+
+  const flatRegions = arr(body.regions ?? body.areas ?? body.areaList);
+  const regions = [...flatRegions, ...nestedRegions]
+    .map(region)
+    .filter((item, index, all) => item.id && all.findIndex((other) => other.id === item.id) === index);
+
   return {
     governorates: includeInactive ? governorates : governorates.filter((item) => item.isActive),
     regions: includeInactive ? regions : regions.filter((item) => item.isActive),

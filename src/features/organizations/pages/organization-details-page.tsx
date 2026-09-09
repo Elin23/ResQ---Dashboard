@@ -1,3 +1,4 @@
+import { getUserErrorMessage } from '@/lib/user-error-message';
 import { useState } from 'react';
 import { CheckCircle2, ClipboardCheck, Info, PauseCircle, PlayCircle, XCircle } from 'lucide-react';
 import { useParams } from 'react-router';
@@ -48,7 +49,7 @@ export function OrganizationDetailsPage() {
     return (
       <ErrorState
         title="تعذر تحميل الجمعية"
-        description={query.error.message}
+        description={getUserErrorMessage(query.error)}
         onRetry={() => void query.refetch()}
       />
     );

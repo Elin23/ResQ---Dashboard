@@ -1,4 +1,5 @@
 import { apiClient } from '@/services/api/client';
+import { resolveMediaUrl } from '@/lib/media-url';
 import type {
   DonationArchiveAnalyticsFilters,
   DonationArchiveAnalyticsRecord,
@@ -30,7 +31,7 @@ function status(v: unknown): DonationCampaignStatus {
   return 'PENDING_REVIEW';
 }
 function media(v: unknown, campaignId: string, index: number) {
-  const x = rec(v); const url = str(x.url, x.fileUrl, x.imageUrl, typeof v === 'string' ? v : undefined) ?? '';
+  const x = rec(v); const url = resolveMediaUrl(str(x.url, x.fileUrl, x.imageUrl, typeof v === 'string' ? v : undefined));
   return { id: id(x.id, x.mediaId, `${campaignId}-${index}`), type: 'IMAGE' as const, url, alt: str(x.alt, x.altText, x.caption) ?? 'صورة حملة التبرع' };
 }
 function campaign(v: unknown): DonationCampaign {
@@ -59,7 +60,7 @@ function donor(v: unknown): DonationArchiveEntry { const x = rec(v); const anony
 function event(v: unknown, fallbackId: string): DonationCampaignTimelineEvent { const x = rec(v); return { id: id(x.id, x.eventId, `${fallbackId}-${Math.random()}`), title: str(x.title, x.action, x.event) ?? 'تحديث الحملة', actor: str(x.actor, x.actorName, rec(x.actor).name), timestamp: str(x.timestamp, x.createdAt, x.creationTime) ?? now(), details: str(x.details, x.description, x.note), tone: str(x.tone) as DonationCampaignTimelineEvent['tone'] }; }
 function details(payload: unknown): DonationCampaignDetails | null { const raw = unwrap(payload); if (raw == null) return null; const b = rec(raw); const c = campaign(b.campaign ?? b); return { campaign: c, donors: arr(b.donors ?? b.donations ?? b.archive).map(donor), timeline: arr(b.timeline ?? b.events ?? b.activity).map((v) => event(v, c.id)) }; }
 function summary(payload: unknown): DonationSummary { const b = rec(unwrap(payload)); const totalAmount = num(b.totalAmountMinor, b.totalAmount, b.totalDonations, rec(b.total).amountMinor) ?? 0; const monthAmount = num(b.thisMonthAmountMinor, b.thisMonthAmount, b.monthTotal, rec(b.thisMonth).amountMinor) ?? 0; return { total: totalAmount ? [{ currency: 'SYP', amountMinor: totalAmount }] : [], thisMonth: monthAmount ? [{ currency: 'SYP', amountMinor: monthAmount }] : [], completed: num(b.completed, b.completedDonations, b.completedCount) ?? 0, pending: num(b.pending, b.pendingCount) ?? 0, publishedCampaigns: num(b.publishedCampaigns, b.publishedCount, b.activeCampaigns) ?? 0, donorCount: num(b.donorCount, b.donorsCount, b.totalDonors) ?? 0 }; }
-function qs(filters: DonationCampaignFilters) { const q = new URLSearchParams(); if (filters.search.trim()) q.set('search', filters.search.trim()); if (filters.status) q.set('status', filters.status); if (filters.organizationId && /^\d+$/.test(filters.organizationId)) q.set('organizationId', filters.organizationId); q.set('page', String(filters.page)); q.set('pageSize', String(filters.pageSize)); return q.toString(); }
+function qs(filters: DonationCampaignFilters) { const q = new URLSearchParams(); if (filters.search.trim()) q.set('search', filters.search.trim()); const statusMap: Record<DonationCampaignStatus, string> = { PENDING_REVIEW: '1', PUBLISHED: '2', CLOSED: '4', REJECTED: '5', DELETED: '' }; if (filters.status && filters.status !== 'DELETED') q.set('status', statusMap[filters.status]); if (filters.organizationId && /^\d+$/.test(filters.organizationId)) q.set('organizationId', filters.organizationId); if (filters.dateFrom) q.set('dateFrom', filters.dateFrom); if (filters.dateTo) q.set('dateTo', filters.dateTo); if (filters.sortBy) q.set('sortBy', filters.sortBy); if (filters.sortDirection) q.set('sortDirection', filters.sortDirection); q.set('page', String(filters.page)); q.set('pageSize', String(filters.pageSize)); return q.toString(); }
 
 export async function getDonationCampaigns(filters: DonationCampaignFilters, signal?: AbortSignal) { return list(await apiClient.get<unknown>(`/api/dashboard/donation-campaigns?${qs(filters)}`, signal), filters); }
 export async function getDonationSummary(_filters?: Partial<DonationCampaignFilters>, signal?: AbortSignal) { return summary(await apiClient.get<unknown>('/api/dashboard/donation-campaigns/summary', signal)); }

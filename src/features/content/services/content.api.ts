@@ -1,5 +1,6 @@
 import type { AdminSession } from '@/features/auth/session';
 import { apiClient } from '@/services/api/client';
+import { resolveMediaUrl } from '@/lib/media-url';
 import type {
   Article,
   ArticleCategory,
@@ -19,6 +20,7 @@ import type {
 type R = Record<string, unknown>;
 type EditorialKind = 'article' | 'story' | 'awareness';
 type EditorialItem = Article | SuccessStory | AwarenessContent;
+const apiKind = (kind: EditorialKind) => kind === 'story' ? 'success-story' : kind;
 
 const rec = (value: unknown): R => value && typeof value === 'object' && !Array.isArray(value) ? value as R : {};
 const arr = (value: unknown): unknown[] => Array.isArray(value) ? value : [];
@@ -74,7 +76,7 @@ function normalizeBase(value: unknown) {
     slug: str(x.slug) ?? '',
     content: str(x.body, x.content, x.description) ?? '',
     summary: str(x.excerpt, x.summary, x.description) ?? '',
-    coverImageUrl: str(x.coverImageUrl, x.imageUrl, x.coverUrl),
+    coverImageUrl: resolveMediaUrl(str(x.coverImageUrl, x.imageUrl, x.coverUrl)) || undefined,
     coverAltText: str(x.coverAltText, x.imageAlt, x.title),
     status: normalizeStatus(x.status),
     author: normalizeAuthor(x.author ?? x.creator ?? x.createdBy, x),
@@ -127,7 +129,7 @@ function normalizeStory(value: unknown): SuccessStory {
       return {
         id: identifier(m.id, `${base.id}-MEDIA-${index + 1}`),
         type: 'IMAGE' as const,
-        url: str(m.url, m.imageUrl) ?? '',
+        url: resolveMediaUrl(str(m.url, m.imageUrl)),
         altText: str(m.altText, m.caption, base.title) ?? base.title,
         caption: str(m.caption),
       };
@@ -291,7 +293,7 @@ export async function getContentOverview(signal?: AbortSignal) {
 }
 
 export async function getEditorialRecord(kind: EditorialKind, id: string, signal?: AbortSignal) {
-  return normalizeRecord(kind, await apiClient.get<unknown>(`/api/dashboard/content/${encodeURIComponent(kind)}/${encodeURIComponent(id)}`, signal));
+  return normalizeRecord(kind, await apiClient.get<unknown>(`/api/dashboard/content/${encodeURIComponent(apiKind(kind))}/${encodeURIComponent(id)}`, signal));
 }
 
 export async function saveEditorial(kind: EditorialKind, id: string | undefined, input: EditorialInput, _actor: AdminSession, status: ContentStatus = 'DRAFT') {
@@ -306,8 +308,8 @@ export async function saveEditorial(kind: EditorialKind, id: string | undefined,
     scheduledAt: input.scheduledAt ?? null,
   };
   const payload = id
-    ? await apiClient.patch<unknown>(`/api/dashboard/content/${encodeURIComponent(kind)}/${encodeURIComponent(id)}`, body)
-    : await apiClient.post<unknown>(`/api/dashboard/content/${encodeURIComponent(kind)}`, body);
+    ? await apiClient.patch<unknown>(`/api/dashboard/content/${encodeURIComponent(apiKind(kind))}/${encodeURIComponent(id)}`, body)
+    : await apiClient.post<unknown>(`/api/dashboard/content/${encodeURIComponent(apiKind(kind))}`, body);
   const item = normalizeItem(kind, unwrap(payload));
   if (status !== 'DRAFT' && item.id) {
     await changeContentStatus(kind, item.id, status, _actor, input.scheduledAt);
@@ -317,13 +319,13 @@ export async function saveEditorial(kind: EditorialKind, id: string | undefined,
 }
 
 export async function changeContentStatus(kind: EditorialKind, id: string, status: ContentStatus, _actor: AdminSession, scheduledAt?: string) {
-  const payload = await apiClient.patch<unknown>(`/api/dashboard/content/${encodeURIComponent(kind)}/${encodeURIComponent(id)}/status`, { status, scheduledAt: scheduledAt ?? null });
+  const payload = await apiClient.patch<unknown>(`/api/dashboard/content/${encodeURIComponent(apiKind(kind))}/${encodeURIComponent(id)}/status`, { status, scheduledAt: scheduledAt ?? null });
   if (payload !== undefined) return normalizeItem(kind, unwrap(payload));
   return (await getEditorialRecord(kind, id))?.item;
 }
 
 export async function addEditorialNote(kind: EditorialKind, id: string, noteText: string, _actor: AdminSession) {
-  const payload = await apiClient.post<unknown>(`/api/dashboard/content/${encodeURIComponent(kind)}/${encodeURIComponent(id)}/notes`, { note: noteText });
+  const payload = await apiClient.post<unknown>(`/api/dashboard/content/${encodeURIComponent(apiKind(kind))}/${encodeURIComponent(id)}/notes`, { note: noteText });
   return payload === undefined ? undefined : note(unwrap(payload), 0);
 }
 

@@ -1,3 +1,4 @@
+import { getUserErrorMessage } from '@/lib/user-error-message';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { ColumnDef } from '@tanstack/react-table';
 import { AlertTriangle, ChevronDown, ChevronUp, ExternalLink, MoreHorizontal, ShieldCheck, UserPlus } from 'lucide-react';
@@ -158,7 +159,7 @@ export function InviteAdminDialog({ open, onOpenChange }: { open: boolean; onOpe
       reset();
       onOpenChange(false);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'تعذر إنشاء الدعوة.');
+      toast.error(getUserErrorMessage(e, 'تعذر إنشاء الدعوة.'));
     }
   });
 
@@ -261,7 +262,7 @@ export function AdminStatusActions({ admin, currentAdminId }: { admin: AdminUser
               await reactivate.mutateAsync(admin.id);
               toast.success('تمت إعادة تفعيل المسؤول.');
             } catch (e) {
-              toast.error(e instanceof Error ? e.message : 'تعذر التفعيل.');
+              toast.error(getUserErrorMessage(e, 'تعذر التفعيل.'));
             }
           }}
         >
@@ -296,7 +297,7 @@ export function AdminStatusActions({ admin, currentAdminId }: { admin: AdminUser
                     reset();
                     setOpen(false);
                   } catch (e) {
-                    toast.error(e instanceof Error ? e.message : 'تعذر التعليق.');
+                    toast.error(getUserErrorMessage(e, 'تعذر التعليق.'));
                   }
                 })()
               }
@@ -379,7 +380,7 @@ export function AdminRolesEditor({ admin }: { admin: AdminUser }) {
             });
             toast.success('تم تحديث أدوار المسؤول.');
           } catch (e) {
-            toast.error(e instanceof Error ? e.message : 'تعذر تحديث الأدوار.');
+            toast.error(getUserErrorMessage(e, 'تعذر تحديث الأدوار.'));
           }
         }}
       >
@@ -501,7 +502,7 @@ export function CreateRoleDialog({ open, onOpenChange }: { open: boolean; onOpen
       reset();
       onOpenChange(false);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'تعذر إنشاء الدور.');
+      toast.error(getUserErrorMessage(e, 'تعذر إنشاء الدور.'));
     }
   });
 
@@ -596,7 +597,7 @@ export function RoleEditor({ role }: { role: AdminRoleRecord }) {
       toast.success('تم تحديث الدور وتسجيل التغيير في سجل النشاط.');
       setConfirm(false);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'تعذر تحديث الدور.');
+      toast.error(getUserErrorMessage(e, 'تعذر تحديث الدور.'));
     }
   };
 

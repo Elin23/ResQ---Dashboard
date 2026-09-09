@@ -1,3 +1,4 @@
+import { getUserErrorMessage } from '@/lib/user-error-message';
 import { useState } from 'react';
 import { CheckCircle2, Trash2, XCircle } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router';
@@ -48,7 +49,7 @@ export function AdoptionRequestDetailsPage() {
     return (
       <ErrorState
         title="تعذر تحميل عرض التبني"
-        description={query.error.message}
+        description={getUserErrorMessage(query.error)}
         onRetry={() => void query.refetch()}
       />
     );

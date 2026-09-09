@@ -2,7 +2,7 @@ import { Bell, LogOut, Menu, Settings, UserRound, Volume2, VolumeX } from 'lucid
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';
 
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, IconButton } from '@/components/ui';
+import { ConfirmDialog, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, IconButton } from '@/components/ui';
 import { usePermission } from '@/features/auth/rbac';
 import { useSession } from '@/features/auth/session';
 import { useNotificationSummary } from '@/features/notifications/hooks';
@@ -30,6 +30,7 @@ export function Header({ onOpenSidebar }: { onOpenSidebar: () => void }) {
   const attentionCount = notificationSummary.data?.partiallySent ?? 0;
   const [acknowledgedAttentionCount, setAcknowledgedAttentionCount] = useState(0);
   const [soundEnabled, setSoundEnabled] = useState(() => isNotificationSoundEnabled());
+  const [logoutOpen, setLogoutOpen] = useState(false);
   const unreadAttentionCount = Math.max(0, attentionCount - acknowledgedAttentionCount);
 
   useEffect(() => {
@@ -69,8 +70,8 @@ export function Header({ onOpenSidebar }: { onOpenSidebar: () => void }) {
     }
   };
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate('/login', { replace: true });
   };
 
@@ -151,7 +152,7 @@ export function Header({ onOpenSidebar }: { onOpenSidebar: () => void }) {
                 </DropdownMenuItem>
               )}
 
-              <DropdownMenuItem className="text-critical data-[highlighted]:bg-critical/[0.07] data-[highlighted]:text-critical" onSelect={handleLogout}>
+              <DropdownMenuItem className="text-critical data-[highlighted]:bg-critical/[0.07] data-[highlighted]:text-critical" onSelect={() => setLogoutOpen(true)}>
                 <LogOut className="size-4" />
                 تسجيل الخروج
               </DropdownMenuItem>
@@ -159,6 +160,15 @@ export function Header({ onOpenSidebar }: { onOpenSidebar: () => void }) {
           </DropdownMenu>
         )}
       </div>
+      <ConfirmDialog
+        open={logoutOpen}
+        onOpenChange={setLogoutOpen}
+        title="تسجيل الخروج"
+        description="هل أنت متأكد أنك تريد تسجيل الخروج من لوحة الإدارة؟"
+        confirmLabel="تسجيل الخروج"
+        destructive
+        onConfirm={() => void handleLogout()}
+      />
     </header>
   );
 }

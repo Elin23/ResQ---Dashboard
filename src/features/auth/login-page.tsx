@@ -1,3 +1,4 @@
+import { getLoginErrorMessage } from '@/lib/user-error-message';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Eye, EyeOff, LoaderCircle, LogIn } from 'lucide-react';
 import { useState } from 'react';
@@ -65,7 +66,7 @@ export function LoginPage() {
     try {
       authenticated = await login(values.username, values.password, values.remember);
     } catch (error) {
-      setAuthError(error instanceof Error ? error.message : 'تعذر تسجيل الدخول. حاول مرة أخرى.');
+      setAuthError(getLoginErrorMessage(error));
       setIsLoggingIn(false);
       return;
     }

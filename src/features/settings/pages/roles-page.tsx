@@ -1,3 +1,4 @@
+import { getUserErrorMessage } from '@/lib/user-error-message';
 import type { ColumnDef } from '@tanstack/react-table';
 import { ExternalLink, MoreHorizontal, Plus } from 'lucide-react';
 import { useMemo, useState } from 'react';
@@ -72,7 +73,7 @@ export function RolesPage() {
     return (
       <ErrorState
         title="تعذر تحميل الأدوار"
-        description={query.error.message}
+        description={getUserErrorMessage(query.error)}
         onRetry={() => void query.refetch()}
       />
     );

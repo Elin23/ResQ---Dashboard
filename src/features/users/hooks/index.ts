@@ -120,8 +120,13 @@ export function useAddUserNote(id: string) {
   const actor = useActor();
   const append = useAppendUserNote(id);
 
+  const client = useQueryClient();
+
   return useMutation({
     mutationFn: (note: string) => addUserNote(id, note, actor),
-    onSuccess: append,
+    onSuccess: async (note) => {
+      append(note);
+      await client.invalidateQueries({ queryKey: userKeys.detail(id) });
+    },
   });
 }

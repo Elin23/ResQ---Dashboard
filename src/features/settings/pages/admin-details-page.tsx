@@ -1,3 +1,4 @@
+import { getUserErrorMessage } from '@/lib/user-error-message';
 import { Link, useParams } from 'react-router';
 
 import { Avatar, Badge, Card, ErrorState, PageHeader, Skeleton } from '@/components/ui';
@@ -19,7 +20,7 @@ export function AdminDetailsPage() {
     return (
       <ErrorState
         title="تعذر تحميل المسؤول"
-        description={query.error.message}
+        description={getUserErrorMessage(query.error)}
         onRetry={() => void query.refetch()}
       />
     );

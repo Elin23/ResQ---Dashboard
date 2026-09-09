@@ -1,3 +1,4 @@
+import { getUserErrorMessage } from '@/lib/user-error-message';
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { Pause, Play, Trash2 } from 'lucide-react';
@@ -22,7 +23,7 @@ export function AdvertisementDetailsPage() {
   }
 
   if (query.isError) {
-    return <ErrorState title="تعذر تحميل الإعلان" description={query.error.message} onRetry={() => void query.refetch()} />;
+    return <ErrorState title="تعذر تحميل الإعلان" description={getUserErrorMessage(query.error)} onRetry={() => void query.refetch()} />;
   }
 
   if (!query.data) {

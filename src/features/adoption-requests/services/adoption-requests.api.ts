@@ -1,4 +1,5 @@
 import { apiClient } from '@/services/api/client';
+import { resolveMediaUrl } from '@/lib/media-url';
 import type {
   AdoptionApplication,
   AdoptionInternalNote,
@@ -54,9 +55,14 @@ function normalizeRequest(value: unknown): AdoptionRequest {
       name: str(animalObj.name, item.animalName),
       species: species(animalObj.species ?? item.species ?? item.animalType),
       breed: str(animalObj.breed, item.breed),
-      sex: (() => { const raw = String(animalObj.sex ?? item.sex ?? 'UNKNOWN').toUpperCase(); return raw.includes('FEMALE') || raw === '2' ? 'FEMALE' : raw.includes('MALE') || raw === '1' ? 'MALE' : 'UNKNOWN'; })(),
+      sex: (() => { const raw = String(animalObj.sex ?? animalObj.gender ?? item.sex ?? item.gender ?? 'UNKNOWN').toUpperCase(); return raw.includes('FEMALE') || raw === '2' ? 'FEMALE' : raw.includes('MALE') || raw === '1' ? 'MALE' : 'UNKNOWN'; })(),
       estimatedAgeMonths: num(animalObj.estimatedAgeMonths, animalObj.ageMonths, item.ageMonths),
-      imageUrls: arr(animalObj.imageUrls ?? item.imageUrls ?? item.images ?? animalObj.images).map((x) => typeof x === 'string' ? x : str(rec(x).url, rec(x).imageUrl, rec(x).fileUrl) ?? '').filter(Boolean),
+      ageText: str(animalObj.age, item.age, item.animalAge),
+      healthStatus: str(animalObj.healthStatus, item.healthStatus),
+      vaccinated: typeof (animalObj.vaccinated ?? item.vaccinated) === 'boolean' ? Boolean(animalObj.vaccinated ?? item.vaccinated) : undefined,
+      freeOfInfectiousDiseases: typeof (animalObj.freeOfInfectiousDiseases ?? item.freeOfInfectiousDiseases) === 'boolean' ? Boolean(animalObj.freeOfInfectiousDiseases ?? item.freeOfInfectiousDiseases) : undefined,
+      veterinaryExamined: typeof (animalObj.veterinaryExamined ?? item.veterinaryExamined) === 'boolean' ? Boolean(animalObj.veterinaryExamined ?? item.veterinaryExamined) : undefined,
+      imageUrls: arr(animalObj.imageUrls ?? item.imageUrls ?? item.images ?? animalObj.images ?? item.media).map((x) => resolveMediaUrl(typeof x === 'string' ? x : str(rec(x).url, rec(x).imageUrl, rec(x).fileUrl))).filter(Boolean),
       description: str(animalObj.description, item.animalDescription, item.description) ?? '',
     },
     publisher: {
@@ -72,7 +78,7 @@ function normalizeRequest(value: unknown): AdoptionRequest {
     status: status(item.status ?? item.adStatus),
     submittedAt, updatedAt,
     reviewedAt: str(item.reviewedAt), completedAt: str(item.completedAt), publishedAt: str(item.publishedAt, item.approvedAt), rejectedAt: str(item.rejectedAt), adoptedAt: str(item.adoptedAt),
-    location: str(item.locationName, item.location, item.address, location.address, item.city, item.governorateName) ?? '',
+    location: str(item.locationName, item.location, item.address, location.address) ?? [str(item.governorateName), str(item.areaName, item.city)].filter(Boolean).join(' - '),
     requirements: str(item.requirements, item.adoptionRequirements), moderationReason: str(item.moderationReason, item.rejectionReason, item.reason),
     reviewer: Object.keys(rec(item.reviewer)).length ? { id: ident(rec(item.reviewer).id), name: str(rec(item.reviewer).name, rec(item.reviewer).fullName) ?? 'مسؤول' } : undefined,
     applicationsCount: num(item.applicationsCount, item.totalApplications) ?? 0,
@@ -91,7 +97,7 @@ function timeline(v: unknown): AdoptionTimelineEvent { const x = rec(v); const a
 function note(v: unknown): AdoptionInternalNote { const x = rec(v); const a = rec(x.admin ?? x.actor ?? x.createdBy); return { id: ident(x.id, x.noteId, crypto.randomUUID()), adminName: str(x.adminName, x.actorName, a.name, a.fullName) ?? 'مسؤول النظام', adminRole: str(x.adminRole, x.actorRole, a.role, a.roleName) ?? 'مسؤول', createdAt: str(x.createdAt, x.creationTime) ?? iso(), note: str(x.note, x.body, x.text) ?? '' }; }
 function normalizeDetails(payload: unknown): AdoptionRequestDetails | null { const raw = unwrap(payload); if (raw == null) return null; const b = rec(raw); return { request: normalizeRequest(b.request ?? b.adoptionRequest ?? b), applications: arr(b.applications ?? b.adoptionApplications).map(application), timeline: arr(b.timeline ?? b.activity ?? b.events).map(timeline), notes: arr(b.notes ?? b.internalNotes).map(note) }; }
 function statusParam(value?: AdoptionRequestStatus) { return value ? ({ PENDING_REVIEW: '1', PUBLISHED: '2', REJECTED: '3', ADOPTED: '4' } as const)[value] : undefined; }
-function qs(filters: AdoptionRequestFilters) { const p = new URLSearchParams(); if (filters.search.trim()) p.set('search', filters.search.trim()); const s = statusParam(filters.status); if (s) p.set('status', s); if (filters.city && /^\d+$/.test(filters.city)) p.set('governorateId', filters.city); p.set('page', String(filters.page)); p.set('pageSize', String(filters.pageSize)); return p.toString(); }
+function qs(filters: AdoptionRequestFilters) { const p = new URLSearchParams(); if (filters.search.trim()) p.set('search', filters.search.trim()); const s = statusParam(filters.status); if (s) p.set('status', s); if (filters.city && /^\d+$/.test(filters.city)) p.set('governorateId', filters.city); if (filters.species) p.set('species', filters.species); if (filters.publisherType) p.set('publisherType', filters.publisherType); if (filters.organizationId) p.set('organizationId', filters.organizationId); if (filters.userId) p.set('userId', filters.userId); if (filters.dateFrom) p.set('dateFrom', filters.dateFrom); if (filters.dateTo) p.set('dateTo', filters.dateTo); if (filters.sortBy) p.set('sortBy', filters.sortBy); if (filters.sortDirection) p.set('sortDirection', filters.sortDirection); p.set('page', String(filters.page)); p.set('pageSize', String(filters.pageSize)); return p.toString(); }
 
 export async function getAdoptionRequests(filters: AdoptionRequestFilters, signal?: AbortSignal) { return normalizeList(await apiClient.get<unknown>(`/api/dashboard/adoption-requests?${qs(filters)}`, signal), filters); }
 export async function getAdoptionRequestById(id: string, signal?: AbortSignal) { return normalizeDetails(await apiClient.get<unknown>(`/api/dashboard/adoption-requests/${encodeURIComponent(id)}`, signal)); }

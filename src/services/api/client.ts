@@ -42,7 +42,7 @@ function resolveUrl(path: string): string {
   return `${env.apiBaseUrl}${path.startsWith('/') ? path : `/${path}`}`;
 }
 
-async function readError(response: Response): Promise<ApiError> {
+async function readError(response: Response, path: string): Promise<ApiError> {
   const headerCorrelationId = response.headers.get('x-correlation-id') ?? undefined;
 
   try {
@@ -52,13 +52,24 @@ async function readError(response: Response): Promise<ApiError> {
         ? (payload.errors as Record<string, string[]>)
         : undefined;
 
+    const rawCode = typeof payload.code === 'string' ? payload.code : 'HTTP_ERROR';
+    const isLogin = /\/api\/dashboard\/auth\/login(?:$|\?)/u.test(path);
+    const message =
+      isLogin && response.status === 401
+        ? 'البريد الإلكتروني أو كلمة المرور غير صحيحة.'
+        : response.status === 401
+          ? 'انتهت جلسة تسجيل الدخول أو لم تعد صالحة. سجّل الدخول مرة أخرى.'
+          : response.status === 403
+            ? 'ليس لديك صلاحية لتنفيذ هذا الإجراء.'
+            : response.status === 404
+              ? 'تعذر العثور على البيانات المطلوبة.'
+              : response.status >= 500
+                ? 'حدث خطأ في الخادم. حاول مرة أخرى بعد قليل.'
+                : 'تعذر إتمام الطلب. راجع البيانات وحاول مرة أخرى.';
+
     return {
-      code: typeof payload.code === 'string' ? payload.code : 'HTTP_ERROR',
-      message:
-        (typeof payload.detail === 'string' && payload.detail) ||
-        (typeof payload.message === 'string' && payload.message) ||
-        (typeof payload.title === 'string' && payload.title) ||
-        'تعذر إتمام الطلب.',
+      code: rawCode,
+      message,
       status: response.status,
       fieldErrors,
       correlationId:
@@ -69,7 +80,18 @@ async function readError(response: Response): Promise<ApiError> {
   } catch {
     return {
       code: 'HTTP_ERROR',
-      message: 'تعذر إتمام الطلب.',
+      message:
+        response.status === 401
+          ? (/\/api\/dashboard\/auth\/login(?:$|\?)/u.test(path)
+              ? 'البريد الإلكتروني أو كلمة المرور غير صحيحة.'
+              : 'انتهت جلسة تسجيل الدخول أو لم تعد صالحة. سجّل الدخول مرة أخرى.')
+          : response.status === 403
+            ? 'ليس لديك صلاحية لتنفيذ هذا الإجراء.'
+            : response.status === 404
+              ? 'تعذر العثور على البيانات المطلوبة.'
+              : response.status >= 500
+                ? 'حدث خطأ في الخادم. حاول مرة أخرى بعد قليل.'
+                : 'تعذر إتمام الطلب. راجع البيانات وحاول مرة أخرى.',
       status: response.status,
       correlationId: headerCorrelationId,
     };
@@ -167,14 +189,26 @@ export const apiClient: ApiClient = {
         body: options.body === undefined ? undefined : JSON.stringify(options.body),
       });
 
-    let response = await execute(options.skipAuth ? null : getAccessToken());
+    let response: Response;
 
-    if (response.status === 401 && !options.skipAuth && !options.skipRefresh) {
-      const nextToken = await refreshAccessToken();
-      if (nextToken) response = await execute(nextToken);
+    try {
+      response = await execute(options.skipAuth ? null : getAccessToken());
+
+      if (response.status === 401 && !options.skipAuth && !options.skipRefresh) {
+        const nextToken = await refreshAccessToken();
+        if (nextToken) response = await execute(nextToken);
+      }
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') throw error;
+
+      throw new ApiClientError({
+        code: 'NETWORK_ERROR',
+        message: 'تعذر الاتصال بالخادم. تحقق من اتصال الإنترنت ثم حاول مرة أخرى.',
+        status: 0,
+      });
     }
 
-    if (!response.ok) throw new ApiClientError(await readError(response));
+    if (!response.ok) throw new ApiClientError(await readError(response, path));
     return parseSuccess<T>(response);
   },
 

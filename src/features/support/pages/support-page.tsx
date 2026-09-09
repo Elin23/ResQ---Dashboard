@@ -1,3 +1,4 @@
+import { getUserErrorMessage } from '@/lib/user-error-message';
 import { useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router';
 import { Button, EmptyState, ErrorState, PageHeader } from '@/components/ui';
@@ -172,7 +173,7 @@ export function SupportPage() {
       {q.isError ? (
         <ErrorState
           title="تعذر تحميل تذاكر الدعم"
-          description={q.error.message}
+          description={getUserErrorMessage(q.error)}
           onRetry={() => void q.refetch()}
         />
       ) : (

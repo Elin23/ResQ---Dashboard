@@ -32,6 +32,26 @@ export function AdoptionFilterBar({ filters, onChange, onClear, active }: { filt
         />
       </div>
 
+
+      <div className="w-full sm:w-auto sm:min-w-[150px]">
+        <Select
+          value={filters.species ?? 'ALL'}
+          onValueChange={(value) =>
+            onChange({
+              species: value === 'ALL' ? undefined : (value as AdoptionRequestFilters['species']),
+              page: 1,
+            })
+          }
+          options={[
+            { value: 'ALL', label: 'كل أنواع الحيوانات' },
+            { value: 'DOG', label: 'كلاب' },
+            { value: 'CAT', label: 'قطط' },
+            { value: 'BIRD', label: 'طيور' },
+            { value: 'OTHER', label: 'أخرى' },
+          ]}
+        />
+      </div>
+
       <div className="w-full sm:w-auto sm:min-w-[165px]">
         <Select
           value={filters.publisherType ?? 'ALL'}

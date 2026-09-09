@@ -1,3 +1,4 @@
+import { getUserErrorMessage } from '@/lib/user-error-message';
 import { useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router';
 import { Button, EmptyState, ErrorState, ExportMenuButton, PageHeader } from '@/components/ui';
@@ -129,7 +130,7 @@ export function OrganizationsPage() {
     return (
       <ErrorState
         title="تعذر تحميل الجمعيات"
-        description={query.error.message}
+        description={getUserErrorMessage(query.error)}
         onRetry={() => void query.refetch()}
       />
     );
@@ -220,7 +221,7 @@ export function OrganizationsPage() {
         pageCount={query.data?.pageCount ?? 1}
         filters={filters}
         loading={query.isLoading || (query.isFetching && !query.data)}
-        error={query.isError ? query.error.message : undefined}
+        error={query.isError ? getUserErrorMessage(query.error) : undefined}
         onRetry={() => void query.refetch()}
         onQueryChange={onState}
         emptyState={

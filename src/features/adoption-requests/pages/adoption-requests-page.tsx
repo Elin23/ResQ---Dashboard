@@ -1,3 +1,4 @@
+import { getUserErrorMessage } from '@/lib/user-error-message';
 import { useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router';
 
@@ -123,7 +124,7 @@ export function AdoptionRequestsPage() {
     return (
       <ErrorState
         title="تعذر تحميل عروض التبني"
-        description={query.error.message}
+        description={getUserErrorMessage(query.error)}
         onRetry={() => void query.refetch()}
       />
     );
@@ -243,7 +244,7 @@ export function AdoptionRequestsPage() {
         pageCount={query.data?.pageCount ?? 1}
         filters={filters}
         loading={query.isLoading || (query.isFetching && !query.data)}
-        error={query.isError ? query.error.message : undefined}
+        error={query.isError ? getUserErrorMessage(query.error) : undefined}
         onRetry={() => void query.refetch()}
         onQueryChange={onState}
         emptyState={empty}

@@ -1,3 +1,4 @@
+import { getUserErrorMessage } from '@/lib/user-error-message';
 import { ArrowUpRight, CheckCircle2, FolderInput, RefreshCcw, UserCheck } from 'lucide-react';
 import { useState } from 'react';
 import { useParams } from 'react-router';
@@ -48,7 +49,7 @@ export function SupportTicketDetailsPage() {
     return (
       <ErrorState
         title="تعذر تحميل التذكرة"
-        description={q.error.message}
+        description={getUserErrorMessage(q.error)}
         onRetry={() => void q.refetch()}
       />
     );
