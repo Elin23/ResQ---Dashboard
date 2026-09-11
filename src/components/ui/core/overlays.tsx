@@ -27,7 +27,7 @@ export function DropdownMenuContent({
         align={align}
         sideOffset={8}
         className={cn(
-          'resq-popover z-50 min-w-48 rounded-xl border border-border/80 bg-surface p-1.5 shadow-overlay',
+          'resq-popover z-[2100] min-w-48 rounded-xl border border-border/80 bg-surface p-1.5 shadow-overlay',
           className,
         )}
       >
@@ -143,11 +143,11 @@ export function Modal({
       onOpenChange={onOpenChange}
     >
       <DialogPrimitive.Portal>
-        <DialogPrimitive.Overlay className="resq-dialog-overlay fixed inset-0 z-50 bg-brown/35" />
+        <DialogPrimitive.Overlay className="resq-dialog-overlay fixed inset-0 z-[2000] bg-brown/35" />
 
         <DialogPrimitive.Content
           dir="rtl"
-          className="resq-dialog-content fixed left-1/2 top-1/2 z-50 max-h-[min(88dvh,48rem)] w-[min(92vw,36rem)] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-xl border border-border/50 bg-white p-5 shadow-lg"
+          className="resq-dialog-content fixed left-1/2 top-1/2 z-[2010] max-h-[min(88dvh,48rem)] w-[min(92vw,36rem)] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-xl border border-border/50 bg-white p-5 shadow-lg"
         >
           <div className="pe-8">
             <DialogPrimitive.Title className="text-[15px] font-semibold">
