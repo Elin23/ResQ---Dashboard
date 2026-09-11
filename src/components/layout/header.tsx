@@ -1,5 +1,6 @@
 import { Bell, LogOut, Menu, Settings, UserRound, Volume2, VolumeX } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 import { Link, useLocation, useNavigate } from 'react-router';
 
 import { ConfirmDialog, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, IconButton } from '@/components/ui';
@@ -72,6 +73,7 @@ export function Header({ onOpenSidebar }: { onOpenSidebar: () => void }) {
 
   const handleLogout = async () => {
     await logout();
+    toast.success('تم تسجيل الخروج بنجاح.');
     navigate('/login', { replace: true });
   };
 
@@ -166,6 +168,7 @@ export function Header({ onOpenSidebar }: { onOpenSidebar: () => void }) {
         title="تسجيل الخروج"
         description="هل أنت متأكد أنك تريد تسجيل الخروج من لوحة الإدارة؟"
         confirmLabel="تسجيل الخروج"
+        warningText="سيتم إنهاء جلستك الحالية وستحتاج إلى تسجيل الدخول مرة أخرى."
         destructive
         onConfirm={() => void handleLogout()}
       />

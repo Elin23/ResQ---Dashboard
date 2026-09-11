@@ -1,6 +1,7 @@
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { ChevronLeft, ChevronRight, LogOut, X } from 'lucide-react';
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { NavLink } from 'react-router';
 
 import { ConfirmDialog, IconButton, Tooltip } from '@/components/ui';
@@ -45,6 +46,7 @@ function SidebarContent({ collapsed, mobile, onToggleCollapsed, onNavigate, onCl
   const [logoutOpen, setLogoutOpen] = useState(false);
   const handleLogout = async () => {
     await logout();
+    toast.success('تم تسجيل الخروج بنجاح.');
   };
   const visibleGroups = routeGroups
     .map((group) => ({
@@ -154,6 +156,7 @@ function SidebarContent({ collapsed, mobile, onToggleCollapsed, onNavigate, onCl
         title="تسجيل الخروج"
         description="هل أنت متأكد أنك تريد تسجيل الخروج من لوحة الإدارة؟"
         confirmLabel="تسجيل الخروج"
+        warningText="سيتم إنهاء جلستك الحالية وستحتاج إلى تسجيل الدخول مرة أخرى."
         destructive
         onConfirm={() => void handleLogout()}
       />

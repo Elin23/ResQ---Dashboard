@@ -46,6 +46,10 @@ test('logout confirmation uses app dialog and never native confirm', async () =>
   assert.match(sidebar, /ConfirmDialog/);
   assert.doesNotMatch(header, /window\.confirm\s*\(/);
   assert.doesNotMatch(sidebar, /window\.confirm\s*\(/);
+  assert.match(header, /toast\.success\('تم تسجيل الخروج بنجاح\.'/);
+  assert.match(sidebar, /toast\.success\('تم تسجيل الخروج بنجاح\.'/);
+  assert.match(header, /warningText="سيتم إنهاء جلستك الحالية/);
+  assert.match(sidebar, /warningText="سيتم إنهاء جلستك الحالية/);
 });
 
 test('media URLs are normalized against backend base URL', async () => {

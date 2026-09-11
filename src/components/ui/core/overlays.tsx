@@ -193,6 +193,7 @@ export function ConfirmDialog({
   confirmLabel = 'تأكيد',
   onConfirm,
   destructive = false,
+  warningText = 'لا يمكن التراجع عن هذا الإجراء إذا كان نهائيًا.',
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -201,6 +202,7 @@ export function ConfirmDialog({
   confirmLabel?: string;
   onConfirm: () => void;
   destructive?: boolean;
+  warningText?: string;
 }) {
   return (
     <Modal
@@ -237,7 +239,7 @@ export function ConfirmDialog({
             : 'bg-muted',
         )}
       >
-        لا يمكن التراجع عن هذا الإجراء إذا كان نهائيًا.
+        {warningText}
       </div>
     </Modal>
   );
