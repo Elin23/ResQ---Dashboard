@@ -13,7 +13,7 @@ import { usePermission } from '@/features/auth/rbac';
 import { adminStatusLabels } from '../../constants';
 import { useCreateRole, useInviteAdmin, useReactivateAdmin, useRoles, useSuspendAdmin, useUpdateAdminRoles, useUpdateRole } from '../../hooks';
 import { inviteAdminSchema, roleSchema, suspendAdminSchema } from '../../schemas';
-import type { AdminFilters, AdminRoleRecord, AdminUser, CreateRoleInput, InviteAdminInput } from '../../types';
+import type { AdminFilters, AdminInvitationResult, AdminRoleRecord, AdminUser, CreateRoleInput, InviteAdminInput } from '../../types';
 import { formatAdminDate } from '../../utils';
 
 export function AdminStatusBadge({ status }: { status: AdminUser['status'] }) {
@@ -133,6 +133,7 @@ export function AdminUsersTable({ items, total, pageCount, filters, loading, onP
 export function InviteAdminDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
   const roles = useRoles();
   const mutation = useInviteAdmin();
+  const [invitation, setInvitation] = useState<AdminInvitationResult | null>(null);
 
   const {
     register,
@@ -144,7 +145,6 @@ export function InviteAdminDialog({ open, onOpenChange }: { open: boolean; onOpe
   } = useForm<InviteAdminInput>({
     resolver: zodResolver(inviteAdminSchema),
     defaultValues: {
-      fullName: '',
       email: '',
       roleIds: [],
     },
@@ -154,10 +154,9 @@ export function InviteAdminDialog({ open, onOpenChange }: { open: boolean; onOpe
 
   const submit = handleSubmit(async (v) => {
     try {
-      await mutation.mutateAsync(v);
-      toast.success('تم إنشاء دعوة المسؤول في البيانات التجريبية.');
-      reset();
-      onOpenChange(false);
+      const result = await mutation.mutateAsync(v);
+      setInvitation(result);
+      toast.success('تم إنشاء دعوة المسؤول. انسخ رمز الدعوة قبل إغلاق النافذة.');
     } catch (e) {
       toast.error(getUserErrorMessage(e, 'تعذر إنشاء الدعوة.'));
     }
@@ -166,22 +165,33 @@ export function InviteAdminDialog({ open, onOpenChange }: { open: boolean; onOpe
   return (
     <Modal
       open={open}
-      onOpenChange={onOpenChange}
+      onOpenChange={(next) => { if (!next) { setInvitation(null); reset(); } onOpenChange(next); }}
       title="دعوة مسؤول جديد"
       description="سيتم إنشاء حالة دعوة فقط. إرسال البريد وقبول الدعوة مسؤولية الخادم."
       footer={
-        <>
-          <Button variant="secondary" onClick={() => onOpenChange(false)}>
-            إلغاء
-          </Button>
-
-          <Button onClick={() => void submit()} disabled={mutation.isPending}>
-            <UserPlus className="size-4" />
-            إنشاء الدعوة
-          </Button>
-        </>
+        invitation ? (
+          <Button onClick={() => { setInvitation(null); reset(); onOpenChange(false); }}>تم</Button>
+        ) : (
+          <>
+            <Button variant="secondary" onClick={() => onOpenChange(false)}>إلغاء</Button>
+            <Button onClick={() => void submit()} disabled={mutation.isPending}>
+              <UserPlus className="size-4" />
+              إنشاء الدعوة
+            </Button>
+          </>
+        )
       }
     >
+      {invitation ? (
+        <div className="space-y-3">
+          <p className="text-sm text-muted-foreground">الخادم يعيد رمز الدعوة مرة واحدة. انسخه الآن وأرسله للمسؤول عبر قناة آمنة.</p>
+          <Input dir="ltr" readOnly value={invitation.token} />
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" variant="secondary" onClick={() => { void navigator.clipboard.writeText(invitation.token).then(() => toast.success('تم نسخ رمز الدعوة.')).catch(() => toast.error('تعذر نسخ الرمز تلقائيًا.')); }}>نسخ الرمز</Button>
+            <span className="text-xs text-muted-foreground">ينتهي: {formatAdminDate(invitation.expiresAt)}</span>
+          </div>
+        </div>
+      ) : (
       <form
         className="space-y-4"
         onSubmit={(e) => {
@@ -189,12 +199,6 @@ export function InviteAdminDialog({ open, onOpenChange }: { open: boolean; onOpe
           void submit();
         }}
       >
-        <label className="block text-sm font-semibold">
-          الاسم
-          <Input className="mt-1" {...register('fullName')} />
-          {errors.fullName && <span className="text-xs text-critical">{errors.fullName.message}</span>}
-        </label>
-
         <label className="block text-sm font-semibold">
           البريد الإلكتروني
           <Input dir="ltr" className="mt-1" {...register('email')} />
@@ -204,7 +208,7 @@ export function InviteAdminDialog({ open, onOpenChange }: { open: boolean; onOpe
         <fieldset className="space-y-2">
           <legend className="text-sm font-semibold">الأدوار</legend>
 
-          {roles.data?.map((r) => (
+          {roles.data?.filter((r) => r.name.toUpperCase() !== 'ADMIN').map((r) => (
             <Checkbox
               key={r.id}
               label={r.name}
@@ -212,9 +216,7 @@ export function InviteAdminDialog({ open, onOpenChange }: { open: boolean; onOpe
               onCheckedChange={(checked) =>
                 setValue(
                   'roleIds',
-                  checked
-                    ? [...selected, r.id]
-                    : selected.filter((id) => id !== r.id),
+                  checked ? [r.id] : [],
                   { shouldValidate: true },
                 )
               }
@@ -224,6 +226,7 @@ export function InviteAdminDialog({ open, onOpenChange }: { open: boolean; onOpe
           {errors.roleIds && <p className="text-xs text-critical">{errors.roleIds.message}</p>}
         </fieldset>
       </form>
+      )}
     </Modal>
   );
 }
@@ -346,7 +349,7 @@ export function AdminRolesEditor({ admin }: { admin: AdminUser }) {
       />
 
       <div className="mt-4 space-y-2">
-        {roles.data?.map((r) => (
+        {roles.data?.filter((r) => r.name.toUpperCase() !== 'ADMIN').map((r) => (
           <Checkbox
             key={r.id}
             checked={selected.includes(r.id)}
@@ -581,7 +584,7 @@ export function RoleEditor({ role }: { role: AdminRoleRecord }) {
       !role.permissions.includes(p.key),
   );
 
-  const readOnly = !canUpdate || role.systemRole === 'SUPER_ADMIN';
+  const readOnly = !canUpdate || role.system;
 
   const save = async () => {
     try {
@@ -639,9 +642,9 @@ export function RoleEditor({ role }: { role: AdminRoleRecord }) {
           </div>
         )}
 
-        {role.systemRole === 'SUPER_ADMIN' && (
+        {role.system && (
           <p className="mt-3 text-sm text-muted-foreground">
-            صلاحيات مدير النظام الشامل مقفلة في المحاكاة لحماية آخر مسار استرداد إداري.
+            هذا دور نظام محمي من الخادم؛ يمكن عرض صلاحياته لكن لا يمكن تعديلها من لوحة التحكم الحالية.
           </p>
         )}
       </Card>

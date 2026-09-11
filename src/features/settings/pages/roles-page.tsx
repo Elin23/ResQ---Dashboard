@@ -1,20 +1,16 @@
 import { getUserErrorMessage } from '@/lib/user-error-message';
 import type { ColumnDef } from '@tanstack/react-table';
-import { ExternalLink, MoreHorizontal, Plus } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { ExternalLink, MoreHorizontal } from 'lucide-react';
+import { useMemo } from 'react';
 import { useNavigate } from 'react-router';
-import { Badge, Button, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, ErrorState, IconButton, PageHeader } from '@/components/ui';
+import { Badge, Card, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, ErrorState, IconButton, PageHeader } from '@/components/ui';
 import { DataTable } from '@/components/ui/data-table';
-import { PermissionGuard } from '@/features/auth/rbac';
-import { CreateRoleDialog } from '../components/settings-components';
 import { useRoles } from '../hooks';
 import type { AdminRoleRecord } from '../types';
-import { formatAdminDate } from '../utils';
 
 export function RolesPage() {
   const query = useRoles();
   const navigate = useNavigate();
-  const [open, setOpen] = useState(false);
 
   const columns = useMemo<Array<ColumnDef<AdminRoleRecord, unknown>>>(
     () => [
@@ -29,20 +25,6 @@ export function RolesPage() {
         ),
       },
       {
-        id: 'description',
-        header: 'الوصف',
-        cell: ({ row }) => (
-          <span className="line-clamp-2 max-w-md text-[12px] text-muted-foreground">
-            {row.original.description}
-          </span>
-        ),
-      },
-      {
-        id: 'usersCount',
-        header: 'المسؤولون',
-        cell: ({ row }) => row.original.usersCount,
-      },
-      {
         id: 'permissions',
         header: 'الصلاحيات',
         cell: ({ row }) => row.original.permissions.length,
@@ -54,15 +36,6 @@ export function RolesPage() {
           <Badge tone={row.original.system ? 'info' : 'neutral'}>
             {row.original.system ? 'نظام' : 'مخصص'}
           </Badge>
-        ),
-      },
-      {
-        id: 'updatedAt',
-        header: 'آخر تحديث',
-        cell: ({ row }) => (
-          <span className="whitespace-nowrap text-[12px] text-muted-foreground">
-            {formatAdminDate(row.original.updatedAt)}
-          </span>
         ),
       },
     ],
@@ -88,15 +61,11 @@ export function RolesPage() {
           { label: 'الإعدادات', href: '/settings' },
           { label: 'الأدوار والصلاحيات' },
         ]}
-        actions={
-          <PermissionGuard permission="roles.create">
-            <Button onClick={() => setOpen(true)}>
-              <Plus className="size-4" />
-              إنشاء دور
-            </Button>
-          </PermissionGuard>
-        }
       />
+
+      <Card className="rounded-xl border-border/45 bg-muted/20 p-4 text-sm text-muted-foreground shadow-none">
+        أدوار لوحة التحكم الحالية أدوار نظام محمية من الخادم. يمكن عرض صلاحياتها وتعيينها للمسؤولين، أما إنشاء أو تعديل أدوار مخصصة فغير متاح في عقد الباك الحالي.
+      </Card>
 
       {/* Each role opens into a dedicated permission editor. */}
       <DataTable
@@ -124,11 +93,6 @@ export function RolesPage() {
             </DropdownMenuContent>
           </DropdownMenu>
         )}
-      />
-
-      <CreateRoleDialog
-        open={open}
-        onOpenChange={setOpen}
       />
     </div>
   );

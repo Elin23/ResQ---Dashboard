@@ -23,15 +23,11 @@ export const addEmergencyContact=(i:Omit<SystemSettings['emergencyContacts'][num
 export const updateEmergencyContact=(i:SystemSettings['emergencyContacts'][number],a:Actor)=>env.dataSource==='api'?api.updateEmergencyContact(i):mock.updateEmergencyContact(i,a);
 export const deleteEmergencyContact=(id:string,a:Actor)=>env.dataSource==='api'?api.deleteEmergencyContact(id):mock.deleteEmergencyContact(id,a);
 export const updateBackupSettings=(i:SystemSettings['backup'],a:Actor)=>env.dataSource==='api'?api.updateBackupSettings(i):mock.updateBackupSettings(i,a);
-export interface CreatedSystemBackup { fileName: string; payload: string; }
+export interface CreatedSystemBackup { fileName?: string; payload?: string; requested?: boolean; }
 export async function createSystemBackup(a:Actor):Promise<CreatedSystemBackup | undefined>{
   if(env.dataSource==='api'){
     const raw=await api.createSystemBackup();
-    if(raw && typeof raw==='object'){
-      const r=raw as Record<string,unknown>;
-      if(typeof r.fileName==='string' && typeof r.payload==='string') return {fileName:r.fileName,payload:r.payload};
-    }
-    return undefined;
+    return raw === undefined ? undefined : { requested: true };
   }
   const result=await mock.createSystemBackup(a);
   return {fileName:result.fileName,payload:result.payload};

@@ -6,8 +6,8 @@ import type { ReportFilters, ReportSummary } from '../types';
 
 const items = [
   {
-    key: 'todayCount' as const,
-    label: 'بلاغات اليوم',
+    key: 'totalCount' as const,
+    label: 'إجمالي البلاغات',
     icon: Inbox,
     tone: 'primary' as const,
     patch: {} satisfies Partial<ReportFilters>,
@@ -17,7 +17,7 @@ const items = [
     label: 'بدون جمعية',
     icon: UsersRound,
     tone: 'pending' as const,
-    patch: { organizationId: 'UNASSIGNED' } satisfies Partial<ReportFilters>,
+    patch: null,
   },
   {
     key: 'enRouteCount' as const,
@@ -27,8 +27,8 @@ const items = [
     patch: { status: 'EN_ROUTE' } satisfies Partial<ReportFilters>,
   },
   {
-    key: 'receivedTodayCount' as const,
-    label: 'تم استلامها اليوم',
+    key: 'receivedCount' as const,
+    label: 'تم استلامها',
     icon: CircleCheck,
     tone: 'success' as const,
     patch: { status: 'RECEIVED' } satisfies Partial<ReportFilters>,
@@ -60,7 +60,7 @@ export function ReportsSummaryCards({ summary, loading, onFilter }: { summary?: 
           value={summary[item.key].toLocaleString('ar-SA-u-nu-latn')}
           icon={item.icon}
           tone={item.tone}
-          onClick={() => onFilter({ ...item.patch, page: 1 })}
+          onClick={item.patch ? () => onFilter({ ...item.patch, page: 1 }) : undefined}
         />
       ))}
     </div>

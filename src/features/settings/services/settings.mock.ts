@@ -3,7 +3,7 @@ import { getRolePermissions, permissionDefinitions, replaceRolePermissions, role
 import { organizationServiceLabels } from '@/features/organizations/constants';
 import { animalTypeLabels } from '@/features/reports/constants';
 import { mockDelay } from '@/services/mock/delay';
-import type { AdminFilters, AdminListResult, AdminRoleRecord, AdminUser, CreateRoleInput, InviteAdminInput, LookupType, RegionRecord, SystemLookupItem, SystemSettings, UpdateAdminRolesInput, UpdateRoleInput } from '../types';
+import type { AdminFilters, AdminInvitationResult, AdminListResult, AdminRoleRecord, AdminUser, CreateRoleInput, InviteAdminInput, LookupType, RegionRecord, SystemLookupItem, SystemSettings, UpdateAdminRolesInput, UpdateRoleInput } from '../types';
 import { createRoleKey } from '../utils';
 
 type Actor = {
@@ -470,7 +470,7 @@ export async function inviteAdmin(input: InviteAdminInput, actor: Actor) {
 
   const admin: AdminUser = {
     id,
-    fullName: input.fullName,
+    fullName: input.email.split('@')[0] || input.email,
     email: input.email,
     status: 'INVITED',
     roles: input.roleIds.map(summary),
@@ -501,7 +501,8 @@ export async function inviteAdmin(input: InviteAdminInput, actor: Actor) {
     },
   });
 
-  return clone(admin);
+  const result: AdminInvitationResult = { id: `INV-${id}`, email: input.email, roleName: roleRecords.find((r) => r.id === input.roleIds[0])?.name ?? input.roleIds[0] ?? '', expiresAt: new Date(Date.now() + 3 * 86400000).toISOString(), token: `mock-${id}` };
+  return clone(result);
 }
 
 const activeSuperAdmins = () =>

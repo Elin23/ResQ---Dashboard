@@ -1019,20 +1019,19 @@ export async function getReports(
 }
 
 export interface ReportOperationalSnapshot {
+  totalCount: number;
   todayCount: number;
   unassignedCount: number;
   enRouteCount: number;
-  receivedTodayCount: number;
+  receivedCount: number;
 }
 
 export async function getReportOperationalSnapshot(): Promise<ReportOperationalSnapshot> {
   await mockDelay(60);
 
   return {
-    todayCount: reports.filter(
-      (report) =>
-        isTodayIso(report.createdAt),
-    ).length,
+    totalCount: reports.length,
+    todayCount: reports.filter((report) => isTodayIso(report.createdAt)).length,
 
     unassignedCount: reports.filter(
       (report) =>
@@ -1046,10 +1045,8 @@ export async function getReportOperationalSnapshot(): Promise<ReportOperationalS
         Boolean(report.assignedOrganization),
     ).length,
 
-    receivedTodayCount: reports.filter(
-      (report) =>
-        report.status === 'RECEIVED' &&
-        isTodayIso(report.updatedAt),
+    receivedCount: reports.filter(
+      (report) => report.status === 'RECEIVED',
     ).length,
   };
 }

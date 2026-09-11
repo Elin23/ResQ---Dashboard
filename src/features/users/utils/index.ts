@@ -23,4 +23,4 @@ export const formatUserRelative = (value: string) => {
 
 // Keep the active-filter state aligned with the filters that are actually visible in the users UI.
 export const hasUserFilters = (f: UserFilters) =>
-  Boolean(f.search || f.accountStatus || f.verificationStatus);
+  Boolean(f.search || f.accountStatus);

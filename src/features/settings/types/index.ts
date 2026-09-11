@@ -128,6 +128,7 @@ export interface SystemBackupExport {
 export interface GovernorateRecord {
   id: string;
   name: string;
+  nameEn?: string;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -137,6 +138,7 @@ export interface RegionRecord {
   id: string;
   governorateId: string;
   name: string;
+  nameEn?: string;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -160,9 +162,16 @@ export interface SystemSettings {
 }
 
 export interface InviteAdminInput {
-  fullName: string;
   email: string;
   roleIds: string[];
+}
+
+export interface AdminInvitationResult {
+  id: string;
+  email: string;
+  roleName: string;
+  expiresAt: string;
+  token: string;
 }
 
 export interface UpdateAdminRolesInput {

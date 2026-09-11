@@ -3,8 +3,10 @@ import type { SupportEscalationTeam, SupportRelatedResourceType, SupportTicketCa
 export const supportStatusLabels: Record<SupportTicketStatus, string> = {
   NEW: 'جديدة',
   OPEN: 'مفتوحة',
+  IN_PROGRESS: 'قيد المعالجة',
   WAITING_FOR_USER: 'بانتظار المستخدم',
   WAITING_FOR_INTERNAL: 'بانتظار إجراء داخلي',
+  ESCALATED: 'مصعّدة',
   RESOLVED: 'تم حلها',
   CLOSED: 'مغلقة',
 };
@@ -53,9 +55,11 @@ export const relatedResourceLabels: Record<SupportRelatedResourceType, string> =
 // Keep allowed workflow transitions explicit and centralized.
 export const allowedSupportTransitions: Record<SupportTicketStatus, readonly SupportTicketStatus[]> = {
   NEW: ['OPEN'],
-  OPEN: ['WAITING_FOR_USER', 'WAITING_FOR_INTERNAL', 'RESOLVED'],
+  OPEN: ['IN_PROGRESS', 'WAITING_FOR_USER', 'WAITING_FOR_INTERNAL', 'ESCALATED', 'RESOLVED'],
+  IN_PROGRESS: ['WAITING_FOR_USER', 'WAITING_FOR_INTERNAL', 'ESCALATED', 'RESOLVED'],
   WAITING_FOR_USER: ['OPEN', 'RESOLVED'],
-  WAITING_FOR_INTERNAL: ['OPEN', 'RESOLVED'],
+  WAITING_FOR_INTERNAL: ['OPEN', 'IN_PROGRESS', 'RESOLVED'],
+  ESCALATED: ['IN_PROGRESS', 'RESOLVED'],
   RESOLVED: ['CLOSED', 'OPEN'],
   CLOSED: ['OPEN'],
 };

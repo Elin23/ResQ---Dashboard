@@ -74,20 +74,7 @@ export function SupportPage() {
   const q = useSupportTickets(filters);
   const summary = useSupportSummary();
 
-  const active = Boolean(
-    filters.search ||
-      filters.status ||
-      filters.priority ||
-      filters.category ||
-      filters.requesterType ||
-      filters.assignee ||
-      filters.unassigned ||
-      filters.userId ||
-      filters.organizationId ||
-      filters.dateFrom ||
-      filters.dateTo ||
-      filters.waiting,
-  );
+  const active = Boolean(filters.search || filters.status || filters.priority);
 
   // Keep support filters synchronized with the URL.
   const update = useCallback(
@@ -114,33 +101,15 @@ export function SupportPage() {
 
   const summaryFilter = (key: string) => {
     if (key === 'URGENT') {
-      update({
-        priority: 'URGENT',
-        status: undefined,
-        page: 1,
-      });
-    } else if (key === 'UNASSIGNED') {
-      update({
-        unassigned: true,
-        assignee: undefined,
-        status: undefined,
-        page: 1,
-      });
-    } else {
-      update({
-        status: key as SupportFilters['status'],
-        priority: undefined,
-        unassigned: undefined,
-        page: 1,
-      });
+      update({ priority: 'URGENT', status: undefined, page: 1 });
+      return;
     }
+    update({ status: key as SupportFilters['status'], priority: undefined, page: 1 });
   };
 
   let empty = 'لا توجد تذاكر دعم حتى الآن.';
 
-  if (filters.unassigned) {
-    empty = 'لا توجد تذاكر غير مسندة حاليًا.';
-  } else if (filters.priority === 'URGENT') {
+  if (filters.priority === 'URGENT') {
     empty = 'لا توجد تذاكر عاجلة حاليًا.';
   } else if (active) {
     empty = 'لا توجد تذاكر تطابق عوامل التصفية الحالية.';

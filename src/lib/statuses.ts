@@ -42,6 +42,8 @@ export type SemanticStatus =
   | 'user:SUSPENDED'
   | 'user:BLOCKED'
   | 'user:DEACTIVATED'
+  | 'user:PENDING_VERIFICATION'
+  | 'user:REJECTED'
   | 'feeding-point:PENDING'
   | 'feeding-point:ACTIVE'
   | 'feeding-point:INACTIVE'
@@ -56,6 +58,8 @@ export type SemanticStatus =
   | 'entity:SUSPENDED'
   | 'support:NEW'
   | 'support:OPEN'
+  | 'support:IN_PROGRESS'
+  | 'support:ESCALATED'
   | 'support:WAITING_FOR_USER'
   | 'support:WAITING_FOR_INTERNAL'
   | 'support:RESOLVED'
@@ -129,6 +133,8 @@ export const statusCatalog: Record<string, Record<string, StatusMeta>> = {
     SUSPENDED: { label: 'معلق', tone: 'pending' },
     BLOCKED: { label: 'محظور', tone: 'critical' },
     DEACTIVATED: { label: 'معطل', tone: 'neutral' },
+    PENDING_VERIFICATION: { label: 'بانتظار التحقق', tone: 'pending' },
+    REJECTED: { label: 'مرفوض', tone: 'critical' },
   },
   'feeding-point': {
     PENDING: { label: 'بانتظار المراجعة', tone: 'pending' },
@@ -151,6 +157,8 @@ export const statusCatalog: Record<string, Record<string, StatusMeta>> = {
   support: {
     NEW: { label: 'جديدة', tone: 'pending' },
     OPEN: { label: 'مفتوحة', tone: 'info' },
+    IN_PROGRESS: { label: 'قيد المعالجة', tone: 'info' },
+    ESCALATED: { label: 'مصعّدة', tone: 'critical' },
     WAITING_FOR_USER: { label: 'بانتظار المستخدم', tone: 'pending' },
     WAITING_FOR_INTERNAL: { label: 'بانتظار إجراء داخلي', tone: 'pending' },
     RESOLVED: { label: 'تم الحل', tone: 'success' },
@@ -227,6 +235,8 @@ const semanticStatusMap: Record<SemanticStatus, StatusMeta> = {
   'user:SUSPENDED': statusCatalog.user?.SUSPENDED ?? { label: 'معلق', tone: 'pending' },
   'user:BLOCKED': statusCatalog.user?.BLOCKED ?? { label: 'محظور', tone: 'critical' },
   'user:DEACTIVATED': statusCatalog.user?.DEACTIVATED ?? { label: 'معطل', tone: 'neutral' },
+  'user:PENDING_VERIFICATION': statusCatalog.user?.PENDING_VERIFICATION ?? { label: 'بانتظار التحقق', tone: 'pending' },
+  'user:REJECTED': statusCatalog.user?.REJECTED ?? { label: 'مرفوض', tone: 'critical' },
 
   'feeding-point:PENDING': statusCatalog['feeding-point']?.PENDING ?? { label: 'بانتظار المراجعة', tone: 'pending' },
   'feeding-point:ACTIVE': statusCatalog['feeding-point']?.ACTIVE ?? { label: 'نشطة', tone: 'success' },
@@ -245,6 +255,8 @@ const semanticStatusMap: Record<SemanticStatus, StatusMeta> = {
 
   'support:NEW': statusCatalog.support?.NEW ?? { label: 'جديدة', tone: 'pending' },
   'support:OPEN': statusCatalog.support?.OPEN ?? { label: 'مفتوحة', tone: 'info' },
+  'support:IN_PROGRESS': statusCatalog.support?.IN_PROGRESS ?? { label: 'قيد المعالجة', tone: 'info' },
+  'support:ESCALATED': statusCatalog.support?.ESCALATED ?? { label: 'مصعّدة', tone: 'critical' },
   'support:WAITING_FOR_USER': statusCatalog.support?.WAITING_FOR_USER ?? { label: 'بانتظار المستخدم', tone: 'pending' },
   'support:WAITING_FOR_INTERNAL': statusCatalog.support?.WAITING_FOR_INTERNAL ?? { label: 'بانتظار إجراء داخلي', tone: 'pending' },
   'support:RESOLVED': statusCatalog.support?.RESOLVED ?? { label: 'تم الحل', tone: 'success' },

@@ -1,7 +1,7 @@
 import { getUserErrorMessage } from '@/lib/user-error-message';
 import { useCallback, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
-import { CircleCheck, CircleDollarSign, ExternalLink, FilePenLine, MoreHorizontal, PauseCircle, Plus, RotateCcw, Search } from 'lucide-react';
+import { CircleCheck, Clock3, ExternalLink, MoreHorizontal, PauseCircle, Plus, RotateCcw, Search } from 'lucide-react';
 import type { ColumnDef } from '@tanstack/react-table';
 import { Button, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, EmptyState, ErrorState, ExportMenuButton, IconButton, Input, Select } from '@/components/ui';
 import { SummaryCard, SummaryCardSkeleton } from '@/components/ui/summary-card';
@@ -12,7 +12,7 @@ import { advertisementPaymentMethodLabels, advertisementPlacementConfig, adverti
 import { useAdvertisements, useAdvertisementSummary } from '../hooks';
 import { AdvertisementStatusBadge } from '../components/advertisement-badges';
 import { AdvertisementCreateDialog } from '../components/advertisement-create-dialog';
-import { formatAdvertisementDate, formatAdvertisementMoney } from '../utils';
+import { formatAdvertisementDate } from '../utils';
 
 function read(params: URLSearchParams): AdvertisementFilters {
   const status = params.get('status');
@@ -44,28 +44,21 @@ function write(filters: AdvertisementFilters) {
   return params;
 }
 
-function Summary({ loading, active, paused, draft, unpaid }: { loading: boolean; active: number; paused: number; draft: number; unpaid: number }) {
+function Summary({ loading, active, paused, scheduled, pendingReview }: { loading: boolean; active: number; paused: number; scheduled: number; pendingReview: number }) {
   const items = [
     { key: 'active', label: 'منشورة', value: active, icon: CircleCheck, tone: 'success' as const },
     { key: 'paused', label: 'متوقفة', value: paused, icon: PauseCircle, tone: 'pending' as const },
-    { key: 'draft', label: 'مسودات', value: draft, icon: FilePenLine, tone: 'neutral' as const },
-    { key: 'unpaid', label: 'غير مسددة', value: unpaid, icon: CircleDollarSign, tone: 'critical' as const },
+    { key: 'scheduled', label: 'مجدولة', value: scheduled, icon: Clock3, tone: 'info' as const },
+    { key: 'pending', label: 'بانتظار المراجعة', value: pendingReview, icon: Clock3, tone: 'neutral' as const },
   ];
 
-  // Advertisement totals use the same KPI presentation as the rest of the dashboard.
   return (
     <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
       {items.map((item) =>
         loading ? (
           <SummaryCardSkeleton key={item.key} />
         ) : (
-          <SummaryCard
-            key={item.key}
-            label={item.label}
-            value={item.value.toLocaleString('ar-SA-u-nu-latn')}
-            icon={item.icon}
-            tone={item.tone}
-          />
+          <SummaryCard key={item.key} label={item.label} value={item.value.toLocaleString('ar-SA-u-nu-latn')} icon={item.icon} tone={item.tone} />
         ),
       )}
     </div>
@@ -126,41 +119,24 @@ export function AdvertisementsPage() {
         ),
       },
       {
-        id: 'owner',
-        header: 'صاحب الإعلان',
+        id: 'contact',
+        header: 'التواصل',
         enableSorting: false,
         cell: ({ row }) => (
           <div>
-            <p className="text-[12px] font-medium">
-              {row.original.ownerName}
-            </p>
-
-            <p
-              dir="ltr"
-              className="text-left text-[11px] text-muted-foreground"
-            >
-              {row.original.ownerPhone}
-            </p>
+            <p dir="ltr" className="text-left text-[12px] font-medium">{row.original.publicationPhone || '—'}</p>
+            <p dir="ltr" className="text-left text-[11px] text-muted-foreground">{row.original.publicationEmail || '—'}</p>
           </div>
         ),
       },
       {
-        id: 'financial',
-        header: 'الاتفاق المالي',
+        id: 'payment',
+        header: 'الدفع',
         enableSorting: false,
         cell: ({ row }) => (
           <div>
-            <p className="text-[12px] font-medium">
-              {formatAdvertisementMoney(row.original.agreedAmountMinor)}
-            </p>
-
-            <p className="text-[11px] text-muted-foreground">
-              {advertisementPaymentMethodLabels[row.original.paymentMethod]}
-            </p>
-
-            <p className={`text-[11px] ${row.original.paid ? 'text-success' : 'text-pending'}`}>
-              {row.original.paid ? 'تم التسديد' : 'غير مسدد'}
-            </p>
+            <p className="text-[12px] font-medium">{advertisementPaymentMethodLabels[row.original.paymentMethod]}</p>
+            <p className={`text-[11px] ${row.original.paid ? 'text-success' : 'text-pending'}`}>{row.original.paid ? 'مدفوع' : 'غير مدفوع'}</p>
           </div>
         ),
       },
@@ -249,13 +225,12 @@ export function AdvertisementsPage() {
                 value: (item: Advertisement) => item.publicationTitle,
               },
               {
-                label: 'صاحب الإعلان',
-                value: (item: Advertisement) => item.ownerName,
+                label: 'هاتف التواصل',
+                value: (item: Advertisement) => item.publicationPhone ?? '',
               },
               {
-                label: 'المبلغ المتفق عليه',
-                value: (item: Advertisement) =>
-                  formatAdvertisementMoney(item.agreedAmountMinor),
+                label: 'طريقة الدفع',
+                value: (item: Advertisement) => advertisementPaymentMethodLabels[item.paymentMethod],
               },
               {
                 label: 'طريقة الدفع',
@@ -266,13 +241,6 @@ export function AdvertisementsPage() {
                 label: 'التسديد',
                 value: (item: Advertisement) =>
                   item.paid ? 'تم التسديد' : 'غير مسدد',
-              },
-              {
-                label: 'رقم الحوالة',
-                value: (item: Advertisement) =>
-                  item.paymentMethod === 'TRANSFER'
-                    ? item.transferReference ?? ''
-                    : '',
               },
               {
                 label: 'مكان النشر',
@@ -306,8 +274,8 @@ export function AdvertisementsPage() {
         loading={summary.isLoading}
         active={summary.data?.active ?? 0}
         paused={summary.data?.paused ?? 0}
-        draft={summary.data?.draft ?? 0}
-        unpaid={summary.data?.unpaid ?? 0}
+        scheduled={summary.data?.scheduled ?? 0}
+        pendingReview={summary.data?.pendingReview ?? 0}
       />
 
       <div className="flex flex-col gap-2 rounded-xl border border-border/45 bg-white p-2.5 md:flex-row md:items-center">
@@ -323,7 +291,7 @@ export function AdvertisementsPage() {
                 page: 1,
               })
             }
-            placeholder="ابحث باسم الإعلان، صاحبه أو رقم الحوالة…"
+            placeholder="ابحث بعنوان الإعلان أو رقمه…"
           />
         </label>
 

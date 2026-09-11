@@ -33,7 +33,7 @@ function animal(value: unknown): Report['animalType'] {
   const raw = String(value ?? '').trim().toUpperCase();
   if (raw.includes('CAT') || raw === '2') return 'CAT';
   if (raw.includes('BIRD') || raw === '3') return 'BIRD';
-  if (raw.includes('OTHER') || raw === '4') return 'OTHER';
+  if (raw.includes('OTHER') || raw === '99') return 'OTHER';
   return 'DOG';
 }
 function normalizeReport(value: unknown): Report {
@@ -61,7 +61,7 @@ function normalizeReport(value: unknown): Report {
       isGuest: Boolean(reporter.isGuest ?? item.isGuest ?? !ident(reporter.id, item.userId)),
     },
     assignedOrganization: Object.keys(org).length || item.organizationId ? { id: ident(org.id, item.organizationId), name: str(org.name, org.organizationName, item.organizationName) ?? 'جمعية' } : undefined,
-    media: arr(item.media ?? item.attachments ?? item.images).map((m, index) => { const x = rec(m); const url = resolveMediaUrl(str(x.url, x.fileUrl, x.imageUrl, typeof m === 'string' ? m : undefined)); return { id: ident(x.id, x.mediaId, `${ident(item.id, item.reportId)}-${index}`), type: String(x.type ?? x.mediaType ?? 'IMAGE').toUpperCase().includes('VIDEO') ? 'VIDEO' : 'IMAGE', url, thumbnailUrl: resolveMediaUrl(str(x.thumbnailUrl)) || undefined, createdAt: str(x.createdAt, x.creationTime) ?? createdAt }; }),
+    media: arr(item.media ?? item.attachments ?? item.images).map((m, index) => { const x = rec(m); const url = resolveMediaUrl(str(x.url, x.fileUrl, x.imageUrl, typeof m === 'string' ? m : undefined)); return { id: ident(x.id, x.mediaId, `${ident(item.id, item.reportId)}-${index}`), type: String(x.type ?? x.mediaType ?? x.contentType ?? 'IMAGE').toUpperCase().includes('VIDEO') ? 'VIDEO' : 'IMAGE', url, thumbnailUrl: resolveMediaUrl(str(x.thumbnailUrl)) || undefined, createdAt: str(x.createdAt, x.creationTime) ?? createdAt }; }),
     createdAt, updatedAt,
     verifiedAt: str(item.verifiedAt), assignedAt: str(item.assignedAt), receivedAt: str(item.receivedAt), closedAt: str(item.closedAt, item.resolvedAt),
     internalNotesCount: num(item.internalNotesCount, item.notesCount) ?? 0,
@@ -74,10 +74,10 @@ function normalizeList(payload: unknown, filters: ReportFilters): ReportListResu
   return { items, total, page, pageSize, pageCount: Math.max(1, Math.ceil(total / Math.max(1, pageSize))) };
 }
 function normalizeSummary(payload: unknown): ReportSummary {
-  const b = rec(unwrap(payload)); return { todayCount: num(b.todayCount, b.today, b.reportsToday) ?? 0, unassignedCount: num(b.unassignedCount, b.unassigned) ?? 0, enRouteCount: num(b.enRouteCount, b.enRoute, b.activeCount) ?? 0, receivedTodayCount: num(b.receivedTodayCount, b.receivedToday) ?? 0 };
+  const b = rec(unwrap(payload)); return { totalCount: num(b.total, b.totalCount) ?? 0, unassignedCount: num(b.unassigned, b.unassignedCount) ?? 0, enRouteCount: num(b.enRoute, b.enRouteCount) ?? 0, receivedCount: num(b.received, b.receivedCount) ?? 0 };
 }
 function note(v: unknown): ReportNote { const x = rec(v); const a = rec(x.admin ?? x.actor ?? x.createdBy); return { id: ident(x.id, x.noteId, crypto.randomUUID()), adminName: str(x.adminName, x.actorName, a.name, a.fullName) ?? 'مسؤول النظام', adminRole: str(x.adminRole, x.actorRole, a.role, a.roleName) ?? 'مسؤول', createdAt: str(x.createdAt, x.creationTime) ?? iso(), note: str(x.note, x.body, x.text) ?? '' }; }
-function timeline(v: unknown): ReportTimelineEvent { const x = rec(v); return { id: ident(x.id, crypto.randomUUID()), action: str(x.action, x.title, x.event) ?? 'تحديث', actor: str(x.actor, x.actorName, rec(x.actor).name), timestamp: str(x.timestamp, x.createdAt, x.creationTime) ?? iso(), details: str(x.details, x.description, x.note), tone: str(x.tone) as ReportTimelineEvent['tone'] }; }
+function timeline(v: unknown): ReportTimelineEvent { const x = rec(v); const from = str(x.fromStatus); const to = str(x.toStatus); const action = str(x.action, x.title, x.event) ?? (to ? `${from ? `${from} ← ` : ''}${to}` : 'تحديث'); return { id: ident(x.id, crypto.randomUUID()), action, actor: str(x.actor, x.actorName, x.actorId, rec(x.actor).name), timestamp: str(x.timestamp, x.at, x.createdAt, x.creationTime) ?? iso(), details: str(x.details, x.description, x.note), tone: str(x.tone) as ReportTimelineEvent['tone'] }; }
 function normalizeDetails(payload: unknown): ReportDetails | null { const raw = unwrap(payload); if (raw == null) return null; const b = rec(raw); return { report: normalizeReport(b.report ?? b), timeline: arr(b.timeline ?? b.activity ?? b.events).map(timeline), notes: arr(b.notes ?? b.internalNotes).map(note) }; }
 function org(v: unknown): EligibleOrganization { const x = rec(v); return { id: ident(x.id, x.organizationId), name: str(x.name, x.organizationName) ?? 'جمعية', governorate: str(x.governorate, x.governorateName, rec(x.governorate).nameAr) ?? '', distanceKm: num(x.distanceKm, x.distance), activeReports: num(x.activeReports, x.activeReportsCount) ?? 0, availability: String(x.availability ?? x.status ?? 'AVAILABLE').toUpperCase().includes('UNAVAILABLE') ? 'UNAVAILABLE' : String(x.availability ?? x.status ?? '').toUpperCase().includes('LIMIT') ? 'LIMITED' : 'AVAILABLE' }; }
 function qs(filters: ReportFilters) { const p = new URLSearchParams(); if (filters.search.trim()) p.set('search', filters.search.trim()); if (filters.status) p.set('status', filters.status); if (filters.governorate && /^\d+$/.test(filters.governorate)) p.set('governorateId', filters.governorate); if (filters.organizationId) p.set('organizationId', filters.organizationId); if (filters.animalType) p.set('animalType', filters.animalType); p.set('page', String(filters.page)); p.set('pageSize', String(filters.pageSize)); return p.toString(); }

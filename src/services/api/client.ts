@@ -49,11 +49,14 @@ async function readError(response: Response, path: string): Promise<ApiError> {
     const payload = (await response.json()) as Record<string, unknown>;
     const fieldErrors =
       payload.errors && typeof payload.errors === 'object'
-        ? (payload.errors as Record<string, string[]>)
+        ? Object.fromEntries(Object.entries(payload.errors as Record<string, unknown>).map(([key, value]) => [key, Array.isArray(value) ? value.map(String) : [String(value)]]))
         : undefined;
 
     const rawCode = typeof payload.code === 'string' ? payload.code : 'HTTP_ERROR';
     const isLogin = /\/api\/dashboard\/auth\/login(?:$|\?)/u.test(path);
+    const serverMessage = [payload.message, payload.detail, payload.title].find(
+      (value): value is string => typeof value === 'string' && value.trim().length > 0,
+    );
     const message =
       isLogin && response.status === 401
         ? 'البريد الإلكتروني أو كلمة المرور غير صحيحة.'
@@ -61,11 +64,15 @@ async function readError(response: Response, path: string): Promise<ApiError> {
           ? 'انتهت جلسة تسجيل الدخول أو لم تعد صالحة. سجّل الدخول مرة أخرى.'
           : response.status === 403
             ? 'ليس لديك صلاحية لتنفيذ هذا الإجراء.'
-            : response.status === 404
-              ? 'تعذر العثور على البيانات المطلوبة.'
-              : response.status >= 500
-                ? 'حدث خطأ في الخادم. حاول مرة أخرى بعد قليل.'
-                : 'تعذر إتمام الطلب. راجع البيانات وحاول مرة أخرى.';
+            : response.status >= 500
+              ? 'حدث خطأ في الخادم. حاول مرة أخرى بعد قليل.'
+              : serverMessage
+                ? serverMessage
+                : response.status === 404
+                  ? 'تعذر العثور على البيانات المطلوبة.'
+                  : response.status === 409
+                    ? 'يتعارض هذا الإجراء مع الحالة الحالية للبيانات.'
+                    : 'تعذر إتمام الطلب. راجع البيانات وحاول مرة أخرى.';
 
     return {
       code: rawCode,

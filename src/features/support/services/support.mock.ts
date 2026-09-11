@@ -461,17 +461,13 @@ export async function getSupportTicket(id: string): Promise<SupportTicketDetails
 
 export async function getSupportSummary(): Promise<SupportSummary> {
   const rows = await Promise.all(seeds.map(resolve));
-  const today = new Date().toDateString();
-
   return {
-    newCount: rows.filter((x) => x.status === 'NEW').length,
-    openCount: rows.filter((x) => ['OPEN', 'WAITING_FOR_USER', 'WAITING_FOR_INTERNAL'].includes(x.status)).length,
-    urgentCount: rows.filter((x) => x.priority === 'URGENT' && !['RESOLVED', 'CLOSED'].includes(x.status)).length,
-    waitingForUser: rows.filter((x) => x.status === 'WAITING_FOR_USER').length,
-    unassigned: rows.filter((x) => !x.assignee && !['RESOLVED', 'CLOSED'].includes(x.status)).length,
-    resolvedToday: rows.filter(
-      (x) => x.resolvedAt && new Date(x.resolvedAt).toDateString() === today,
-    ).length,
+    total: rows.length,
+    open: rows.filter((x) => x.status === 'OPEN').length,
+    inProgress: rows.filter((x) => x.status === 'IN_PROGRESS').length,
+    resolved: rows.filter((x) => x.status === 'RESOLVED').length,
+    closed: rows.filter((x) => x.status === 'CLOSED').length,
+    urgent: rows.filter((x) => ['URGENT', 'HIGH'].includes(x.priority)).length,
   };
 }
 

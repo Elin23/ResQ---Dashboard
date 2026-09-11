@@ -52,6 +52,34 @@ export const auditActionLabels: Record<AuditAction, string> = {
   LOOKUP_VALUE_CREATED: 'أضاف قيمة مرجعية',
   LOOKUP_VALUE_UPDATED: 'حدّث قيمة مرجعية',
   ADVERTISEMENT_EXPIRED: 'أنهى إعلانًا تلقائيًا',
+  CREATE: 'أنشأ سجلًا',
+  UPDATE: 'حدّث سجلًا',
+  STATUS_UPDATE: 'غيّر الحالة',
+  APPROVE: 'وافق على الطلب',
+  REJECT: 'رفض الطلب',
+  DELETE: 'حذف السجل',
+  ASSIGN: 'أسند السجل',
+  NOTE_CREATE: 'أضاف ملاحظة داخلية',
+  DOCUMENT_REVIEW: 'راجع مستندًا',
+  REFILL_REVIEW: 'راجع إثبات تعبئة',
+  REVIEW_START: 'بدأ المراجعة',
+  RESOLVE: 'حل المشكلة',
+  REPLY: 'أضاف ردًا',
+  SEND: 'أرسل الإشعار',
+  SCHEDULE: 'جدول الإرسال',
+  CANCEL: 'ألغى العملية',
+  DUPLICATE: 'أنشأ نسخة',
+  PAUSE: 'أوقف مؤقتًا',
+  ACTIVATE: 'فعّل السجل',
+  ADMIN_INVITE: 'دعا مسؤولًا جديدًا',
+  ADMIN_INVITE_ACCEPT: 'قُبلت دعوة مسؤول',
+  ADMIN_SUSPEND: 'علّق حساب مسؤول',
+  ADMIN_REACTIVATE: 'أعاد تفعيل مسؤول',
+  ADMIN_ROLES_UPDATE: 'حدّث أدوار مسؤول',
+  ROLE_CREATE: 'أنشأ دورًا',
+  ROLE_UPDATE: 'حدّث دورًا',
+  SETTINGS_UPDATE: 'حدّث إعدادات النظام',
+  BACKUP_REQUEST: 'طلب نسخة احتياطية',
 };
 
 export const auditResourceLabels: Record<AuditResourceType, string> = {
@@ -68,6 +96,16 @@ export const auditResourceLabels: Record<AuditResourceType, string> = {
   ADMIN: 'مسؤول إداري',
   ROLE: 'دور إداري',
   SYSTEM_SETTING: 'إعداد نظام',
+  ADOPTION: 'إعلان تبنٍ',
+  DONATION_CAMPAIGN: 'حملة تبرع',
+  PLACE: 'مكان على الخريطة',
+  PLACE_REQUEST: 'طلب إضافة مكان',
+  NOTIFICATION_BROADCAST: 'إشعار جماعي',
+  ADMIN_INVITATION: 'دعوة مسؤول',
+  ADMIN_USER: 'حساب مسؤول',
+  BACKUP: 'نسخة احتياطية',
+  FOOD_POINT_ISSUE: 'مشكلة نقطة إطعام',
+  SETTING: 'إعداد نظام',
 };
 
 // These actions are highlighted because they affect permissions, money, or account access.
@@ -81,6 +119,11 @@ export const sensitiveAuditActions = new Set<AuditAction>([
   'DONATION_REFUND_RECORDED',
   'ROLE_UPDATED',
   'SYSTEM_SETTING_CHANGED',
+  'DELETE',
+  'ADMIN_SUSPEND',
+  'ADMIN_ROLES_UPDATE',
+  'ROLE_CREATE',
+  'ROLE_UPDATE',
 ]);
 
 // Hide these fields when the admin does not have permission to view sensitive data.

@@ -19,6 +19,7 @@ function governorate(value: unknown): GovernorateRecord {
   return {
     id: ident(row.id, row.governorateId),
     name: str(row.name, row.nameAr, row.label) ?? '',
+    nameEn: str(row.nameEn),
     isActive: bool(row.isActive, row.active) ?? true,
     createdAt,
     updatedAt: str(row.updatedAt, row.lastModificationTime) ?? createdAt,
@@ -32,6 +33,7 @@ function region(value: unknown): RegionRecord {
     id: ident(row.id, row.regionId, row.areaId),
     governorateId: ident(row.governorateId, rec(row.governorate).id),
     name: str(row.name, row.nameAr, row.label) ?? '',
+    nameEn: str(row.nameEn),
     isActive: bool(row.isActive, row.active) ?? true,
     createdAt,
     updatedAt: str(row.updatedAt, row.lastModificationTime) ?? createdAt,
@@ -71,25 +73,11 @@ function normalizeCatalog(payload: unknown, includeInactive: boolean): LocationC
   };
 }
 
-async function typedFallback(includeInactive: boolean, signal?: AbortSignal): Promise<LocationCatalog> {
-  const [govPayload, areaPayload] = await Promise.all([
-    apiClient.get<unknown>(`/api/app/governorate/governorate-list?IsActive=${includeInactive ? '' : 'true'}&SkipCount=0&MaxResultCount=500`, signal),
-    apiClient.get<unknown>(`/api/app/area/get-areas?IsActive=${includeInactive ? '' : 'true'}&SkipCount=0&MaxResultCount=2000`, signal),
-  ]);
-  const govBody = rec(unwrap(govPayload));
-  const areaBody = rec(unwrap(areaPayload));
-  const governorates = arr(govBody.governoratesList ?? govBody.items ?? unwrap(govPayload)).map(governorate);
-  const regions = arr(areaBody.areasList ?? areaBody.items ?? unwrap(areaPayload)).map(region);
-  return { governorates, regions };
-}
-
 export async function getLocationCatalog(options?: { includeInactive?: boolean; signal?: AbortSignal }): Promise<LocationCatalog> {
   const includeInactive = options?.includeInactive ?? false;
   const suffix = includeInactive ? '?includeInactive=true' : '';
   const payload = await apiClient.get<unknown>(`/api/dashboard/locations${suffix}`, options?.signal);
-  const catalog = normalizeCatalog(payload, includeInactive);
-  if (catalog.governorates.length || catalog.regions.length) return catalog;
-  return typedFallback(includeInactive, options?.signal);
+  return normalizeCatalog(payload, includeInactive);
 }
 
 export async function addGovernorate(name: string) {
@@ -97,20 +85,29 @@ export async function addGovernorate(name: string) {
 }
 
 export async function updateGovernorate(id: string, patch: { name?: string; isActive?: boolean }) {
+  const catalog = await getLocationCatalog({ includeInactive: true });
+  const current = catalog.governorates.find((item) => item.id === id);
+  if (!current) throw new Error('المحافظة غير موجودة أو تم حذفها.');
   return apiClient.patch(`/api/dashboard/locations/governorates/${encodeURIComponent(id)}`, {
-    ...(patch.name !== undefined ? { name: patch.name, nameEn: '' } : {}),
-    ...(patch.isActive !== undefined ? { isActive: patch.isActive } : {}),
+    name: patch.name ?? current.name,
+    nameEn: current.nameEn ?? null,
+    isActive: patch.isActive ?? current.isActive,
   });
 }
+
 
 export async function addRegion(input: { governorateId: string; name: string }) {
   return apiClient.post('/api/dashboard/locations/regions', { governorateId: Number(input.governorateId), name: input.name, nameEn: '', isActive: true });
 }
 
 export async function updateRegion(id: string, patch: { governorateId?: string; name?: string; isActive?: boolean }) {
+  const catalog = await getLocationCatalog({ includeInactive: true });
+  const current = catalog.regions.find((item) => item.id === id);
+  if (!current) throw new Error('المنطقة غير موجودة أو تم حذفها.');
   return apiClient.patch(`/api/dashboard/locations/regions/${encodeURIComponent(id)}`, {
-    ...(patch.governorateId !== undefined ? { governorateId: Number(patch.governorateId) } : {}),
-    ...(patch.name !== undefined ? { name: patch.name, nameEn: '' } : {}),
-    ...(patch.isActive !== undefined ? { isActive: patch.isActive } : {}),
+    governorateId: Number(patch.governorateId ?? current.governorateId),
+    name: patch.name ?? current.name,
+    nameEn: current.nameEn ?? null,
+    isActive: patch.isActive ?? current.isActive,
   });
 }

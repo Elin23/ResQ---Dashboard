@@ -68,11 +68,11 @@ export function BackupSettingsManager({ settings, readOnly = false }: { settings
     try {
       const backup = await create.mutateAsync();
 
-      if (backup) {
+      if (backup?.fileName && backup.payload) {
         downloadBackup(backup.fileName, backup.payload);
         toast.success('تم إنشاء النسخة الاحتياطية وتنزيلها.');
       } else {
-        toast.success('تم إنشاء النسخة الاحتياطية على الخادم.');
+        toast.success('تم تسجيل طلب النسخة الاحتياطية على الخادم.');
       }
     } catch (error) {
       toast.error(getUserErrorMessage(error, 'تعذر إنشاء النسخة الاحتياطية.'));
@@ -85,7 +85,7 @@ export function BackupSettingsManager({ settings, readOnly = false }: { settings
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <SectionHeader
             title="النسخ الاحتياطي"
-            description="إدارة الجدولة والاحتفاظ بالنسخ، مع إمكانية إنشاء نسخة يدوية وتنزيلها فورًا."
+            description="إدارة الجدولة والاحتفاظ بالنسخ، مع إمكانية تسجيل طلب نسخة يدوية على الخادم."
           />
 
           {!readOnly && (
@@ -237,9 +237,8 @@ export function BackupSettingsManager({ settings, readOnly = false }: { settings
               </p>
             )}
 
-            {/* Mock backups represent the UI flow only; production backup enforcement belongs to the backend. */}
             <div className="mt-4 rounded-lg bg-muted/35 px-3 py-2.5 text-[11px] leading-5 text-muted-foreground">
-              النسخة الحالية تجريبية داخل بيئة الـMock. عند ربط الـBackend يجب إنشاء النسخة الكاملة على الخادم وقاعدة البيانات وحمايتها وفق سياسة النسخ المعتمدة.
+              إنشاء النسخة يتم على الخادم. ظهور الطلب في السجل يعني أن الخادم استلمه؛ اكتمال الملف نفسه يعتمد على عامل النسخ الاحتياطي في بيئة النشر.
             </div>
           </div>
         </div>

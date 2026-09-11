@@ -62,52 +62,6 @@ export function SupportFilterBar({ filters, onChange, onClear, active }: { filte
         )}
       </FilterBar>
 
-      {/* Quick queue shortcuts stay separate from the primary filters. */}
-      <div className="flex flex-wrap gap-2 px-0.5">
-        <Button
-          size="sm"
-          variant={filters.unassigned ? 'primary' : 'secondary'}
-          className="h-8 rounded-lg px-3 text-[12px]"
-          onClick={() =>
-            onChange({
-              unassigned: filters.unassigned ? undefined : true,
-              assignee: undefined,
-              page: 1,
-            })
-          }
-        >
-          غير مسندة
-        </Button>
-
-        <Button
-          size="sm"
-          variant={filters.assignee === 'me' ? 'primary' : 'secondary'}
-          className="h-8 rounded-lg px-3 text-[12px]"
-          onClick={() =>
-            onChange({
-              assignee: filters.assignee === 'me' ? undefined : 'me',
-              unassigned: undefined,
-              page: 1,
-            })
-          }
-        >
-          مسندة إليّ
-        </Button>
-
-        <Button
-          size="sm"
-          variant={filters.waiting === 'INTERNAL' ? 'primary' : 'secondary'}
-          className="h-8 rounded-lg px-3 text-[12px]"
-          onClick={() =>
-            onChange({
-              waiting: filters.waiting === 'INTERNAL' ? undefined : 'INTERNAL',
-              page: 1,
-            })
-          }
-        >
-          بانتظار إجراء داخلي
-        </Button>
-      </div>
     </div>
   );
 }

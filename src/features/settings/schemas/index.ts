@@ -3,9 +3,8 @@ import { z } from 'zod';
 import { permissions } from '@/features/auth/permissions';
 
 export const inviteAdminSchema = z.object({
-  fullName: z.string().trim().min(3, 'الاسم مطلوب.'),
   email: z.string().trim().email('أدخل بريدًا إلكترونيًا صحيحًا.'),
-  roleIds: z.array(z.string()).min(1, 'اختر دورًا واحدًا على الأقل.'),
+  roleIds: z.array(z.string()).length(1, 'اختر دورًا واحدًا للدعوة.'),
 });
 
 export const suspendAdminSchema = z.object({

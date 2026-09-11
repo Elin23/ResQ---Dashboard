@@ -439,20 +439,14 @@ export async function getUsers(filters: UserFilters): Promise<UserListResult> {
 export async function getUserSummary(): Promise<UserSummary> {
   const relationships = await relationshipData();
   const users = allUsers(relationships).map((user) => enrich(user, relationships));
-  const start = new Date();
-
-  start.setDate(1);
-  start.setHours(0, 0, 0, 0);
-
   return {
     total: users.length,
-    newThisMonth: users.filter((u) => new Date(u.createdAt) >= start).length,
     active: users.filter((u) => u.accountStatus === 'ACTIVE').length,
     suspended: users.filter((u) => u.accountStatus === 'SUSPENDED').length,
     blocked: users.filter((u) => u.accountStatus === 'BLOCKED').length,
-    withActiveAdoptions: users.filter(
-      (u) => (u.statistics?.activeAdoptionRequestsCount ?? 0) > 0,
-    ).length,
+    deactivated: users.filter((u) => u.accountStatus === 'DEACTIVATED').length,
+    pendingVerification: 0,
+    rejected: 0,
   };
 }
 

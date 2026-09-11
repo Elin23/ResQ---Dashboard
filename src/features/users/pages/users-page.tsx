@@ -9,7 +9,7 @@ import { UserSummaryCards } from '../components/user-summary';
 import { UsersTable } from '../components/users-table';
 import { accountStatusLabels, verificationLabels } from '../constants';
 import { useUsers, useUserSummary } from '../hooks';
-import { userAccountStatuses, userVerificationStatuses, type User, type UserFilters } from '../types';
+import { userAccountStatuses, type User, type UserFilters } from '../types';
 import { hasUserFilters } from '../utils';
 
 
@@ -17,7 +17,6 @@ function fromParams(params: URLSearchParams): UserFilters {
   return {
     search: params.get('q') ?? '',
     accountStatus: readEnumParam(params.get('status'), userAccountStatuses),
-    verificationStatus: readEnumParam(params.get('verification'), userVerificationStatuses),
     page: Math.max(1, Number(params.get('page') ?? 1) || 1),
     pageSize: [10, 20, 50].includes(Number(params.get('pageSize'))) ? Number(params.get('pageSize')) : 10,
     sortBy: readEnumParam(params.get('sort'), ['createdAt', 'lastActiveAt', 'fullName', 'accountStatus'] as const),
@@ -31,7 +30,6 @@ function toParams(filters: UserFilters) {
   const entries: Array<[string, string | number | undefined]> = [
     ['q', filters.search || undefined],
     ['status', filters.accountStatus],
-    ['verification', filters.verificationStatus],
     ['page', filters.page > 1 ? filters.page : undefined],
     ['pageSize', filters.pageSize !== 10 ? filters.pageSize : undefined],
     ['sort', filters.sortBy],

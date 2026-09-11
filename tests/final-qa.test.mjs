@@ -104,7 +104,7 @@ test('internal source imports do not point at the removed rescue feature', () =>
   }
 });
 
-test('latest simplification removes adoption internal notes and uses clear advertisement payment and image fields', () => {
+test('latest simplification removes adoption internal notes and keeps advertisement fields aligned with the backend contract', () => {
   const adoptionDetails = read('src/features/adoption-requests/pages/adoption-request-details-page.tsx');
   const adCreate = read('src/features/advertisements/components/advertisement-create-dialog.tsx');
   const adDetails = read('src/features/advertisements/pages/advertisement-details-page.tsx');
@@ -112,9 +112,9 @@ test('latest simplification removes adoption internal notes and uses clear adver
   assert.doesNotMatch(adoptionDetails, /AdoptionInternalNotesCard|ملاحظات داخلية/u);
   assert.match(adCreate, /type="file"/u);
   assert.match(adCreate, /multiple/u);
-  assert.match(adCreate, /رقم الحوالة/u);
+  assert.doesNotMatch(adCreate + adDetails, /رقم الحوالة|المبلغ المتفق عليه/u);
   assert.doesNotMatch(adCreate + adDetails + adTypes, /رقم الدفعة|paymentReference|targetUrl|رابط الوجهة/u);
-  assert.match(adCreate + adDetails, /الموقع الإلكتروني/u);
+  assert.doesNotMatch(adCreate + adDetails, /الموقع الإلكتروني/u);
   assert.match(adTypes, /paymentMethod: AdvertisementPaymentMethod/u);
 });
 

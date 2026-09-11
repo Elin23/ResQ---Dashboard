@@ -5,6 +5,8 @@ export const accountStatusLabels: Record<UserAccountStatus, string> = {
   SUSPENDED: 'معلق',
   BLOCKED: 'محظور',
   DEACTIVATED: 'معطل',
+  PENDING_VERIFICATION: 'بانتظار التحقق',
+  REJECTED: 'مرفوض',
 };
 
 export const verificationLabels: Record<UserVerificationStatus, string> = {

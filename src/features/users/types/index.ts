@@ -1,4 +1,4 @@
-export const userAccountStatuses = ['ACTIVE', 'SUSPENDED', 'BLOCKED', 'DEACTIVATED'] as const;
+export const userAccountStatuses = ['ACTIVE', 'SUSPENDED', 'BLOCKED', 'DEACTIVATED', 'PENDING_VERIFICATION', 'REJECTED'] as const;
 export type UserAccountStatus = (typeof userAccountStatuses)[number];
 
 export const userVerificationStatuses = ['UNVERIFIED', 'PHONE_VERIFIED', 'VERIFIED'] as const;
@@ -127,11 +127,12 @@ export interface UserListResult {
 
 export interface UserSummary {
   total: number;
-  newThisMonth: number;
   active: number;
   suspended: number;
   blocked: number;
-  withActiveAdoptions: number;
+  deactivated: number;
+  pendingVerification: number;
+  rejected: number;
 }
 
 export interface ModerateUserInput {

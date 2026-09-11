@@ -53,8 +53,8 @@ function normalizeAd(v: unknown): Advertisement {
   const paymentRaw = String(x.paymentMethod ?? x.paymentType ?? '').toUpperCase();
   return {
     id: id(x.id, x.advertisementId),
-    advertiser: { type: 'CLIENT', id: id(advertiser.id, x.userId) || undefined, name: str(advertiser.name, advertiser.fullName, x.ownerName, x.userName, x.advertiserName) ?? 'معلن' },
-    ownerName: str(x.ownerName, x.advertiserName, advertiser.name, advertiser.fullName) ?? 'معلن',
+    advertiser: { type: 'CLIENT', id: id(advertiser.id, x.advertiserId, x.userId) || undefined, name: str(advertiser.name, advertiser.fullName, x.ownerName, x.userName, x.advertiserName) ?? id(x.advertiserId, x.userId) ?? 'معلن' },
+    ownerName: str(x.ownerName, x.advertiserName, advertiser.name, advertiser.fullName) ?? id(x.advertiserId, x.userId) ?? 'معلن',
     ownerPhone: str(x.ownerPhone, x.contactPhone, advertiser.phone, advertiser.phoneNumber) ?? '',
     agreedAmountMinor: num(x.agreedAmountMinor, x.amountMinor, x.amount) ?? 0,
     currency: 'SYP', paid,
@@ -100,7 +100,7 @@ export async function createAdvertisement(input: CreateAdvertisementInput, actor
   const payload = await apiClient.post<unknown>('/api/dashboard/advertisements', {
     userId: actor.id,
     title: input.publicationTitle, description: input.description ?? null,
-    contactPhone: input.publicationPhone ?? input.ownerPhone, contactEmail: input.publicationEmail ?? null,
+    contactPhone: input.publicationPhone, contactEmail: input.publicationEmail ?? null,
     placement: placementToApi[input.placement], startDate: input.startAt ?? new Date().toISOString(), endDate: input.endAt ?? new Date(Date.now() + 30 * 86400000).toISOString(),
     isPaid: input.paid, paymentMethod: paymentToApi[input.paymentMethod],
     imageUrls: input.imageUrls,

@@ -109,18 +109,13 @@ export interface AdvertisementAdvertiserSummary {
 }
 
 export interface CreateAdvertisementInput {
-  ownerName: string;
-  ownerPhone: string;
-  agreedAmountMinor: number;
   paid: boolean;
   paymentMethod: AdvertisementPaymentMethod;
-  transferReference?: string;
   publicationTitle: string;
   description?: string;
   imageUrls: string[];
-  publicationPhone?: string;
+  publicationPhone: string;
   publicationEmail?: string;
-  websiteUrl?: string;
   placement: AdvertisementPlacement;
   startAt?: string;
   endAt?: string;

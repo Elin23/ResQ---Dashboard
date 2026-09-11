@@ -282,18 +282,15 @@ export async function createAdvertisement(input: CreateAdvertisementInput, actor
     id,
     advertiser: {
       type: 'CLIENT',
-      name: input.ownerName,
+      name: input.publicationTitle,
     },
-    ownerName: input.ownerName,
-    ownerPhone: input.ownerPhone,
-    agreedAmountMinor: input.agreedAmountMinor,
+    ownerName: input.publicationTitle,
+    ownerPhone: input.publicationPhone,
+    agreedAmountMinor: 0,
     currency: 'SYP',
     paid: input.paid,
     paymentMethod: input.paymentMethod,
-    transferReference:
-      input.paymentMethod === 'TRANSFER'
-        ? input.transferReference
-        : undefined,
+    transferReference: undefined,
     title: input.publicationTitle,
     publicationTitle: input.publicationTitle,
     description: input.description,
@@ -306,7 +303,7 @@ export async function createAdvertisement(input: CreateAdvertisementInput, actor
     placement: input.placement,
     publicationPhone: input.publicationPhone,
     publicationEmail: input.publicationEmail,
-    websiteUrl: input.websiteUrl,
+    websiteUrl: undefined,
     startAt: input.startAt,
     endAt: input.endAt,
     status: 'DRAFT',

@@ -8,7 +8,7 @@ import { useActivateAdvertisement, useAdvertisement } from '../hooks';
 import { AdvertisementStatusBadge } from '../components/advertisement-badges';
 import { DeleteAdvertisementDialog, PauseAdvertisementDialog } from '../components/advertisement-workflow-dialogs';
 import { advertisementPaymentMethodLabels, advertisementPlacementConfig } from '../constants';
-import { formatAdvertisementDate, formatAdvertisementMoney } from '../utils';
+import { formatAdvertisementDate } from '../utils';
 
 export function AdvertisementDetailsPage() {
   const { advertisementId = '' } = useParams();
@@ -43,7 +43,7 @@ export function AdvertisementDetailsPage() {
             <span>{ad.id}</span>
           </div>
           <h1 className="mt-1 text-[19px] font-semibold leading-6">{ad.publicationTitle}</h1>
-          <p className="mt-0.5 text-[12px] text-muted-foreground/75">{ad.ownerName} · {advertisementPlacementConfig[ad.placement].label}</p>
+          <p className="mt-0.5 text-[12px] text-muted-foreground/75">{advertisementPlacementConfig[ad.placement].label}</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -95,7 +95,6 @@ export function AdvertisementDetailsPage() {
               <div className="mt-4 grid gap-3 border-t border-border/35 pt-4 sm:grid-cols-2">
                 <Info label="هاتف النشر" value={ad.publicationPhone ?? 'غير محدد'} ltr />
                 <Info label="البريد الإلكتروني" value={ad.publicationEmail ?? 'غير محدد'} ltr />
-                {ad.websiteUrl && <Info label="الموقع الإلكتروني" value={ad.websiteUrl} ltr />}
                 <Info label="مدة النشر" value={`${formatAdvertisementDate(ad.startAt)} — ${formatAdvertisementDate(ad.endAt)}`} />
               </div>
             </div>
@@ -103,16 +102,12 @@ export function AdvertisementDetailsPage() {
 
           <aside className="space-y-4 bg-muted/[0.12] p-4">
             <div>
-              <h2 className="text-[14px] font-semibold">الاتفاق المالي</h2>
+              <h2 className="text-[14px] font-semibold">بيانات الدفع والنشر</h2>
               <div className="mt-3 space-y-3">
-                <Info label="صاحب الإعلان" value={ad.ownerName} />
-                <Info label="رقم التواصل" value={ad.ownerPhone} ltr />
-                <Info label="المبلغ المتفق عليه" value={formatAdvertisementMoney(ad.agreedAmountMinor)} />
+                <Info label="معرّف المعلن" value={ad.advertiser.id ?? 'غير محدد'} ltr />
+                <Info label="رقم التواصل" value={ad.publicationPhone ?? 'غير محدد'} ltr />
                 <Info label="طريقة الدفع" value={advertisementPaymentMethodLabels[ad.paymentMethod]} />
-                <Info label="حالة التسديد" value={ad.paid ? 'تم التسديد' : 'غير مسدد'} />
-                {ad.paymentMethod === 'TRANSFER' && (
-                  <Info label="رقم الحوالة" value={ad.transferReference ?? 'غير مسجل'} ltr />
-                )}
+                <Info label="حالة الدفع" value={ad.paid ? 'مدفوع' : 'غير مدفوع'} />
               </div>
             </div>
           </aside>

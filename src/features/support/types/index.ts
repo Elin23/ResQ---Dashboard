@@ -1,4 +1,4 @@
-export const supportTicketStatuses = ['NEW', 'OPEN', 'WAITING_FOR_USER', 'WAITING_FOR_INTERNAL', 'RESOLVED', 'CLOSED'] as const;
+export const supportTicketStatuses = ['NEW', 'OPEN', 'IN_PROGRESS', 'WAITING_FOR_USER', 'WAITING_FOR_INTERNAL', 'ESCALATED', 'RESOLVED', 'CLOSED'] as const;
 export type SupportTicketStatus = (typeof supportTicketStatuses)[number];
 export const supportTicketPriorities = ['LOW', 'NORMAL', 'HIGH', 'URGENT'] as const;
 export type SupportTicketPriority = (typeof supportTicketPriorities)[number];
@@ -114,12 +114,12 @@ export interface SupportListResult {
 }
 
 export interface SupportSummary {
-  newCount: number;
-  openCount: number;
-  urgentCount: number;
-  waitingForUser: number;
-  unassigned: number;
-  resolvedToday: number;
+  total: number;
+  open: number;
+  inProgress: number;
+  resolved: number;
+  closed: number;
+  urgent: number;
 }
 
 export interface SupportCannedResponse {

@@ -91,10 +91,10 @@ export interface ReportListResult {
 
 // Summary values power the operational cards above the reports table.
 export interface ReportSummary {
-  todayCount: number;
+  totalCount: number;
   unassignedCount: number;
   enRouteCount: number;
-  receivedTodayCount: number;
+  receivedCount: number;
 }
 
 export interface ReportTimelineEvent {

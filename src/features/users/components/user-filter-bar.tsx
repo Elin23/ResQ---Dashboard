@@ -2,8 +2,8 @@ import { RotateCcw } from 'lucide-react';
 
 import { Button, DebouncedSearchInput, FilterBar, Select } from '@/components/ui';
 
-import { accountStatusLabels, verificationLabels } from '../constants';
-import { userAccountStatuses, userVerificationStatuses, type UserFilters } from '../types';
+import { accountStatusLabels } from '../constants';
+import { userAccountStatuses, type UserFilters } from '../types';
 
 const accountStatusOptions = [
   { value: 'ALL', label: 'كل حالات الحساب' },
@@ -13,13 +13,7 @@ const accountStatusOptions = [
   })),
 ];
 
-const verificationOptions = [
-  { value: 'ALL', label: 'كل حالات التوثيق' },
-  ...userVerificationStatuses.map((value) => ({
-    value,
-    label: verificationLabels[value],
-  })),
-];
+
 
 export function UserFilterBar({ filters, onChange, onClear, active }: { filters: UserFilters; onChange: (patch: Partial<UserFilters>) => void; onClear: () => void; active: boolean }) {
   return (
@@ -47,19 +41,6 @@ export function UserFilterBar({ filters, onChange, onClear, active }: { filters:
         />
       </label>
 
-      <label className="w-full sm:w-auto sm:min-w-[170px]">
-        <span className="sr-only">حالة التوثيق</span>
-        <Select
-          value={filters.verificationStatus ?? 'ALL'}
-          onValueChange={(value) =>
-            onChange({
-              verificationStatus: value === 'ALL' ? undefined : (value as UserFilters['verificationStatus']),
-              page: 1,
-            })
-          }
-          options={verificationOptions}
-        />
-      </label>
 
       {/* Keep the users queue focused on the three filters used most often. */}
       {active && (

@@ -27,6 +27,7 @@ const number = (...values: unknown[]): number | undefined => {
   }
   return undefined;
 };
+const bool = (...values: unknown[]): boolean | undefined => { for (const value of values) { if (typeof value === 'boolean') return value; if (value === 'true' || value === 1 || value === '1') return true; if (value === 'false' || value === 0 || value === '0') return false; } return undefined; };
 const id = (...values: unknown[]): string => String(values.find((value) => value !== undefined && value !== null && String(value).trim()) ?? '');
 const nowIso = () => new Date().toISOString();
 
@@ -39,7 +40,9 @@ function normalizeAccountStatus(value: unknown): UserAccountStatus {
   const raw = String(value ?? '').trim().toUpperCase();
   if (raw.includes('SUSPEND') || raw === '2') return 'SUSPENDED';
   if (raw.includes('BLOCK') || raw === '3') return 'BLOCKED';
-  if (raw.includes('DEACT') || raw.includes('DISABL') || raw === '4' || raw === '5' || raw === '6') return 'DEACTIVATED';
+  if (raw.includes('DEACT') || raw.includes('DISABL') || raw === '4') return 'DEACTIVATED';
+  if (raw.includes('PENDING') || raw === '5') return 'PENDING_VERIFICATION';
+  if (raw.includes('REJECT') || raw === '6') return 'REJECTED';
   return 'ACTIVE';
 }
 
@@ -70,7 +73,7 @@ function normalizeUser(value: unknown): User {
     city: text(item.city, item.area, item.areaName, record(item.area).name, record(item.area).nameAr),
     birthDate: text(item.birthDate, item.dateOfBirth),
     accountStatus: normalizeAccountStatus(item.accountStatus ?? item.status ?? item.userStatus),
-    verificationStatus: normalizeVerificationStatus(item.verificationStatus ?? item.verification ?? item.isVerified),
+    verificationStatus: (() => { const explicit = item.verificationStatus ?? item.verification ?? item.isVerified; if (explicit !== undefined) return normalizeVerificationStatus(explicit); const phoneVerified = bool(item.phoneVerified, item.phoneNumberConfirmed); const emailVerified = bool(item.emailConfirmed); return phoneVerified && emailVerified ? 'VERIFIED' : phoneVerified ? 'PHONE_VERIFIED' : emailVerified ? 'VERIFIED' : 'UNVERIFIED'; })(),
     profileBio: text(item.profileBio, item.bio, item.description),
     createdAt,
     updatedAt,
@@ -107,11 +110,12 @@ function normalizeSummary(payload: unknown): UserSummary {
   const body = record(unwrap(payload));
   return {
     total: number(body.total, body.totalUsers, body.usersCount) ?? 0,
-    newThisMonth: number(body.newThisMonth, body.newUsersThisMonth) ?? 0,
     active: number(body.active, body.activeUsers) ?? 0,
     suspended: number(body.suspended, body.suspendedUsers) ?? 0,
     blocked: number(body.blocked, body.blockedUsers) ?? 0,
-    withActiveAdoptions: number(body.withActiveAdoptions, body.usersWithActiveAdoptions) ?? 0,
+    deactivated: number(body.deactivated) ?? 0,
+    pendingVerification: number(body.pendingVerification) ?? 0,
+    rejected: number(body.rejected) ?? 0,
   };
 }
 
@@ -132,7 +136,8 @@ function normalizeDetails(payload: unknown): UserDetails | null {
   if (raw == null) return null;
   const body = record(raw);
   const userSource = body.user ?? body.profile ?? body;
-  const moderation = array(body.moderation ?? body.moderationHistory).map((value) => {
+  const moderationSource = body.moderationHistory ?? (body.moderation ? [body.moderation] : []);
+  const moderation = array(moderationSource).map((value) => {
     const item = record(value);
     return {
       id: id(item.id, item.moderationId, crypto.randomUUID()),

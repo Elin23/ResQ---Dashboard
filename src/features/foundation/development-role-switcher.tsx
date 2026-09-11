@@ -1,13 +1,14 @@
 import { ShieldCheck } from 'lucide-react';
 
 import { Select } from '@/components/ui';
+import { env } from '@/config/env';
 import { roleLabels, roles } from '@/features/auth/permissions';
 import { useSession } from '@/features/auth/session';
 
 export function DevelopmentRoleSwitcher() {
   const { session, setDevelopmentRole } = useSession();
 
-  if (!session) {
+  if (!session || env.dataSource !== 'mock') {
     return null;
   }
 
