@@ -24,10 +24,16 @@ const now = () => new Date().toISOString();
 
 function status(v: unknown): DonationCampaignStatus {
   const raw = String(v ?? '').trim().toUpperCase();
-  if (raw === '2' || raw.includes('PUBLISH') || raw.includes('APPROV')) return 'PUBLISHED';
-  if (raw === '4' || raw.includes('CLOSE') || raw.includes('COMPLETE')) return 'CLOSED';
-  if (raw === '5' || raw.includes('REJECT')) return 'REJECTED';
-  if (raw.includes('DELETE')) return 'DELETED';
+
+  // MobileBackend DonationCampaignStatus:
+  // Draft=1, PendingReview=2, Published=3, Paused=4,
+  // Completed=5, Closed=6, Rejected=7, Deleted=8.
+  if (raw === '8' || raw.includes('DELETE')) return 'DELETED';
+  if (raw === '7' || raw.includes('REJECT')) return 'REJECTED';
+  if (raw === '6' || raw.includes('CLOSE')) return 'CLOSED';
+  if (raw === '5' || raw.includes('COMPLETE')) return 'CLOSED';
+  if (raw === '3' || raw.includes('PUBLISH') || raw.includes('APPROV')) return 'PUBLISHED';
+  if (raw === '4' || raw.includes('PAUSE')) return 'PUBLISHED';
   return 'PENDING_REVIEW';
 }
 function media(v: unknown, campaignId: string, index: number) {
@@ -60,7 +66,7 @@ function donor(v: unknown): DonationArchiveEntry { const x = rec(v); const anony
 function event(v: unknown, fallbackId: string): DonationCampaignTimelineEvent { const x = rec(v); return { id: id(x.id, x.eventId, `${fallbackId}-${Math.random()}`), title: str(x.title, x.action, x.event) ?? 'تحديث الحملة', actor: str(x.actor, x.actorName, rec(x.actor).name), timestamp: str(x.timestamp, x.createdAt, x.creationTime) ?? now(), details: str(x.details, x.description, x.note), tone: str(x.tone) as DonationCampaignTimelineEvent['tone'] }; }
 function details(payload: unknown): DonationCampaignDetails | null { const raw = unwrap(payload); if (raw == null) return null; const b = rec(raw); const c = campaign(b.campaign ?? b); return { campaign: c, donors: arr(b.donors ?? b.donations ?? b.archive).map(donor), timeline: arr(b.timeline ?? b.events ?? b.activity).map((v) => event(v, c.id)) }; }
 function summary(payload: unknown): DonationSummary { const b = rec(unwrap(payload)); const totalAmount = num(b.totalRaised, b.totalAmountMinor, b.totalAmount) ?? 0; const donationCount = num(b.donationCount, b.completed, b.completedDonations) ?? 0; return { total: totalAmount ? [{ currency: 'SYP', amountMinor: totalAmount }] : [], thisMonth: [], completed: donationCount, pending: num(b.pendingReview, b.pending, b.pendingCount) ?? 0, publishedCampaigns: num(b.published, b.publishedCampaigns, b.activeCampaigns) ?? 0, donorCount: donationCount }; }
-function qs(filters: DonationCampaignFilters) { const q = new URLSearchParams(); if (filters.search.trim()) q.set('search', filters.search.trim()); const statusMap: Record<DonationCampaignStatus, string> = { PENDING_REVIEW: '1', PUBLISHED: '2', CLOSED: '4', REJECTED: '5', DELETED: '' }; if (filters.status && filters.status !== 'DELETED') q.set('status', statusMap[filters.status]); if (filters.organizationId && /^\d+$/.test(filters.organizationId)) q.set('organizationId', filters.organizationId); if (filters.dateFrom) q.set('dateFrom', filters.dateFrom); if (filters.dateTo) q.set('dateTo', filters.dateTo); if (filters.sortBy) q.set('sortBy', filters.sortBy); if (filters.sortDirection) q.set('sortDirection', filters.sortDirection); q.set('page', String(filters.page)); q.set('pageSize', String(filters.pageSize)); return q.toString(); }
+function qs(filters: DonationCampaignFilters) { const q = new URLSearchParams(); if (filters.search.trim()) q.set('search', filters.search.trim()); const statusMap: Record<DonationCampaignStatus, string> = { PENDING_REVIEW: '2', PUBLISHED: '3', CLOSED: '6', REJECTED: '7', DELETED: '8' }; if (filters.status) q.set('status', statusMap[filters.status]); if (filters.organizationId && /^\d+$/.test(filters.organizationId)) q.set('organizationId', filters.organizationId); if (filters.dateFrom) q.set('dateFrom', filters.dateFrom); if (filters.dateTo) q.set('dateTo', filters.dateTo); if (filters.sortBy) q.set('sortBy', filters.sortBy); if (filters.sortDirection) q.set('sortDirection', filters.sortDirection); q.set('page', String(filters.page)); q.set('pageSize', String(filters.pageSize)); return q.toString(); }
 
 export async function getDonationCampaigns(filters: DonationCampaignFilters, signal?: AbortSignal) { return list(await apiClient.get<unknown>(`/api/dashboard/donation-campaigns?${qs(filters)}`, signal), filters); }
 export async function getDonationSummary(_filters?: Partial<DonationCampaignFilters>, signal?: AbortSignal) { return summary(await apiClient.get<unknown>('/api/dashboard/donation-campaigns/summary', signal)); }
