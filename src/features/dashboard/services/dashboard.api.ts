@@ -249,7 +249,7 @@ async function buildAttentionFromFeatureApis(signal?: AbortSignal): Promise<Atte
   const [reportsResult, adoptionsResult, organizationsResult] = await Promise.allSettled([
     reportsApi.getReports({ search: '', page: 1, pageSize: 30, sortBy: 'createdAt', sortDirection: 'desc' }, signal),
     adoptionApi.getAdoptionRequests({ search: '', status: 'PENDING_REVIEW', page: 1, pageSize: 10, sortBy: 'submittedAt', sortDirection: 'desc' }, signal),
-    organizationsApi.getOrganizations({ search: '', verificationStatus: 'PENDING', page: 1, pageSize: 10, sortBy: 'createdAt', sortDirection: 'desc' }, signal),
+    organizationsApi.getOrganizations({ search: '', status: 'PENDING_VERIFICATION', page: 1, pageSize: 10, sortBy: 'createdAt', sortDirection: 'desc' }, signal),
   ]);
   const now = Date.now();
   const waiting = (date: string) => Math.max(0, Math.floor((now - new Date(date).getTime()) / 60_000));
@@ -261,7 +261,7 @@ async function buildAttentionFromFeatureApis(signal?: AbortSignal): Promise<Atte
       .map((report) => ({ id: `report-${report.id}`, title: report.title, detail: 'بلاغ حرج مفتوح', severity: 'critical' as const, waitingMinutes: waiting(report.createdAt), target: `/reports/${encodeURIComponent(report.id)}`, actionLabel: 'فتح التفاصيل' })));
   }
   if (adoptionsResult.status === 'fulfilled') {
-    items.push(...adoptionsResult.value.items.map((request) => ({ id: `adoption-${request.id}`, title: request.title, detail: 'طلب تبنّي بانتظار المراجعة', severity: 'pending' as const, waitingMinutes: waiting(request.submittedAt), target: `/adoption-requests/${encodeURIComponent(request.id)}`, actionLabel: 'فتح التفاصيل' })));
+    items.push(...adoptionsResult.value.items.map((request) => ({ id: `adoption-${request.id}`, title: request.animal.name ? `طلب تبنّي - ${request.animal.name}` : 'طلب تبنّي بانتظار المراجعة', detail: 'طلب تبنّي بانتظار المراجعة', severity: 'pending' as const, waitingMinutes: waiting(request.submittedAt), target: `/adoption-requests/${encodeURIComponent(request.id)}`, actionLabel: 'فتح التفاصيل' })));
   }
   if (organizationsResult.status === 'fulfilled') {
     items.push(...organizationsResult.value.items.map((organization) => ({ id: `organization-${organization.id}`, title: organization.name, detail: 'جمعية تحتاج مراجعة', severity: 'pending' as const, waitingMinutes: waiting(organization.createdAt), target: `/organizations/${encodeURIComponent(organization.id)}`, actionLabel: 'فتح التفاصيل' })));
