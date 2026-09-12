@@ -1,10 +1,11 @@
 export type DataSourceMode = 'mock' | 'api';
 
 const DEFAULT_API_BASE_URL = 'https://resqback.runasp.net';
+const DEFAULT_MEDIA_BASE_URL = 'https://resqmob.runasp.net';
 
-function normalizeBaseUrl(value: string | undefined): string {
+function normalizeBaseUrl(value: string | undefined, fallback: string): string {
   const trimmed = value?.trim();
-  return (trimmed || DEFAULT_API_BASE_URL).replace(/\/$/, '');
+  return (trimmed || fallback).replace(/\/+$/, '');
 }
 
 function normalizeNonNegativeNumber(value: string | undefined): number {
@@ -15,7 +16,8 @@ function normalizeNonNegativeNumber(value: string | undefined): number {
 const requestedDataSource = import.meta.env.VITE_DATA_SOURCE?.trim().toLowerCase();
 
 export const env = {
-  apiBaseUrl: normalizeBaseUrl(import.meta.env.VITE_API_BASE_URL),
+  apiBaseUrl: normalizeBaseUrl(import.meta.env.VITE_API_BASE_URL, DEFAULT_API_BASE_URL),
+  mediaBaseUrl: normalizeBaseUrl(import.meta.env.VITE_MEDIA_BASE_URL, DEFAULT_MEDIA_BASE_URL),
   dataSource: (requestedDataSource === 'mock' ? 'mock' : 'api') as DataSourceMode,
   mockLatencyMs: normalizeNonNegativeNumber(import.meta.env.VITE_MOCK_LATENCY_MS),
   mapTileUrl: import.meta.env.VITE_MAP_TILE_URL?.trim() || 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
