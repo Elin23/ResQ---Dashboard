@@ -89,11 +89,39 @@ export async function getDashboardSummary(range: DashboardRange): Promise<Dashbo
       },
     ],
 
-    /*
-     * Keep this field temporarily while DashboardSummary still expects it.
-     * It can be removed after ActiveMission is removed from the dashboard types.
-     */
-    activeMissions: [],
+    // Frontend fallback until the backend exposes active rescue missions.
+    activeMissions: [
+      {
+        id: 'RQ-2026-00481',
+        animal: 'كلب مصاب',
+        location: 'دمشق — المزة',
+        organization: 'فريق الاستجابة الميداني',
+        stage: 'report:EN_ROUTE',
+        progress: 65,
+        startedAt: minutesAgo(18),
+        priority: 'CRITICAL',
+      },
+      {
+        id: 'RQ-2026-00484',
+        animal: 'قطة عالقة',
+        location: 'دمشق — باب توما',
+        organization: 'جمعية أمان للحيوان',
+        stage: 'report:IN_PROGRESS',
+        progress: 42,
+        startedAt: minutesAgo(33),
+        priority: 'HIGH',
+      },
+      {
+        id: 'RQ-2026-00486',
+        animal: 'كلب ضال',
+        location: 'حلب — الحمدانية',
+        organization: 'فريق الإنقاذ المحلي',
+        stage: 'report:ASSIGNED',
+        progress: 25,
+        startedAt: minutesAgo(49),
+        priority: 'HIGH',
+      },
+    ],
 
     criticalReports: [
       {
