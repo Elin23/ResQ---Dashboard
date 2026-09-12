@@ -5,7 +5,8 @@ import * as api from './reports.api';
 import * as mock from './reports.mock';
 
 export const getReports = (filters: ReportFilters, signal?: AbortSignal) => env.dataSource === 'api' ? api.getReports(filters, signal) : mock.getReports(filters);
-export const getReportSummary = (signal?: AbortSignal) => env.dataSource === 'api' ? api.getReportSummary(signal) : mock.getReportSummary();
+// Summary cards must always reflect real backend data; never use report mock fixtures.
+export const getReportSummary = (signal?: AbortSignal) => api.getReportSummary(signal);
 export const getReportById = (id: string, signal?: AbortSignal) => env.dataSource === 'api' ? api.getReportById(id, signal) : mock.getReportById(id);
 export const getEligibleOrganizations = (search: string, signal?: AbortSignal) => env.dataSource === 'api' ? api.getEligibleOrganizations(search, signal) : mock.getEligibleOrganizations(search);
 
